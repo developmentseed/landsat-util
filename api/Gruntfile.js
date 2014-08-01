@@ -6,7 +6,7 @@
 // Author: developmentseed
 // Contributer: scisco
 //
-// License: CC0 V1
+// License: CC0 1.0 Universal
 
 module.exports = function(grunt) {
   var path = require('path');
