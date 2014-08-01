@@ -3,6 +3,8 @@ landsat-util
 
 A utility to search, download and process Landsat 8 satellite imagery
 
+***Important:** This repo is under development and not ready for deployment yet.*
+
 ## Install Dependencies
 
 ### GDAL Python
