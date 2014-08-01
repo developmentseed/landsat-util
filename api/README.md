@@ -1,4 +1,6 @@
-# This is a fork of excellent OpenFDA API: https://github.com/FDA/openfda/tree/master/api
+## Landsat-util metadata API
+
+This is a fork of excellent OpenFDA API: https://github.com/FDA/openfda/tree/master/api
 
 ## Getting started
 
