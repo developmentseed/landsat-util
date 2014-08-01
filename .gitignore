@@ -52,3 +52,8 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+## Project related stuff
+output
+.DS_Store
+.settings
+
