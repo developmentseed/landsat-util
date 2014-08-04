@@ -16,6 +16,7 @@ from optparse import OptionParser
 import landsat_util.settings
 from landsat_util.gs_helper import GsHelper
 from landsat_util.clipper_helper import Clipper
+from landsat_util.metadata_helper import Metadata
 
 # FNULL = open(os.devnull, 'w') #recreating /dev/null
 
@@ -46,11 +47,19 @@ def main():
                       imagery area, for a list of country syntax visit \
                       (\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
                       metavar="Italy")
+    parser.add_option("--update_metadata",
+                      help="Update ElasticSearch Metadata. Requires access \
+                      to an Elastic Search instance",
+                      action='store_true')
 
     (options, args) = parser.parse_args()
 
+    # Raise an error if no option is given
+    raise_error = True
+
     # Execute search_array sequence
     if options.search_array:
+        raise_error = False
         array = search_array_check(options.search_array)
 
         if options.start and options.end:
@@ -81,20 +90,27 @@ def main():
         else:
             exit("No Images found. Change your search parameters.")
 
-    elif options.shapefile:
+    if options.shapefile:
+        raise_error = False
         clipper = Clipper()
         clipper.shapefile(options.shapefile)
         exit("Shapefile clipped")
 
-    elif options.country:
+    if options.country:
+        raise_error = False
         clipper = Clipper()
         clipper.country(options.country)
         exit("Process Completed")
 
-    else:
-        exit(
-            "You must specify an argument. Use landsat_util --help for \
-            more info")
+    if options.update_metadata:
+        raise_error = False
+        meta = Metadata()
+        print 'Starting Metadata Update using Elastic Search ...\n'
+        meta.populate()
+
+    if raise_error:
+        exit('You must specify an argument. Use landsat_util --help for ' +
+             'more info')
 
 
 def exit(message):
