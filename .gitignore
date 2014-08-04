@@ -56,4 +56,5 @@ docs/_build/
 output
 .DS_Store
 .settings
+metadata.csv
 

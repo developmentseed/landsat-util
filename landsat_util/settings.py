@@ -21,7 +21,11 @@ L8_METADATA_URL = 'http://landsat.usgs.gov/metadata_service/bulk_metadata_files/
 
 # Elastic Search Config
 
-ES_URL = 'http://localhost:9200'
+ES_URL = [{
+    'host': 'localhost',
+    'port': 9200,
+    'use_ssl': False
+}]
 ES_MAIN_INDEX = 'landsat'
 ES_MAIN_TYPE = '8'
 
@@ -34,6 +38,7 @@ UNZIP_DIR = DOWNLOAD_DIR + '/unzip'
 SCENE_FILE = DOWNLOAD_DIR + '/scene_list'
 
 ASSESTS_DIR = BASE_DIR + '/assests'
+L8_METADATA_FILENAME = 'metadata.csv'
 
 SHAPEFILE_INPUT = BASE_DIR + '/output/shapefiles/input'
 SHAPEFILE_OUTPUT = BASE_DIR + '/output/shapefiles/output'
