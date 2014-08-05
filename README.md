@@ -7,13 +7,18 @@ A utility to search, download and process Landsat 8 satellite imagery
 
 ## Install Dependencies
 
-You need to setup a virtualenv before installing the dependencies. More details [are here](https://gist.github.com/scisco/7485a7b9fac30be164c0).
+It is better to install virtualenv before installing the dependencies. More details [are here](https://gist.github.com/scisco/7485a7b9fac30be164c0).
 
 #### On Mac
 
+If you don't have brew on Mac, go [here](http://brew.sh/).
+
     $: brew udpate
     $: brew install gdal
-    $: pip install -r requirements.txt
+
+If you don't have pip, run:
+
+    $: sudo easy_install pip
 
 #### On Ubuntu (Tested on Ubuntu 14.04)
 
@@ -22,11 +27,14 @@ Install PIP and some other  dependencies for a successful install of requirement
     $ sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $ sudo apt-get update
     $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal -y
-    $: pip install -r requirements.txt
 
 To Run the API [read this](https://github.com/developmentseed/landsat-util/tree/master/api).
 
 ## Landsat8 Utility
+
+    $: git clone https://github.com/developmentseed/landsat-util.git
+    $: cd landsat-util
+    $: pip install -r requirements.txt
 
 ```
 Usage: landsat_util.py [options]
