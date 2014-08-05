@@ -178,7 +178,7 @@ TrySearch = function(index, params, es_search_params, response) {
         for (j = 0; j < FIELDS_TO_REMOVE.length; j++) {
           delete es_results[FIELDS_TO_REMOVE[j]];
         }
-        response_json.results.push(remove_fields);
+        response_json.results.push(es_results);
       }
       response.json(HTTP_CODE.OK, response_json);
 
