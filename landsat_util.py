@@ -47,10 +47,11 @@ def main():
                       imagery area, for a list of country syntax visit \
                       (\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
                       metavar="Italy")
-    parser.add_option("--update_metadata",
+    parser.add_option("--update-metadata",
                       help="Update ElasticSearch Metadata. Requires access \
                       to an Elastic Search instance",
-                      action='store_true')
+                      action='store_true',
+                      dest='umeta')
 
     (options, args) = parser.parse_args()
 
@@ -102,7 +103,7 @@ def main():
         clipper.country(options.country)
         exit("Process Completed")
 
-    if options.update_metadata:
+    if options.umeta:
         raise_error = False
         meta = Metadata()
         print 'Starting Metadata Update using Elastic Search ...\n'

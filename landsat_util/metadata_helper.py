@@ -35,8 +35,7 @@ class Metadata(object):
         self.es_main_type = settings.ES_MAIN_TYPE
 
     def populate(self):
-        # if self.download():
-        if True:
+        if self.download():
             es = Elasticsearch(self.es_url)
 
             f = open('%s/%s' % (self.assests_dir, self.l8_metadata_filename),
