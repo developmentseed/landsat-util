@@ -19,7 +19,9 @@ You need to setup a virtualenv before installing the dependencies. More details 
 
 Install PIP and some other  dependencies for a successful install of requirements.txt
 
-    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev -y
+    $ sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+    $ sudo apt-get update
+    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal -y
     $: pip install -r requirements.txt
 
 To Run the API [read this](https://github.com/developmentseed/landsat-util/tree/master/api).
