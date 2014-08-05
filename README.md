@@ -7,8 +7,6 @@ A utility to search, download and process Landsat 8 satellite imagery
 
 ## Install Dependencies
 
-It is better to install virtualenv before installing the dependencies. More details [are here](https://gist.github.com/scisco/7485a7b9fac30be164c0).
-
 #### On Mac
 
 If you don't have brew on Mac, go [here](http://brew.sh/).
@@ -16,9 +14,16 @@ If you don't have brew on Mac, go [here](http://brew.sh/).
     $: brew udpate
     $: brew install gdal
 
-If you don't have pip, run:
+To install virtualenv run:
 
-    $: sudo easy_install pip
+    $: sudo easy_install virtualenv
+
+To make and activate virtualenv
+
+    $: virtualenv name_of_the_environment
+    $: source name_of_the_environment/bin/activate
+
+Read here for [more info](https://gist.github.com/scisco/7485a7b9fac30be164c0)
 
 #### On Ubuntu (Tested on Ubuntu 14.04)
 
