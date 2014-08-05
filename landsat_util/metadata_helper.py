@@ -84,7 +84,8 @@ class Metadata(object):
 
                 except ConnectionError:
                     print('There was a connection error. Check your Elastic' +
-                          ' Search setting')
+                          ' Search setting and make sure Elastic Search is' +
+                          'running.')
                     sys.exit(0)
                 except:
                     print('An expected error: %s' % (sys.exc_info()[0]))
