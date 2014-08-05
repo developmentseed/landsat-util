@@ -47,7 +47,7 @@ To run the api:
 
 To test the API run:
 
-    $: curl localhost:8000/landsat/metadata.json?search=LC81660362014196LGN00
+    $: curl localhost:8000/landsat?search=LC81660362014196LGN00
 
 To run the API in the background run:
 
