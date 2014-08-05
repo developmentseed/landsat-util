@@ -216,7 +216,7 @@ TrySearch = function(index, params, es_search_params, response) {
 };
 
 Endpoint = function(noun) {
-  app.get('/' + noun + '/metadata.json', function(request, response) {
+  app.get('/' + noun, function(request, response) {
     LogRequest(request);
     SetHeaders(response);
 
@@ -225,7 +225,7 @@ Endpoint = function(noun) {
       return;
     }
 
-    var index = MAIN_INDEX;
+    var index = noun;
     var es_search_params =
       TryToBuildElasticsearchParams(params, index, response);
     if (es_search_params == null) {

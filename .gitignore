@@ -57,4 +57,5 @@ output
 .DS_Store
 .settings
 metadata.csv
+node_modules
 
