@@ -99,10 +99,6 @@ class Clipper(object):
                 rp[k] = '00%s' % v
             elif len(v) == 2:
                 rp[k] = '0%s' % v
-        i = 2
-        while i <= len(rp):
-            rp.insert(i, '2014')
-            i = i + 3
 
         s = open('%s/rows_paths.txt' % (self.shapefile_output), 'w')
         s.write(','.join(rp))
