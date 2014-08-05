@@ -7,11 +7,22 @@ A utility to search, download and process Landsat 8 satellite imagery
 
 ## Install Dependencies
 
-### GDAL Python
+You need to setup a virtualenv before installing the dependencies. More details [are here](https://gist.github.com/scisco/7485a7b9fac30be164c0).
+
+#### On Mac
 
     $: brew udpate
     $: brew install gdal
     $: pip install -r requirements.txt
+
+#### On Ubuntu (Tested on Ubuntu 14.04)
+
+Install PIP and some other  dependencies for a successful install of requirements.txt
+
+    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev -y
+    $: pip install -r requirements.txt
+
+To Run the API [read this](https://github.com/developmentseed/landsat-util/tree/master/api).
 
 ## Landsat8 Utility
 
@@ -27,14 +38,15 @@ Options:
   --end=02/27/2014      End Date - Format: MM/DD/YYYY
   --shapefile=my_shapefile.shp
                         Generate rows and paths from a shapefile. You must
-                        create a folder                              called
-                        'shapefile_input'. You must add your shapefile to this
-                        folder.
-  --country=Italy       Enter country NAME or CODE that will designate imagery
-                        area, for a list of                      country
-                        syntax visit ("https://docs.google.com/spreadsheets/d
+                        create a folder called 'shapefile_input'. You must add
+                        your shapefile to this folder.
+  --country=Italy       Enter country NAME or CODE that will designate
+                        imagery area, for a list of country syntax visit
+                        ("https://docs.google.com/spreadsheets/d
                         /1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-
                         K9cEVnN01aN8/edit?usp=sharing)"
+  --update-metadata     Update ElasticSearch Metadata. Requires access
+                        to an Elastic Search instance
 ```
 
 For example
@@ -80,7 +92,7 @@ When you run the program an output folder will be created on the main folder
 .
 |-- ds-imagery
 |     |-- output
-|   |   |-- imagery
+|     |   |-- imagery
 |     |   |   |-- file_scene
 |     |   |   |-- zip
 |     |   |   |   |-- LC80030032014174LGN00.tar.bz
@@ -91,8 +103,8 @@ When you run the program an output folder will be created on the main folder
 |     |   |   |   |-- LC80030032014174LGN00_B3.TIF
 |     |   |   |   |-- LC80030032014174LGN00_B4.TIF
 |     |   |   |     |-- LC80030032014174LGN00_MTL.txt
-|   |   |-- Shapefiles
-|   |   |   |-- input
-|   |   |   |-- output
+|     |   |-- Shapefiles
+|     |   |   |-- input
+|     |   |   |-- output
 
 ```
