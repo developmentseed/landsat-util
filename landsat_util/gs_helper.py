@@ -27,7 +27,7 @@ class GsHelper(object):
         # based on the search parameters
         self.found = 0
 
-        self.__check_create_folder(self.download_dir)
+        check_create_folder(self.download_dir)
 
     #################
     # Public Methods
