@@ -29,6 +29,8 @@ ES_URL = [{
 ES_MAIN_INDEX = 'landsat'
 ES_MAIN_TYPE = '8'
 
+API_URL = 'http://api.developmentseed.com/landsat'
+
 # Local Forlders Config
 
 # User's Home Directory
