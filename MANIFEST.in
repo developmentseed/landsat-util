@@ -1,0 +1,4 @@
+include README.md
+include .gitignore
+include LICENSE
+recursive-include landsat/assests *
