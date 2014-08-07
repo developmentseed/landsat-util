@@ -47,7 +47,7 @@ setup(name="landsat",
       scripts=["bin/landsat"],
       url="https://github.com/developmentseed/landsat-util",
       packages=["landsat"],
-
+      include_package_data=True,
       license="CCO",
       platforms="Posix; MacOS X; Windows",
       install_requires=[
