@@ -17,14 +17,19 @@ except ImportError:
     from distutils.core import setup
 
 # Check if gdal-config is installed
-if subprocess(['which', 'gdal-config']):
-    print "Error: gdal-config is not installed on this machine."
-    print "This installation requires gdal-config to proceed."
-    print ""
-    print "If you are on Mac OSX, you can installed gdal-config by running" + \
-          "brew install gdal"
-    print "On Ubuntu you should run sudo apt-get install libgdal1-dev"
-    print "Exiting the setup now!"
+if subprocess.call(['which', 'gdal-config']):
+    error = """Error: gdal-config is not installed on this machine.
+This installation requires gdal-config to proceed.
+
+If you are on Mac OSX, you can installed gdal-config by running:
+    brew install gdal
+
+On Ubuntu you should run:
+    sudo apt-get install libgdal1-dev
+
+Exiting the setup now!"""
+    print error
+
     sys.exit(1)
 
 
