@@ -47,11 +47,11 @@ class GsHelper(object):
 
         return files
 
-    def download_single(self, sat_type='L8', row, path, name):
+    def download_single(self, row, path, name, sat_type='L8'):
         url = '%s/%s/%s/%s/%s.tar.bz' % (self.source_url,
                                          sat_type,
-                                         row,
                                          path,
+                                         row,
                                          name)
 
         subprocess.call(
