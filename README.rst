@@ -31,13 +31,18 @@ Install PIP and some other  dependencies for a successful install of requirement
     $: sudo apt-get update
     $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal -y
 
-**Install Landsat8 Utility**
+**Installing Landsat8 Utility**
 
 Either use pip or easy_install to install the utility:
 
 .. code-block:: console
 
-    $: pip install git+git://github.com/developmentseed/landsat-util.git
+    $: pip install landsat
+
+or
+
+.. code-block:: console
+
     $: sudo easy_install
 
 Usage
