@@ -29,10 +29,17 @@ ES_URL = [{
 ES_MAIN_INDEX = 'landsat'
 ES_MAIN_TYPE = '8'
 
+API_URL = 'http://api.developmentseed.com:8000/landsat'
+
 # Local Forlders Config
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-DOWNLOAD_DIR = BASE_DIR + '/output/imagery'
+# User's Home Directory
+HOME_DIR = os.path.expanduser('~')
+
+# Utility's base directory
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+DOWNLOAD_DIR = HOME_DIR + '/landsat/output/imagery'
 ZIP_DIR = DOWNLOAD_DIR + '/zip'
 UNZIP_DIR = DOWNLOAD_DIR + '/unzip'
 SCENE_FILE = DOWNLOAD_DIR + '/scene_list'
@@ -40,5 +47,5 @@ SCENE_FILE = DOWNLOAD_DIR + '/scene_list'
 ASSESTS_DIR = BASE_DIR + '/assests'
 L8_METADATA_FILENAME = 'metadata.csv'
 
-SHAPEFILE_INPUT = BASE_DIR + '/output/shapefiles/input'
-SHAPEFILE_OUTPUT = BASE_DIR + '/output/shapefiles/output'
+SHAPEFILE_INPUT = HOME_DIR + '/landsat/output/shapefiles/input'
+SHAPEFILE_OUTPUT = HOME_DIR + '/landsat/output/shapefiles/output'

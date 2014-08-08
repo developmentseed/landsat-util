@@ -21,7 +21,7 @@ from urllib2 import urlopen, HTTPError, URLError
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError
 
-from landsat_util import settings
+import settings
 
 
 class Metadata(object):

@@ -11,7 +11,7 @@ import subprocess
 from zipfile import ZipFile
 import tarfile
 
-from landsat_util.general_helper import check_create_folder
+from general_helper import check_create_folder
 
 
 class GsHelper(object):
@@ -22,6 +22,7 @@ class GsHelper(object):
         self.zip_dir = settings.ZIP_DIR
         self.unzip_dir = settings.UNZIP_DIR
         self.scene_file = settings.SCENE_FILE
+        self.source_url = settings.SOURCE_URL
 
         # Keep the number of images found on Google search
         # based on the search parameters
@@ -33,18 +34,29 @@ class GsHelper(object):
     # Public Methods
     #################
 
-    def search(self, query, date_rng):
+    def search(self, query, date_rng=None):
         files = []
         self.__fetch_gs_scence_list()
         file = open(self.scene_file, 'r')
-# 		for q in query:
-# 			print date_rng
+#       for q in query:
+#           print date_rng
         files.extend(
             self.__search_scene_list(scene=file,
                                      query=query,
                                      date_rng=date_rng))
 
         return files
+
+    def download_single(self, row, path, name, sat_type='L8'):
+        url = '%s/%s/%s/%s/%s.tar.bz' % (self.source_url,
+                                         sat_type,
+                                         path,
+                                         row,
+                                         name)
+
+        subprocess.call(
+            ["gsutil", "cp", "-n", url,
+             "%s/%s" % (self.zip_dir, name)])
 
     def download(self, image_list):
         self.__download_images(image_list)
@@ -71,7 +83,7 @@ class GsHelper(object):
 
             print "scene_file unziped"
 
-# 		return open(self.scene_file, 'r')
+#       return open(self.scene_file, 'r')
 
     def __search_scene_list(self, scene, query, date_rng=None):
         """

@@ -9,10 +9,10 @@
 import os
 import re
 
-import landsat_util.ogr2ogr
-import landsat_util.settings
-import landsat_util.ogrinfo
-from landsat_util.general_helper import Capturing, check_create_folder
+import ogr2ogr
+import settings
+import ogrinfo
+from general_helper import Capturing, check_create_folder, three_digit
 
 # creates new input-shp.shp and ASSIGNS spatial reference system
 # ogr2ogr.main(['', '-a_srs', 'EPSG:4326', 'custom-sh-copy.shp',
@@ -22,9 +22,9 @@ from landsat_util.general_helper import Capturing, check_create_folder
 class Clipper(object):
 
     def __init__(self):
-        self.assests_dir = landsat_util.settings.ASSESTS_DIR
-        self.shapefile_output = landsat_util.settings.SHAPEFILE_OUTPUT
-        self.shapefile_input = landsat_util.settings.SHAPEFILE_INPUT
+        self.assests_dir = settings.ASSESTS_DIR
+        self.shapefile_output = settings.SHAPEFILE_OUTPUT
+        self.shapefile_input = settings.SHAPEFILE_INPUT
 
         check_create_folder(self.shapefile_input)
         check_create_folder(self.shapefile_output)
@@ -51,7 +51,7 @@ class Clipper(object):
             input = output
             argv.insert(1, '-overwrite')
 
-        landsat_util.ogr2ogr.main(argv)
+        ogr2ogr.main(argv)
 
     def __extract_country(self, name):
         print "Extracting the country"
@@ -65,7 +65,7 @@ class Clipper(object):
         if os.path.isfile(output):
             argv.insert(1, '-overwrite')
 
-        landsat_util.ogr2ogr.main(argv)
+        ogr2ogr.main(argv)
 
     def __clip_shapefile(self, file):
         print "Clipping the shapefile"
@@ -78,14 +78,14 @@ class Clipper(object):
         if os.path.isfile(output):
             argv.insert(1, '-overwrite')
 
-        landsat_util.ogr2ogr.main(argv)
+        ogr2ogr.main(argv)
 
     def __generate_path_row(self, source, layer=''):
         print "Generating paths and rows"
 
         source = self.shapefile_output + '/' + source
         with Capturing() as output:
-            landsat_util.ogrinfo.main(
+            ogrinfo.main(
                 ['',
                  '-sql',
                  'SELECT PATH, ROW FROM "%s"' % layer, source, layer
@@ -93,12 +93,10 @@ class Clipper(object):
 
         # Convert the above output into a list with rows and paths
         rp = [re.sub(r'([A-Z]|[a-z]|\s|\(|\)|\'|\"|=|,|:|\.0|\.)', '', a)
-              for a in str(output).split(',') if 'ROW' in a or 'PATH' in a]
+              for a in str(output).split(',') if ('ROW' in a or 'PATH' in a)
+              and '(3.0)' not in a]
         for k, v in enumerate(rp):
-            if len(v) == 1:
-                rp[k] = '00%s' % v
-            elif len(v) == 2:
-                rp[k] = '0%s' % v
+            rp[k] = three_digit(v)
 
         s = open('%s/rows_paths.txt' % (self.shapefile_output), 'w')
         s.write(','.join(rp))
