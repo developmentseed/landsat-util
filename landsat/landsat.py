@@ -17,17 +17,18 @@ import settings
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from metadata_helper import Metadata
+from search_helper import Search
+from general_helper import georgian_day, year, reformat_date
 
 # FNULL = open(os.devnull, 'w') #recreating /dev/null
 
 
-def main():
-    """
-    Main function - launches the program
-    """
-    # Define options
-    parser = OptionParser()
-    parser.add_option("--search_array",
+def define_options(parser):
+    parser.add_option("-m",
+                      help="Use Metadata API to search",
+                      action='store_true',
+                      dest='use_metadata')
+    parser.add_option("--rows_paths",
                       help="Include a search array in this format: \
                       \"path,row,path,row, ... \"",
                       metavar="\"path,row,path,row, ... \"")
@@ -37,60 +38,94 @@ def main():
     parser.add_option("--end",
                       help="End Date - Format: MM/DD/YYYY",
                       metavar="02/27/2014")
+    parser.add_option("--cloud",
+                      help="Maximum cloud percentage",
+                      metavar="1.00")
+    parser.add_option("--limit",
+                      help="Limit results. Max is 100",
+                      default=100,
+                      metavar="100")
     parser.add_option("--shapefile",
-                      help="Generate rows and paths from a shapefile. You must\
-                       create a folder called 'shapefile_input'. You must add \
-                       your shapefile to this folder.",
+                      help="Generate rows and paths from a shapefile. You " +
+                      "must create a folder called 'shapefile_input'. You " +
+                      "must add your shapefile to this folder.",
                       metavar="my_shapefile.shp")
     parser.add_option("--country",
-                      help="Enter country NAME or CODE that will designate \
-                      imagery area, for a list of country syntax visit \
-                      (\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
+                      help="Enter country NAME or CODE that will designate " +
+                      "imagery area, for a list of country syntax visit " +
+                      "(\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT" +
+                      "8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
                       metavar="Italy")
     parser.add_option("--update-metadata",
                       help="Update ElasticSearch Metadata. Requires access \
                       to an Elastic Search instance",
                       action='store_true',
                       dest='umeta')
+    return parser
+
+
+def main():
+    """
+    Main function - launches the program
+    """
+    # Define options
+    parser = OptionParser()
+    parser = define_options(parser)
 
     (options, args) = parser.parse_args()
 
     # Raise an error if no option is given
     raise_error = True
 
-    # Execute search_array sequence
-    if options.search_array:
+    # Execute rows_paths sequence
+    if options.rows_paths:
         raise_error = False
-        array = search_array_check(options.search_array)
+        array = rows_paths_check(options.rows_paths)
         date_rng = None
+        gs = GsHelper(settings)
 
-        if options.start and options.end:
-            fmt = '%m/%d/%Y'
+        if options.use_metadata:
+            s = Search()
+            result = s.search(row_paths=options.rows_paths,
+                              start_date=reformat_date(options.start,
+                                                       '%Y-%m-%d'),
+                              end_date=reformat_date(options.end,
+                                                     '%Y-%m-%d'),
+                              cloud_max=options.cloud,
+                              limit=100)
+
+            if result['status'] == 'SUCCESS':
+                print '%s items were found' % result['total_returned']
+                print 'Starting the download:'
+                for item in result['results']:
+                    gs.download_single(row=item['row'],
+                                       path=item['path'],
+                                       name=item['sceneID'])
+                    gs.unzip()
+                    print "%s images were downloaded " + \
+                          "and unzipped!" % result['total_returned']
+                    exit("Your unzipped images are located here: %s" %
+                         gs.unzip_dir)
+            elif result['status'] == 'error':
+                exit(result['message'])
+
+        else:
             date_rng = {
-                'start_y': datetime.datetime
-                                   .strptime(options.start, fmt)
-                                   .timetuple()
-                                   .tm_year,
-                'start_jd': datetime.datetime
-                                    .strptime(options.start, fmt)
-                                    .timetuple().tm_yday,
-                'end_y': datetime.datetime
-                                 .strptime(options.end, fmt)
-                                 .timetuple().tm_year,
-                'end_jd': datetime.datetime
-                                  .strptime(options.end, fmt)
-                                  .timetuple().tm_yday
+                'start_y': year(options.start),
+                'start_jd': georgian_day(options.start),
+                'end_y': year(options.end),
+                'end_jd': georgian_day(options.end)
             }
 
-        gs = GsHelper(settings)
-        gs.download(gs.search(array, date_rng))
+            gs.download(gs.search(array, date_rng))
 
-        if gs.found > 0:
-            gs.unzip()
-            print "%s images were downloaded and unzipped!" % gs.found
-            exit("Your unzipped images are located here: %s" % gs.unzip_dir)
-        else:
-            exit("No Images found. Change your search parameters.")
+            if gs.found > 0:
+                gs.unzip()
+                print "%s images were downloaded and unzipped!" % gs.found
+                exit("Your unzipped images are located here: %s" %
+                     gs.unzip_dir)
+            else:
+                exit("No Images found. Change your search parameters.")
 
     if options.shapefile:
         raise_error = False
@@ -120,11 +155,11 @@ def exit(message):
     sys.exit()
 
 
-def search_array_check(search_array):
+def rows_paths_check(rows_paths):
     """
     Turn the search text into paired groups of two
     """
-    array = search_array.split(',')
+    array = rows_paths.split(',')
     paired = []
     for i in xrange(0, len(array), 2):
         paired.append(array[i:i + 2])
