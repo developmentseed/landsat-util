@@ -55,7 +55,8 @@ class Search(object):
             result['results'] = [{'sceneID': i['sceneID'],
                                   'sat_type': u'L8',
                                   'path': three_digit(i['path']),
-                                  'row': three_digit(i['row'])}
+                                  'row': three_digit(i['row']),
+                                  'thumbnail': i['browseURL']}
                                  for i in r_dict['results']]
 
         return result
