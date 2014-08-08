@@ -5,7 +5,7 @@ A utility to search, download and process Landsat 8 satellite imagery.
 
 This tool uses Development Seed's `API for Landsat Metdata <https://github.com/developmentseed/landsat-api>`_.
 
-This API is accessible here: http://api.developmentseed.com/landsat
+This API is accessible here: http://api.developmentseed.com:8000/landsat
 
 You can also run your own API and connect it to this tool.
 
