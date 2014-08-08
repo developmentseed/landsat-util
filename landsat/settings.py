@@ -29,7 +29,7 @@ ES_URL = [{
 ES_MAIN_INDEX = 'landsat'
 ES_MAIN_TYPE = '8'
 
-API_URL = 'http://api.developmentseed.com/landsat'
+API_URL = 'http://api.developmentseed.com:8000/landsat'
 
 # Local Forlders Config
 
