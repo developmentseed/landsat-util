@@ -11,6 +11,7 @@ import json
 import requests
 
 import settings
+from general_helper import three_digit
 
 
 class Search(object):
@@ -45,15 +46,18 @@ class Search(object):
             result['status'] = u'error'
             result['code'] = r_dict['error']['code']
             result['message'] = r_dict['error']['message']
-            print result
+
         elif 'meta' in r_dict:
             result['status'] = u'SUCCESS'
             result['total'] = r_dict['meta']['results']['total']
             result['limit'] = r_dict['meta']['results']['limit']
             result['total_returned'] = len(r_dict['results'])
-            result['sceneIDs'] = [i['sceneID'] for i in r_dict['results']]
+            result['results'] = [{'sceneID': i['sceneID'],
+                                  'sat_type': u'L8',
+                                  'path': three_digit(i['path']),
+                                  'row': three_digit(i['row'])}
+                                 for i in r_dict['results']]
 
-        print result
         return result
 
     def query_builder(self,
