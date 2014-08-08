@@ -12,7 +12,7 @@ import re
 import ogr2ogr
 import settings
 import ogrinfo
-from general_helper import Capturing, check_create_folder
+from general_helper import Capturing, check_create_folder, three_digit
 
 # creates new input-shp.shp and ASSIGNS spatial reference system
 # ogr2ogr.main(['', '-a_srs', 'EPSG:4326', 'custom-sh-copy.shp',
@@ -96,10 +96,7 @@ class Clipper(object):
               for a in str(output).split(',') if ('ROW' in a or 'PATH' in a)
               and '(3.0)' not in a]
         for k, v in enumerate(rp):
-            if len(v) == 1:
-                rp[k] = '00%s' % v
-            elif len(v) == 2:
-                rp[k] = '0%s' % v
+            rp[k] = three_digit(v)
 
         s = open('%s/rows_paths.txt' % (self.shapefile_output), 'w')
         s.write(','.join(rp))
