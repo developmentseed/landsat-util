@@ -102,8 +102,7 @@ def main():
                                        path=item['path'],
                                        name=item['sceneID'])
                     gs.unzip()
-                    print "%s images were downloaded " + \
-                          "and unzipped!" % result['total_returned']
+                    print "%s images were downloaded and unzipped!" % result['total_returned']
                     exit("Your unzipped images are located here: %s" %
                          gs.unzip_dir)
             elif result['status'] == 'error':
