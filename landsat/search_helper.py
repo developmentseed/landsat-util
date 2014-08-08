@@ -38,8 +38,22 @@ class Search(object):
                                                     search_string,
                                                     limit))
 
-        result = json.loads(r.text)
+        r_dict = json.loads(r.text)
+        result = {}
 
+        if 'error' in r_dict:
+            result['status'] = u'error'
+            result['code'] = r_dict['error']['code']
+            result['message'] = r_dict['error']['message']
+            print result
+        elif 'meta' in r_dict:
+            result['status'] = u'SUCCESS'
+            result['total'] = r_dict['meta']['results']['total']
+            result['limit'] = r_dict['meta']['results']['limit']
+            result['total_returned'] = len(r_dict['results'])
+            result['sceneIDs'] = [i['sceneID'] for i in r_dict['results']]
+
+        print result
         return result
 
     def query_builder(self,
