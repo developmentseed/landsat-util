@@ -18,17 +18,6 @@ You need to install gdal before using this tool. You can try brew:
     $: brew udpate
     $: brew install gdal
 
-We strongly advise using a virtualenv to run this tool. If you don't have it run:
-
-    $: sudo easy_install virtualenv
-
-To make and activate virtualenv
-
-    $: virtualenv name_of_the_environment
-    $: source name_of_the_environment/bin/activate
-
-[Read further](https://gist.github.com/scisco/7485a7b9fac30be164c0)
-
 #### On Ubuntu (Tested on Ubuntu 14.04)
 
 Install PIP and some other  dependencies for a successful install of requirements.txt
@@ -39,7 +28,11 @@ Install PIP and some other  dependencies for a successful install of requirement
 
 ## Install Landsat8 Utility
 
-    $: pip install git+git://github.com/developmentseed/landsat-util
+Either use pip or easy_install to install the utility:
+
+    $: pip install git+git://github.com/developmentseed/landsat-util.git
+
+    $: sudo easy_install
 
 And then just run
 
