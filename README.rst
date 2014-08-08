@@ -37,13 +37,13 @@ Either use pip or easy_install to install the utility:
 
 .. code-block:: console
 
-    $: pip install landsat
+    $: pip install git+git://github.com/developmentseed/landsat-util.git
 
-or
+or download the repository and run:
 
 .. code-block:: console
 
-    $: sudo easy_install landsat
+    $: python setup.py install
 
 Usage
 =====
