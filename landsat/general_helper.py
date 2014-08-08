@@ -37,3 +37,10 @@ def get_file(path):
 
 def get_filename(path):
     return os.path.splitext(get_file(path))[0]
+
+
+def three_digit(number):
+    if len(number) == 1:
+        return '00%s' % number
+    elif len(number) == 2:
+        return '0%s' % number
