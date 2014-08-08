@@ -62,6 +62,7 @@ def main():
     if options.search_array:
         raise_error = False
         array = search_array_check(options.search_array)
+        date_rng = None
 
         if options.start and options.end:
             fmt = '%m/%d/%Y'
