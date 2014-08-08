@@ -9,6 +9,7 @@
 import os
 import sys
 from cStringIO import StringIO
+from datetime import datetime
 
 
 class Capturing(list):
@@ -40,7 +41,26 @@ def get_filename(path):
 
 
 def three_digit(number):
+    number = str(number)
     if len(number) == 1:
-        return '00%s' % number
+        return u'00%s' % number
     elif len(number) == 2:
-        return '0%s' % number
+        return u'0%s' % number
+
+
+def georgian_day(date):
+    fmt = '%m/%d/%Y'
+    return datetime.strptime(date, fmt).timetuple().tm_yday
+
+
+def year(date):
+    fmt = '%m/%d/%Y'
+    return datetime.strptime(date, fmt).timetuple().tm_year
+
+
+def reformat_date(date, new_fmt):
+    if date:
+        fmt = '%m/%d/%Y'
+        return datetime.strptime(date, fmt).strftime(new_fmt)
+    else:
+        return None
