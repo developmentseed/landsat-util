@@ -43,7 +43,7 @@ or
 
 .. code-block:: console
 
-    $: sudo easy_install
+    $: sudo easy_install landsat
 
 Usage
 =====
