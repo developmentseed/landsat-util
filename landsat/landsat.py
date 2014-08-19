@@ -8,6 +8,7 @@
 #
 # License: CC0 1.0 Universal
 
+from __future__ import print_function
 import sys
 import subprocess
 from optparse import OptionParser, OptionGroup
@@ -127,14 +128,15 @@ def main():
                               limit=100)
 
             if result['status'] == 'SUCCESS':
-                print '%s items were found' % result['total_returned']
-                print 'Starting the download:'
+                print('%s items were found' % result['total_returned'])
+                print('Starting the download:')
                 for item in result['results']:
                     gs.download_single(row=item['row'],
                                        path=item['path'],
                                        name=item['sceneID'])
                     gs.unzip()
-                    print "%s images were downloaded and unzipped!" % result['total_returned']
+                    print("%s images were downloaded and unzipped!"
+                          % result['total_returned'])
                     exit("Your unzipped images are located here: %s" %
                          gs.unzip_dir)
             elif result['status'] == 'error':
@@ -152,7 +154,7 @@ def main():
 
             if gs.found > 0:
                 gs.unzip()
-                print "%s images were downloaded and unzipped!" % gs.found
+                print("%s images were downloaded and unzipped!" % gs.found)
                 exit("Your unzipped images are located here: %s" %
                      gs.unzip_dir)
             else:
@@ -173,7 +175,7 @@ def main():
     if options.umeta:
         raise_error = False
         meta = Metadata()
-        print 'Starting Metadata Update using Elastic Search ...\n'
+        print('Starting Metadata Update using Elastic Search ...\n')
         meta.populate()
 
     if raise_error:
@@ -182,7 +184,7 @@ def main():
 
 
 def exit(message):
-    print message
+    print(message)
     sys.exit()
 
 
@@ -203,13 +205,13 @@ def package_installed(package):
     Check if a package is installed on the machine
     """
 
-    print "Checking if %s is installed on the system" % package
+    print("Checking if %s is installed on the system" % package)
     installed = not subprocess.call(["which", package])
     if installed:
-        print "%s is installed" % package
+        print("%s is installed" % package)
         return True
     else:
-        print "You have to install %s first!" % package
+        print("You have to install %s first!" % package)
         return False
 
 
