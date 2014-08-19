@@ -10,8 +10,7 @@
 
 import sys
 import subprocess
-import datetime
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 import settings
 from gs_helper import GsHelper
@@ -23,44 +22,78 @@ from general_helper import georgian_day, year, reformat_date
 # FNULL = open(os.devnull, 'w') #recreating /dev/null
 
 
-def define_options(parser):
-    parser.add_option("-m",
-                      help="Use Metadata API to search",
-                      action='store_true',
-                      dest='use_metadata')
-    parser.add_option("--rows_paths",
-                      help="Include a search array in this format: \
-                      \"path,row,path,row, ... \"",
-                      metavar="\"path,row,path,row, ... \"")
-    parser.add_option("--start",
+def define_options():
+
+    help_text = """
+    Landsat-util helps you with searching Landsat8 metadata and downloading the
+    images within the search criteria.
+
+    With landsat-util you can also find rows and paths of an area by searching
+    a country name or using a custom shapefile and use the result to further
+    narrow your search.
+
+    Syntax:
+    %prog [OPTIONS]
+
+    Example uses:
+    To search and download images or row 003 and path 003 with a data range
+    with cloud coverage of maximum 3.0%:
+        %prog -s 01/01/2014 -e 06/01/2014 -l 100 -c 3 -i "003,003"
+"""
+
+    parser = OptionParser(usage=help_text)
+
+    search = OptionGroup(parser, "Search",
+                         "To search Landsat's Metadata use these options:")
+
+    search.add_option("-i", "--rows_paths",
+                       help="Include a search array in this format:"
+                       "\"path,row,path,row, ... \"",
+                       metavar="\"path,row,path,row, ... \"")
+    search.add_option("-s", "--start",
                       help="Start Date - Format: MM/DD/YYYY",
                       metavar="01/27/2014")
-    parser.add_option("--end",
+    search.add_option("-e", "--end",
                       help="End Date - Format: MM/DD/YYYY",
                       metavar="02/27/2014")
-    parser.add_option("--cloud",
+    search.add_option("-c", "--cloud",
                       help="Maximum cloud percentage",
                       metavar="1.00")
-    parser.add_option("--limit",
+    search.add_option("-l", "--limit",
                       help="Limit results. Max is 100",
                       default=100,
                       metavar="100")
-    parser.add_option("--shapefile",
-                      help="Generate rows and paths from a shapefile. You " +
-                      "must create a folder called 'shapefile_input'. You " +
-                      "must add your shapefile to this folder.",
-                      metavar="my_shapefile.shp")
-    parser.add_option("--country",
-                      help="Enter country NAME or CODE that will designate " +
-                      "imagery area, for a list of country syntax visit " +
-                      "(\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT" +
-                      "8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
-                      metavar="Italy")
-    parser.add_option("--update-metadata",
-                      help="Update ElasticSearch Metadata. Requires access \
-                      to an Elastic Search instance",
-                      action='store_true',
-                      dest='umeta')
+
+    parser.add_option_group(search)
+
+    clipper = OptionGroup(parser, "Clipper",
+                          "To find rows and paths of a shapefile or a country "
+                          "use these options:")
+
+    clipper.add_option("-f", "--shapefile",
+                       help="Path to a shapefile for generating the rows and"
+                       "path.",
+                       metavar="/path/to/my_shapefile.shp")
+    clipper.add_option("-o", "--country",
+                       help="Enter country NAME or CODE that will designate "
+                       "imagery area, for a list of country syntax visit "
+                       "(\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
+                       metavar="Italy")
+
+    parser.add_option_group(clipper)
+
+    metadata = OptionGroup(parser, "Metadata Updater",
+                           "Use this option to update Landsat API if you have"
+                           "a local copy running")
+
+    metadata.add_option("-u", "--update-metadata",
+                        help="Update ElasticSearch Metadata. Requires access"
+                        "to an Elastic Search instance",
+                        action='store_true',
+                        dest='umeta')
+
+    parser.add_option_group(metadata)
+
     return parser
 
 
@@ -69,8 +102,7 @@ def main():
     Main function - launches the program
     """
     # Define options
-    parser = OptionParser()
-    parser = define_options(parser)
+    parser = define_options()
 
     (options, args) = parser.parse_args()
 
@@ -145,8 +177,8 @@ def main():
         meta.populate()
 
     if raise_error:
-        exit('You must specify an argument. Use landsat_util --help for ' +
-             'more info')
+        parser.print_help()
+        exit('\nYou must specify an argument.')
 
 
 def exit(message):
