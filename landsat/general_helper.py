@@ -24,6 +24,26 @@ class Capturing(list):
         sys.stdout = self._stdout
 
 
+def create_paired_list(string):
+    """ Create a list of paired items from a string
+
+    Arguments:
+        string - the format must be 003,003,004,004 (commas with no space)
+
+    Returns:
+        [('003','003'), ('004', '004')]
+    """
+    array = string.split(',')
+
+    # Make sure the elements in the list are even and pairable
+    if len(array) % 2 == 0:
+        new_array = [tuple(array[i:i + 2])
+                     for i in range(0, len(array), 2)]
+        return new_array
+    else:
+        raise ValueError('The string should include pairs and fomrated')
+
+
 def check_create_folder(folder_path):
     """ Check whether a folder exists, if not the folder is created
     Always return folder_path

@@ -39,6 +39,16 @@ class TestGeneralHelper(unittest.TestCase):
             if exc.errno != errno.ENOENT:
                 raise
 
+    def test_create_paired_list(self):
+        # Test correct input
+        output = g.create_paired_list('003,003,004,004')
+        self.assertEqual([('003', '003'), ('004', '004')], output)
+
+        # Test incorrect input
+        self.assertRaises(ValueError, g.create_paired_list, '003,003,004')
+        self.assertRaises(ValueError, g.create_paired_list, '')
+
+
     def test_check_create_folder(self):
         new_path = g.check_create_folder(self.temp_folder_test)
 
