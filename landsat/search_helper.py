@@ -11,7 +11,7 @@ import json
 import requests
 
 import settings
-from general_helper import three_digit
+from general_helper import three_digit, create_paired_list
 
 
 class Search(object):
@@ -112,16 +112,13 @@ class Search(object):
         rows_paths = []
 
         # Coverting rows and paths to paired list
-        if row_paths:
-            row_path_array = row_paths.split(',')
-            ##Make sure the elements in the list are even and pairable
-            if len(row_path_array) % 2 == 0:
-                new_array = [tuple(row_path_array[i:i + 2])
-                             for i in range(0, len(row_path_array), 2)]
-                rows_paths.extend(['(%s)' % self._row_path_builder(i[0], i[1])
-                                   for i in new_array])
-            else:
-                return ''
+        try:
+            new_array = create_paired_list(row_paths)
+
+            rows_paths.extend(['(%s)' % self._row_path_builder(i[0], i[1])
+                               for i in new_array])
+        except ValueError:
+            return ''
 
         if start_date and end_date:
             query.append(self._date_range_builder(start_date, end_date))
