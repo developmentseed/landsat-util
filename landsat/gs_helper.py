@@ -12,11 +12,11 @@ from zipfile import ZipFile
 import tarfile
 
 from general_helper import check_create_folder
-
+import settings
 
 class GsHelper(object):
 
-    def __init__(self, settings):
+    def __init__(self):
         self.scene_file_url = settings.SCENE_FILE_URL
         self.download_dir = settings.DOWNLOAD_DIR
         self.zip_dir = settings.ZIP_DIR

@@ -13,7 +13,6 @@ import sys
 import subprocess
 from optparse import OptionParser, OptionGroup
 
-import settings
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from metadata_helper import Metadata
@@ -77,8 +76,8 @@ def define_options():
                        metavar="/path/to/my_shapefile.shp")
     clipper.add_option("-o", "--country",
                        help="Enter country NAME or CODE that will designate "
-                       "imagery area, for a list of country syntax visit "
-                       "(\"https://docs.google.com/spreadsheets/d/1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-K9cEVnN01aN8/edit?usp=sharing)\"",
+                       "imagery area, for a list of country syntax visit: "
+                       "http://goo.gl/8H9wuq",
                        metavar="Italy")
 
     parser.add_option_group(clipper)
@@ -115,7 +114,7 @@ def main():
         raise_error = False
         array = rows_paths_check(options.rows_paths)
         date_rng = None
-        gs = GsHelper(settings)
+        gs = GsHelper()
 
         if options.use_metadata:
             s = Search()
