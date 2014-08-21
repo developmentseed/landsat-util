@@ -217,8 +217,12 @@ def package_installed(package):
         return False
 
 
-if __name__ == "__main__":
-
+def __main__():
+    global parser
     parser = define_options()
     (options, args) = parser.parse_args()
     main(options, args)
+
+if __name__ == "__main__":
+    __main__()
+

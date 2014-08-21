@@ -10,4 +10,4 @@
 import landsat.landsat
 
 if __name__ == '__main__':
-    landsat.landsat.main()
+    landsat.landsat.__main__()
