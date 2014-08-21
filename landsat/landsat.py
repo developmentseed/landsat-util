@@ -13,13 +13,13 @@ import sys
 import subprocess
 from optparse import OptionParser, OptionGroup
 
+from dateutil.parser import parse
+
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from metadata_helper import Metadata
 from search_helper import Search
 from general_helper import georgian_day, year, reformat_date
-
-# FNULL = open(os.devnull, 'w') #recreating /dev/null
 
 
 def define_options():
@@ -63,6 +63,10 @@ def define_options():
                       help="Limit results. Max is 100",
                       default=100,
                       metavar="100")
+    search.add_option("-d", "--direct",
+                      help="Only search scene_files and don't use the API",
+                      action='store_true',
+                      dest='direct')
 
     parser.add_option_group(search)
 
@@ -97,14 +101,10 @@ def define_options():
     return parser
 
 
-def main():
+def main(options, args=None):
     """
     Main function - launches the program
     """
-    # Define options
-    parser = define_options()
-
-    (options, args) = parser.parse_args()
 
     # Raise an error if no option is given
     raise_error = True
@@ -116,48 +116,48 @@ def main():
         date_rng = None
         gs = GsHelper()
 
-        if options.use_metadata:
-            s = Search()
-            result = s.search(row_paths=options.rows_paths,
-                              start_date=reformat_date(options.start,
-                                                       '%Y-%m-%d'),
-                              end_date=reformat_date(options.end,
-                                                     '%Y-%m-%d'),
-                              cloud_max=options.cloud,
-                              limit=100)
+        if options.start:
+            options.start = reformat_date(parse(options.start))
 
-            if result['status'] == 'SUCCESS':
-                print('%s items were found' % result['total_returned'])
-                print('Starting the download:')
-                for item in result['results']:
-                    gs.download_single(row=item['row'],
-                                       path=item['path'],
-                                       name=item['sceneID'])
-                    gs.unzip()
-                    print("%s images were downloaded and unzipped!"
-                          % result['total_returned'])
-                    exit("Your unzipped images are located here: %s" %
-                         gs.unzip_dir)
-            elif result['status'] == 'error':
-                exit(result['message'])
+        if options.end:
+            options.end = reformat_date(parse(options.end))
 
-        else:
-            date_rng = {
-                'start_y': year(options.start),
-                'start_jd': georgian_day(options.start),
-                'end_y': year(options.end),
-                'end_jd': georgian_day(options.end)
-            }
+        if options.rows_paths:
+            if options.direct:
+                files = gs.search(options.rows_paths, start=options.start,
+                                  end=options.end)
 
-            gs.download(gs.search(array, date_rng))
-
-            if gs.found > 0:
-                gs.unzip()
-                print("%s images were downloaded and unzipped!" % gs.found)
-                exit("Your unzipped images are located here: %s" %
-                     gs.unzip_dir)
+                if files:
+                    if gs.batch_download(files):
+                        gs.unzip()
+                        print("%s images were downloaded and unzipped!"
+                                  % len(files))
+                        exit("Your unzipped images are located here: %s" %
+                                 gs.unzip_dir)
+                else:
+                    exit("No Images found. Change your search parameters.")
             else:
-                exit("No Images found. Change your search parameters.")
+                s = Search()
+                result = s.search(row_paths=options.rows_paths,
+                                  start_date=options.start,
+                                  end_date=options.end,
+                                  cloud_max=options.cloud,
+                                  limit=options.limit)
+
+                if result['status'] == 'SUCCESS':
+                    print('%s items were found' % result['total_returned'])
+                    print('Starting the download:')
+                    for item in result['results']:
+                        gs.single_download(row=item['row'],
+                                           path=item['path'],
+                                           name=item['sceneID'])
+                        gs.unzip()
+                        print("%s images were downloaded and unzipped!"
+                              % result['total_returned'])
+                        exit("Your unzipped images are located here: %s" %
+                             gs.unzip_dir)
+                elif result['status'] == 'error':
+                    exit(result['message'])
 
     if options.shapefile:
         raise_error = False
@@ -175,7 +175,10 @@ def main():
         raise_error = False
         meta = Metadata()
         print('Starting Metadata Update using Elastic Search ...\n')
-        meta.populate()
+        if meta.populate():
+            exit('Task Completed!')
+        else:
+            exit('Error!')
 
     if raise_error:
         parser.print_help()
@@ -215,4 +218,7 @@ def package_installed(package):
 
 
 if __name__ == "__main__":
-    main()
+
+    parser = define_options()
+    (options, args) = parser.parse_args()
+    main(options, args)
