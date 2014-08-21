@@ -29,7 +29,7 @@ Install PIP and some other  dependencies for a successful install of requirement
 
     $: sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $: sudo apt-get update
-    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal -y
+    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev -y
 
 **Install Landsat-util**
 
