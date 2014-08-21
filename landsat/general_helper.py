@@ -27,16 +27,20 @@ def exit(message):
     print message
     sys.exit()
 
-def create_paired_list(string):
+def create_paired_list(i):
     """ Create a list of paired items from a string
 
     Arguments:
-        string - the format must be 003,003,004,004 (commas with no space)
+        i - the format must be 003,003,004,004 (commas with no space)
 
     Returns:
         [('003','003'), ('004', '004')]
     """
-    array = string.split(',')
+
+    if type(i) is str:
+        array = i.split(',')
+    elif type(i) is list:
+        array = i
 
     # Make sure the elements in the list are even and pairable
     if len(array) % 2 == 0:

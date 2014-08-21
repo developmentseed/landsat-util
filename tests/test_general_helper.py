@@ -42,8 +42,12 @@ class TestGeneralHelper(unittest.TestCase):
                 raise
 
     def test_create_paired_list(self):
-        # Test correct input
+        # Test correct input (string)
         output = g.create_paired_list('003,003,004,004')
+        self.assertEqual([('003', '003'), ('004', '004')], output)
+
+        # Test correct input (list)
+        output = g.create_paired_list(['003', '003', '004', '004'])
         self.assertEqual([('003', '003'), ('004', '004')], output)
 
         # Test incorrect input
