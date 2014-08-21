@@ -70,8 +70,6 @@ class Search(object):
                                             cloud_min,
                                             cloud_max)
 
-        print search_string
-
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
         r = requests.get('%s?search=%s&limit=%s' % (self.api_url,

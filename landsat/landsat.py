@@ -144,20 +144,24 @@ def main(options, args=None):
                                   cloud_max=options.cloud,
                                   limit=options.limit)
 
-                if result['status'] == 'SUCCESS':
-                    print('%s items were found' % result['total_returned'])
-                    print('Starting the download:')
-                    for item in result['results']:
-                        gs.single_download(row=item['row'],
-                                           path=item['path'],
-                                           name=item['sceneID'])
+                try:
+                    if result['status'] == 'SUCCESS':
+                        print('%s items were found' % result['total_returned'])
+                        print('Starting the download:')
+                        for item in result['results']:
+                            gs.single_download(row=item['row'],
+                                               path=item['path'],
+                                               name=item['sceneID'])
                         gs.unzip()
                         print("%s images were downloaded and unzipped!"
                               % result['total_returned'])
                         exit("Your unzipped images are located here: %s" %
                              gs.unzip_dir)
-                elif result['status'] == 'error':
-                    exit(result['message'])
+                    elif result['status'] == 'error':
+                        exit(result['message'])
+                except KeyError:
+                    exit('Too Many API queries. You can only query DevSeed\'s '
+                         'API 5 times per minute')
 
     if options.shapefile:
         raise_error = False
