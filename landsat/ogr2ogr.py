@@ -48,6 +48,22 @@ except:
     import ogr
     import osr
 
+
+###################
+
+class OgrError(Exception):
+    """Exception raised for errors in the whole module.
+
+    Attributes:
+        msg  -- explanation of the error
+    """
+
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
 ###############################################################################
 
 class ScaledProgressObject:
@@ -85,7 +101,7 @@ def TermProgress( dfComplete, pszMessage, pProgressArg ):
     if nThisTick > 40:
         nThisTick = 40
 
-    # Have we started a new progress run?  
+    # Have we started a new progress run?
     if nThisTick < nLastTick and nLastTick >= 39:
         nLastTick = -1
 
@@ -137,12 +153,12 @@ class Enum(set):
 GeomOperation = Enum(["NONE", "SEGMENTIZE", "SIMPLIFY_PRESERVE_TOPOLOGY"])
 
 def main(args = None, progress_func = TermProgress, progress_data = None):
-    
+
     global bSkipFailures
     global nGroupTransactions
     global bPreserveFID
     global nFIDToFetch
-    
+
     pszFormat = "ESRI Shapefile"
     pszDataSource = None
     pszDestDataSource = None
@@ -417,8 +433,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
                   (len(args[iArg+1]) >= 12 and EQUAL(args[iArg+1][0:12],"MULTIPOLYGON") ) :
                 poClipSrc = ogr.CreateGeometryFromWkt(args[iArg+1])
                 if poClipSrc is None:
-                    print("FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n")
-                    return Usage()
+                    OgrError('FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT')
 
                 iArg = iArg + 1
 
@@ -460,8 +475,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
                   (len(args[iArg+1]) >= 12 and EQUAL(args[iArg+1][0:12],"MULTIPOLYGON") ) :
                 poClipDst = ogr.CreateGeometryFromWkt(args[iArg+1])
                 if poClipDst is None:
-                    print("FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT\n")
-                    return Usage()
+                    OgrError("FAILURE: Invalid geometry. Must be a valid POLYGON or MULTIPOLYGON WKT")
 
                 iArg = iArg + 1
 
@@ -507,28 +521,24 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
         return Usage()
 
     if bPreserveFID and bExplodeCollections:
-        print("FAILURE: cannot use -preserve_fid and -explodecollections at the same time\n\n")
-        return Usage()
+        OgrError("FAILURE: cannot use -preserve_fid and -explodecollections at the same time\n\n")
 
     if bClipSrc and pszClipSrcDS is not None:
         poClipSrc = LoadGeometry(pszClipSrcDS, pszClipSrcSQL, pszClipSrcLayer, pszClipSrcWhere)
         if poClipSrc is None:
-            print("FAILURE: cannot load source clip geometry\n" )
-            return Usage()
+            raise OgrError("FAILURE: cannot load source clip geometry")
 
     elif bClipSrc and poClipSrc is None:
         if poSpatialFilter is not None:
             poClipSrc = poSpatialFilter.Clone()
         if poClipSrc is None:
-            print("FAILURE: -clipsrc must be used with -spat option or a\n" + \
-                  "bounding box, WKT string or datasource must be specified\n")
-            return Usage()
+            OgrError("FAILURE: -clipsrc must be used with -spat option or a" +
+                  "bounding box, WKT string or datasource must be specified")
 
     if pszClipDstDS is not None:
         poClipDst = LoadGeometry(pszClipDstDS, pszClipDstSQL, pszClipDstLayer, pszClipDstWhere)
         if poClipDst is None:
-            print("FAILURE: cannot load dest clip geometry\n" )
-            return Usage()
+            OgrError("FAILURE: cannot load dest clip geometry")
 
 #/* -------------------------------------------------------------------- */
 #/*      Open data source.                                               */
@@ -539,8 +549,8 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
 #/*      Report failure                                                  */
 #/* -------------------------------------------------------------------- */
     if poDS is None:
-        print("FAILURE:\n" + \
-                "Unable to open datasource `%s' with the following drivers." % pszDataSource)
+        OgrError("FAILURE:" +
+                 "Unable to open datasource `%s' with the following drivers." % pszDataSource)
 
         for iDriver in range(ogr.GetDriverCount()):
             print("  ->  " + ogr.GetDriver(iDriver).GetName() )
@@ -567,9 +577,8 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
                     poODS = None
 
             if bUpdate:
-                print("FAILURE:\n" +
-                        "Unable to open existing output datasource `%s'." % pszDestDataSource)
-                return False
+                OgrError("FAILURE:" +
+                         "Unable to open existing output datasource `%s'." % pszDestDataSource)
 
         elif len(papszDSCO) > 0:
             print("WARNING: Datasource creation options ignored since an existing datasource\n" + \
@@ -783,8 +792,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
             for iLayer in range(nSrcLayerCount):
                 poLayer = poDS.GetLayer(iLayer)
                 if poLayer is None:
-                    print("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
-                    return False
+                    OgrError("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
 
                 papszLayers[iLayer] = poLayer.GetName()
         else:
@@ -803,8 +811,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
         for iLayer in range(nSrcLayerCount):
             poLayer = poDS.GetLayer(iLayer)
             if poLayer is None:
-                print("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
-                return False
+                OgrError("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
 
             pasAssocLayers[iLayer].poSrcLayer = poLayer
 
@@ -899,8 +906,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
                 poLayer = poDS.GetLayer(iLayer)
 
                 if poLayer is None:
-                    print("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
-                    return False
+                    OgrError("FAILURE: Couldn't fetch advertised layer %d!" % iLayer)
 
                 papoLayers[iLayer] = poLayer
                 iLayer = iLayer + 1
@@ -917,8 +923,7 @@ def main(args = None, progress_func = TermProgress, progress_data = None):
                 poLayer = poDS.GetLayerByName(layername)
 
                 if poLayer is None:
-                    print("FAILURE: Couldn't fetch advertised layer %s!" % layername)
-                    return False
+                    OgrError("FAILURE: Couldn't fetch advertised layer %s!" % layername)
 
                 papoLayers[iLayer] = poLayer
                 iLayer = iLayer + 1
@@ -1504,7 +1509,7 @@ def TranslateLayer( psInfo, poSrcDS, poSrcLayer, poDstDS,  \
     bForceToPolygon = False
     bForceToMultiPolygon = False
     bForceToMultiLineString = False
-    
+
     poDstLayer = psInfo.poDstLayer
     #papszTransformOptions = psInfo.papszTransformOptions
     poCT = psInfo.poCT
