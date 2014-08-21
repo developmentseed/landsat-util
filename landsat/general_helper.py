@@ -111,12 +111,15 @@ def year(date):
         return 0
 
 
-def reformat_date(date, new_fmt):
+def reformat_date(date, new_fmt='%Y-%m-%d'):
     """ Return reformated date. Example: 01/28/2014 & %d/%m/%Y -> 28/01/2014
     Accepted date format: %m/%d/%Y
     """
     try:
-        fmt = '%m/%d/%Y'
-        return datetime.strptime(date, fmt).strftime(new_fmt)
+        if type(date) is datetime:
+            return date.strftime(new_fmt)
+        else:
+            fmt = '%m/%d/%Y'
+            return datetime.strptime(date, fmt).strftime(new_fmt)
     except ValueError:
         return date

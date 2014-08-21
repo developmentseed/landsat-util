@@ -161,4 +161,6 @@ class Clipper(object):
         s.write(','.join(rp))
         s.close()
 
+        print 'The paths and rows are: "%s"' % ','.join(rp)
+
         return create_paired_list(rp)

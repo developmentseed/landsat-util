@@ -70,6 +70,8 @@ class Search(object):
                                             cloud_min,
                                             cloud_max)
 
+        print search_string
+
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
         r = requests.get('%s?search=%s&limit=%s' % (self.api_url,
@@ -134,7 +136,7 @@ class Search(object):
             query.append(self._cloud_cover_prct_range_builder(cloud_min,
                                                               '100'))
         elif cloud_max:
-            query.append(self._cloud_cover_prct_range_builder('0',
+            query.append(self._cloud_cover_prct_range_builder('-1',
                                                               cloud_max))
 
         search_string = '+AND+'.join(map(str, query))
@@ -147,7 +149,7 @@ class Search(object):
 
         return search_string
 
-    def _row_path_builder(self, row, path):
+    def _row_path_builder(self, path, row):
         """ Builds row and path query
             Accepts row and path in XXX format, e.g. 003
         """
