@@ -54,29 +54,59 @@ Usage
 
 .. code-block:: console
 
-   Usage: landsat [options]
+   Usage:
+        Landsat-util helps you with searching Landsat8 metadata and downloading the
+        images within the search criteria.
 
-   Options:
-   -h, --help            show this help message and exit
-   -m                    Use Metadata API to search
-   --rows_paths="path,row,path,row, ... "
-                        Include a search array in this format:
-                        "path,row,path,row, ... "
-   --start=01/27/2014    Start Date - Format: MM/DD/YYYY
-   --end=02/27/2014      End Date - Format: MM/DD/YYYY
-   --cloud=1.00          Maximum cloud percentage
-   --limit=100           Limit results. Max is 100
-   --shapefile=my_shapefile.shp
-                        Generate rows and paths from a shapefile. You must
-                        create a folder called 'shapefile_input'. You must add
-                        your shapefile to this folder.
-   --country=Italy       Enter country NAME or CODE that will designate imagery
-                        area, for a list of country syntax visit
-                        ("https://docs.google.com/spreadsheets/d
-                        /1CgC0rrvvT8uF9dgeNMI0CVVqc0z85N-
-                        K9cEVnN01aN8/edit?usp=sharing)"
-   --update-metadata     Update ElasticSearch Metadata. Requires access
-                        to an Elastic Search instance
+        With landsat-util you can also find rows and paths of an area by searching
+        a country name or using a custom shapefile and use the result to further
+        narrow your search.
+
+        Syntax:
+        landsat.py [OPTIONS]
+
+        Example uses:
+        To search and download images or row 003 and path 003 with a data range
+        with cloud coverage of maximum 3.0%:
+            landsat.py -s 01/01/2014 -e 06/01/2014 -l 100 -c 3 -i "003,003"
+
+
+    Options:
+      -h, --help            show this help message and exit
+
+      Search:
+        To search Landsat's Metadata use these options:
+
+        -i "path,row,path,row, ... ", --rows_paths="path,row,path,row, ... "
+                            Include a search array in this
+                            format:"path,row,path,row, ... "
+
+        -s 01/27/2014, --start=01/27/2014
+                        Start Date - Format: MM/DD/YYYY
+        -e 02/27/2014, --end=02/27/2014
+                            End Date - Format: MM/DD/YYYY
+        -c 1.00, --cloud=1.00
+                            Maximum cloud percentage
+        -l 100, --limit=100
+                            Limit results. Max is 100
+        -d, --direct        Only search scene_files and don't use the API
+
+      Clipper:
+        To find rows and paths of a shapefile or a country use these options:
+
+        -f /path/to/my_shapefile.shp, --shapefile=/path/to/my_shapefile.shp
+                            Path to a shapefile for generating the rows andpath.
+        -o Italy, --country=Italy
+                            Enter country NAME or CODE that will designate imagery
+                            area, for a list of country syntax visit:
+                            http://goo.gl/8H9wuq
+
+      Metadata Updater:
+        Use this option to update Landsat API if you havea local copy running
+
+        -u, --update-metadata
+                            Update ElasticSearch Metadata. Requires accessto an
+                            Elastic Search instance
 
 **Example**
 
@@ -105,8 +135,6 @@ The output is saved in the home directory of the user
   |     |   |   |   |-- LC80030032014174LGN00_B3.TIF
   |     |   |   |   |-- LC80030032014174LGN00_B4.TIF
   |     |   |   |     |-- LC80030032014174LGN00_MTL.txt
-  |     |   |-- Shapefiles
-  |     |   |   |-- input
-  |     |   |   |-- output
+
 
 

@@ -54,6 +54,7 @@ setup(name="landsat",
           "GDAL==1.11.0",
           "elasticsearch==1.1.1",
           "gsutil==4.4",
-          "requests==2.3.0"
+          "requests==2.3.0",
+          "python-dateutil==2.2"
       ],
       )

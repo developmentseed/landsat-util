@@ -82,14 +82,16 @@ class Metadata(object):
                     if skipped_counter > 10:
                         break
 
+                    return True
+
                 except ConnectionError:
                     print('There was a connection error. Check your Elastic' +
                           ' Search setting and make sure Elastic Search is' +
                           'running.')
-                    sys.exit(0)
+                    return False
                 except:
                     print('An expected error: %s' % (sys.exc_info()[0]))
-                    sys.exit(0)
+                    return False
 
             print('The update is completed. %s new records were added.' %
                   added_counter)
