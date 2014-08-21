@@ -24,11 +24,9 @@ except ImportError:
 
 class TestSearchHelper(unittest.TestCase):
 
-    def setUp(self):
-        self.s = Search()
-
-    def tearDown(self):
-        pass
+    @classmethod
+    def setUpClass(cls):
+        cls.s = Search()
 
     def test_search(self):
         # TEST A REGULAR SEARCH WITH KNOWN RESULT

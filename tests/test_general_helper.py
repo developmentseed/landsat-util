@@ -27,14 +27,16 @@ except ImportError:
 
 class TestGeneralHelper(unittest.TestCase):
 
-    def setUp(self):
-        self.temp_folder_base = mkdtemp()
-        self.temp_folder_test = self.temp_folder_base + '/test'
-        self.temp_file = mkstemp(dir=self.temp_folder_base)
+    @classmethod
+    def setUpClass(cls):
+        cls.temp_folder_base = mkdtemp()
+        cls.temp_folder_test = cls.temp_folder_base + '/test'
+        cls.temp_file = mkstemp(dir=cls.temp_folder_base)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         try:
-            shutil.rmtree(self.temp_folder_base)
+            shutil.rmtree(cls.temp_folder_base)
         except OSError as exc:
             if exc.errno != errno.ENOENT:
                 raise
