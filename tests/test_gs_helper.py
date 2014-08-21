@@ -47,7 +47,7 @@ class TestGsHelper(unittest.TestCase):
     def test_init(self):
         self.assertIsInstance(self.g, GsHelper)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_search(self):
         # test wrong query
         self.assertRaises(SystemExit, self.g.search, '334555')
