@@ -11,7 +11,9 @@ import subprocess
 from zipfile import ZipFile
 import tarfile
 
-from general_helper import check_create_folder
+from dateutil.parser import parse
+
+from general_helper import check_create_folder, create_paired_list, exit
 import settings
 
 
@@ -25,51 +27,95 @@ class GsHelper(object):
         self.scene_file = settings.SCENE_FILE
         self.source_url = settings.SOURCE_URL
 
-        # Keep the number of images found on Google search
-        # based on the search parameters
-        self.found = 0
-
+        # Make sure download directory exist
         check_create_folder(self.download_dir)
 
-    #################
-    # Public Methods
-    #################
+    def search(self, rows_paths, start=None, end=None):
+        """ Search in Landsat's scene_list file. The file is stored as .zip on
+        Google Storage and includes the gs url of all available images.
 
-    def search(self, query, date_rng=None):
+        Example of file information on scene_list.zip:
+        gs://earthengine-public/landsat/L8/232/096/LT82320962013127LGN01.tar.bz
+
+        Arguments:
+            rows_paths - a string of paired values. e.g. '003,003,001,001'
+            start - a string containing the start date. e.g. 12/23/2014
+            end - a string containing the end date. e.g. 12/24/2014
+
+        Return:
+            a list containing download urls. e.g.:
+            ['gs://earthengine-public/landsat/L8/232/094/LT82320942013127LGN01.tar.bz',
+             'gs://earthengine-public/landsat/L8/232/093/LT82320932013127LGN01.tar.bz']
+        """
+
+        # Turning rows and paths to paired tuples
+        try:
+            paired = create_paired_list(rows_paths)
+        except ValueError, e:
+            exit('Error: %s' % e.args[0])
+
         files = []
-        self.__fetch_gs_scence_list()
+        self._fetch_gs_scence_list()
         file = open(self.scene_file, 'r')
-#       for q in query:
-#           print date_rng
-        files.extend(
-            self.__search_scene_list(scene=file,
-                                     query=query,
-                                     date_rng=date_rng))
+
+        files.extend(self._search_scene_list(scene=file,
+                                             query=paired,
+                                             start=parse(start),
+                                             end=parse(end)))
 
         return files
 
-    def download_single(self, row, path, name, sat_type='L8'):
+    def single_download(self, row, path, name, sat_type='L8'):
         url = '%s/%s/%s/%s/%s.tar.bz' % (self.source_url,
                                          sat_type,
                                          path,
                                          row,
                                          name)
+        """ Download single image from Landsat on Google Storage
 
-        subprocess.call(
-            ["gsutil", "cp", "-n", url,
-             "%s/%s" % (self.zip_dir, name)])
+        Arguments:
+            row - string in this format xxx, e.g. 003
+            path - string in this format xxx, e.g. 003
+            name - zip file name without .tar.bz e.g. LT81360082013127LGN01
+            sat_type - e.g. L7, L8, ...
+        """
+        try:
+            subprocess.check_call(
+                ["gsutil", "cp", "-n", url, "%s/%s" % (self.zip_dir,
+                                                       '%s.tar.bz' % name)])
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
-    def download(self, image_list):
-        self.__download_images(image_list)
+    def batch_download(self, image_list):
+        """
+        Download batch group of images
+
+        Arguments:
+            image_list - a list of google storage urls e.g.
+                ['gs://earthengine-public/landsat/L8/136/008/'
+                      'LT81360082013127LGN01.tar.bz',
+                      'gs://earthengine-public/landsat/L8/136/008/'
+                      'LT81360082013127LGN01.tar.bz']
+        """
+        try:
+            self._download_images(image_list)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
     def unzip(self):
-        self.__unzip_images()
+        """
+        Unzip all files stored at settings.ZIP_DIR and save them in
+        settings.UNZIP_DIR
+        """
+        return self._unzip_images()
 
     #################
     # Private Methods
     #################
 
-    def __fetch_gs_scence_list(self):
+    def _fetch_gs_scence_list(self):
 
         if not os.path.isfile(self.scene_file):
             # Download the file
@@ -86,58 +132,79 @@ class GsHelper(object):
 
 #       return open(self.scene_file, 'r')
 
-    def __search_scene_list(self, scene, query, date_rng=None):
+    def _search_scene_list(self, scene, query, start=None, end=None):
         """
-        Search scene_list for the provide rows, paths and date range.
-        date_rng is a dictionary in this format:
-        {
-        'start_y': 2014, #year
-        'start_jd': 13, #Julian Day
-        'end_y': 2014,
-        'end_jd': 15, #Julian Day
-        }
+        Search scene_list for the provided rows, paths and date range.
+
+        Arguments:
+            query - a list of paired tuples e.g.[('003', '003'),('003', '004')]
+            start - a datetime object
+            end - a datetime object
         """
 
         file_list = []
+        found = 0
+
+        # Query date range
+        start_year = start.timetuple().tm_year
+        end_year = end.timetuple().tm_year
+        start_jd = start.timetuple().tm_yday
+        end_jd = end.timetuple().tm_yday
+
+        if start and end:
+            print ('Searching for images from %s to %s'
+                   % (start.strftime('%b %d, %Y'),
+                       end.strftime('%b %d, %Y')))
+
+        print 'Rows and Paths searched: '
+        print query
 
         scene.seek(0)
         for line in scene:
             url = line.split('/')
             file_name = url[len(url) - 1]
-            f_query = [file_name[3:6], file_name[6:9]]
+            f_query = (file_name[3:6], file_name[6:9])
             jd = int(file_name[13:16].lstrip('0'))  # Julian Day
             year = int(file_name[9:13])
 
             if f_query in query:
-                if date_rng:
-                    if year >= date_rng['start_y'] and \
-                       year <= date_rng['end_y'] and \
-                       jd >= date_rng['start_jd'] and \
-                       jd <= date_rng['end_jd']:
+                if start and end:
+                    if year == start_year and year == end_year:
+                        if jd >= start_jd and jd <= end_jd:
+                            file_list.append(line.replace('\n', ''))
+                            found += 1
+                    elif year == start_year:
+                        if jd >= start_jd:
+                            file_list.append(line.replace('\n', ''))
+                            found += 1
+                    elif year == end_year:
+                        if jd <= end_jd:
+                            file_list.append(line.replace('\n', ''))
+                            found += 1
+                    elif (year > start_year and year < end_year):
                         file_list.append(line.replace('\n', ''))
-                        self.found += 1
+                        found += 1
                 else:
                     file_list.append(line.replace('\n', ''))
-                    self.found += 1
+                    found += 1
 
-        print "Search completed! %s images found." % self.found
+        print "Search completed! %s images found." % found
         return file_list
 
-    def __download_images(self, files):
+    def _download_images(self, files):
 
         check_create_folder(self.zip_dir)
 
-        if self.found > 0:
-            print "Downloading %s files from Google Storage..." % self.found
+        print "Downloading %s files from Google Storage..." % len(files)
 
         for url in files:
             url_brk = url.split('/')
             image_name = url_brk[len(url_brk) - 1]
-            subprocess.call(
+            subprocess.check_call(
                 ["gsutil", "cp", "-n", url,
                  "%s/%s" % (self.zip_dir, image_name)])
 
-    def __unzip_images(self):
+    def _unzip_images(self):
         images = os.listdir(self.zip_dir)
         check_create_folder(self.unzip_dir)
 
@@ -145,7 +212,7 @@ class GsHelper(object):
             # Get the image name for creating folder
             image_name = image.split('.')
 
-            if image_name[0] and self.__check_if_not_unzipped(image_name[0]):
+            if image_name[0] and self._check_if_not_unzipped(image_name[0]):
                 # Create folder
                 check_create_folder('%s/%s' % (self.unzip_dir, image_name[0]))
 
@@ -155,7 +222,10 @@ class GsHelper(object):
                 tar.extractall(path='%s/%s' % (self.unzip_dir, image_name[0]))
                 tar.close()
 
-    def __check_if_not_unzipped(self, folder_name):
+            return True
+        return False
+
+    def _check_if_not_unzipped(self, folder_name):
         if os.path.exists('%s/%s' % (self.unzip_dir, folder_name)):
             print "%s is already unzipped" % folder_name
             return False

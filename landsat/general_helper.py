@@ -23,6 +23,9 @@ class Capturing(list):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
 
+def exit(message):
+    print message
+    sys.exit()
 
 def create_paired_list(string):
     """ Create a list of paired items from a string
@@ -41,7 +44,9 @@ def create_paired_list(string):
                      for i in range(0, len(array), 2)]
         return new_array
     else:
-        raise ValueError('The string should include pairs and fomrated')
+        raise ValueError('The string should include pairs and be formated. '
+                         'The format must be 003,003,004,004 (commas with '
+                         'no space)')
 
 
 def check_create_folder(folder_path):
