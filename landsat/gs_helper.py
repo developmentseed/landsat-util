@@ -104,6 +104,9 @@ class GsHelper(object):
         except subprocess.CalledProcessError:
             return False
 
+    def extract_row_path(self, scene_name):
+        return [scene_name[3:6], scene_name[6:9]]
+
     def unzip(self):
         """
         Unzip all files stored at settings.ZIP_DIR and save them in
