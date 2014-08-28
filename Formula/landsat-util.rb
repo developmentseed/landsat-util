@@ -7,7 +7,8 @@ class LandsatUtil < Formula
   head "https://github.com/developmentseed/landsat-util.git", :branch => 'image'
 
   depends_on "gdal"
-  depends_on "imagemagick"
+  depends_on "libtiff"
+  depends_on "imagemagick" => "with-libtiff"
   depends_on "https://raw.githubusercontent.com/OSGeo/homebrew-osgeo4mac/master/Formula/orfeo-40.rb"
 
   def install
