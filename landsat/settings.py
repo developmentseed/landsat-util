@@ -14,6 +14,8 @@ import os
 
 # Google Storage Landsat Config
 
+DEBUG = False
+
 SOURCE_URL = 'gs://earthengine-public/landsat'
 SCENE_FILE_URL = SOURCE_URL + '/scene_list.zip'
 SATELLITE = 'L8'

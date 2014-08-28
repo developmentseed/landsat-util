@@ -20,6 +20,7 @@ from clipper_helper import Clipper
 from search_helper import Search
 from general_helper import reformat_date
 from image_helper import Process
+import settings
 
 
 def args_options():
@@ -107,6 +108,8 @@ def main(args):
                 p.full_with_pansharpening()
             else:
                 p.full()
+
+            exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
 
         elif args.subs == 'search':
 
@@ -197,6 +200,9 @@ def package_installed(package):
 
 
 def __main__():
+
+    if not settings.DEBUG:
+        sys.tracebacklimit = 0
     global parser
     parser = args_options()
     args = parser.parse_args()
