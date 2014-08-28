@@ -254,7 +254,7 @@ def main(args):
 
 def exit(message):
     print(message)
-    sys.exit()
+    sys.exit(0)
 
 
 def package_installed(package):
