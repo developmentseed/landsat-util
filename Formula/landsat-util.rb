@@ -8,7 +8,7 @@ class LandsatUtil < Formula
 
   depends_on "gdal"
   depends_on "imagemagick"
-  depends_on "orfeo-40"
+  depends_on "https://raw.githubusercontent.com/OSGeo/homebrew-osgeo4mac/master/Formula/orfeo-40.rb"
 
   def install
     minor = `python -c 'import sys; print(sys.version_info[1])'`.chomp
