@@ -41,7 +41,7 @@ def create_paired_list(i):
         array = i.split(',')
     elif isinstance(i, list):
         # Make sure it is not already paired
-        if len(i[0]) == 2:
+        if isinstance(i[0], list):
             return i
         else:
             array = i
