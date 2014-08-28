@@ -56,7 +56,6 @@ def args_options():
                                'might take a long time to both download and '
                                'process large batches of images')
 
-
     search_subparsers = parser_search.add_subparsers(help='Search commands',
                                                      dest='search_subs')
 
@@ -95,13 +94,13 @@ def args_options():
 
     return parser
 
+
 def main(args):
     """
     Main function - launches the program
     """
 
     if args:
-        print(args)
         if args.subs == 'process':
             p = Process(args.path)
             if args.pansharpen:
@@ -113,11 +112,14 @@ def main(args):
 
         elif args.subs == 'search':
 
-            if args.start:
-                args.start = reformat_date(parse(args.start))
+            try:
+                if args.start:
+                    args.start = reformat_date(parse(args.start))
 
-            if args.end:
-                args.end = reformat_date(parse(args.end))
+                if args.end:
+                    args.end = reformat_date(parse(args.end))
+            except TypeError:
+                exit("You date format is incorrect. Please try again!")
 
             s = Search()
             if args.search_subs == 'pr':
@@ -179,6 +181,7 @@ def main(args):
                                    name=scene)
             exit("The downloaded images are located here: %s" % gs.zip_dir)
 
+
 def exit(message):
     print(message)
     sys.exit()
@@ -201,8 +204,6 @@ def package_installed(package):
 
 def __main__():
 
-    if not settings.DEBUG:
-        sys.tracebacklimit = 0
     global parser
     parser = args_options()
     args = parser.parse_args()
@@ -210,4 +211,3 @@ def __main__():
 
 if __name__ == "__main__":
     __main__()
-
