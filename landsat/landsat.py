@@ -56,8 +56,7 @@ search, download, and process Landsat imagery.
             -c CLOUD, --cloud CLOUD
                                 Maximum cloud percentage default is 20 perct
 
-            --onlysearch        If this flag is used only the search result is
-                                returned and no image will be downloaded.
+            -d, --download        Use this flag to download found images
 
             --imageprocess      If this flag is used, the images are downloaded
                                 and process. Be cautious as it might take a
@@ -110,10 +109,8 @@ def args_options():
     parser_search.add_argument('-c', '--cloud', type=float, default=20.0,
                                help='Maximum cloud percentage '
                                'default is 20 perct')
-    parser_search.add_argument('--onlysearch', action='store_true',
-                               help='If this flag is used only the search '
-                               'result is returned and no image will be '
-                               'downloaded.')
+    parser_search.add_argument('-d', '--download', action='store_true',
+                               help='Use this flag to download found images')
     parser_search.add_argument('--imageprocess', action='store_true',
                                help='If this flag is used, the images are '
                                'downloaded and process. Be cautious as it '
@@ -186,7 +183,7 @@ def main(args):
                 if args.end:
                     args.end = reformat_date(parse(args.end))
             except TypeError:
-                exit("You date format is incorrect. Please try again!")
+                exit("You date format is incorrect. Please try again!", 1)
 
             s = Search()
             if args.search_subs == 'pr':
@@ -214,10 +211,13 @@ def main(args):
                                       cloud_max=args.cloud)
             try:
                 if result['status'] == 'SUCCESS':
-                    print('%s items were found' % result['total_returned'])
-                    if args.onlysearch:
-                        print(json.dumps(result, sort_keys=True, indent=4))
+                    print('%s items were found' % result['total'])
+                    if result['total'] > 100:
+                        exit('Too many results. Please narrow your search')
                     else:
+                        print(json.dumps(result, sort_keys=True, indent=4))
+                    # If only search
+                    if args.download:
                         gs = GsHelper()
                         print('Starting the download:')
                         for item in result['results']:
@@ -237,11 +237,13 @@ def main(args):
                         else:
                             exit("The downloaded images are located here: %s" %
                                  gs.zip_dir)
+                    else:
+                        exit('Done!')
                 elif result['status'] == 'error':
                     exit(result['message'])
             except KeyError:
                 exit('Too Many API queries. You can only query DevSeed\'s '
-                     'API 5 times per minute')
+                     'API 5 times per minute', 1)
         elif args.subs == 'download':
             gs = GsHelper()
             print('Starting the download:')
@@ -252,9 +254,9 @@ def main(args):
             exit("The downloaded images are located here: %s" % gs.zip_dir)
 
 
-def exit(message):
+def exit(message, code=0):
     print(message)
-    sys.exit(0)
+    sys.exit(code)
 
 
 def package_installed(package):
