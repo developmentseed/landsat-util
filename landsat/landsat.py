@@ -12,6 +12,8 @@ from __future__ import print_function
 import sys
 import subprocess
 import argparse
+import textwrap
+import json
 
 from dateutil.parser import parse
 
@@ -23,8 +25,67 @@ from image_helper import Process
 import settings
 
 
+DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
+search, download, and process Landsat imagery.
+
+    Commands:
+        Search:
+        landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
+                     [--onlysearch] [--imageprocess]
+                     {pr,shapefile,country}
+
+        positional arguments:
+            {pr,shapefile,country}
+                                Search commands
+            pr                  Activate paths and rows
+            shapefile           Activate Shapefile
+            country             Activate country
+
+            optional arguments:
+            -h, --help            show this help message and exit
+            -l LIMIT, --limit LIMIT
+                                Search return results limit default is 100
+
+            -s START, --start START
+                                Start Date - Most formats are accepted e.g.
+                                Jun 12 2014 OR 06/12/2014
+
+            -e END, --end END   End Date - Most formats are accepted e.g.
+                                Jun 12 2014 OR 06/12/2014
+
+            -c CLOUD, --cloud CLOUD
+                                Maximum cloud percentage default is 20 perct
+
+            --onlysearch        If this flag is used only the search result is
+                                returned and no image will be downloaded.
+
+            --imageprocess      If this flag is used, the images are downloaded
+                                and process. Be cautious as it might take a
+                                long time to both download and process large
+                                batches of images
+
+        Download:
+        landsat download [-h] sceneID [sceneID ...]
+
+        positional arguments:
+            sceneID     Provide Full sceneID, e.g. LC81660392014196LGN00
+
+        Process:
+        landsat.py process [-h] [--pansharpen] path
+
+        positional arguments:
+            path          Path to the compressed image file
+
+        optional arguments:
+            --pansharpen  Whether to also pansharpen the process image.
+                          Pansharpening takes a long time
+"""
+
+
 def args_options():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='landsat',
+                        formatter_class=argparse.RawDescriptionHelpFormatter,
+                        description=textwrap.dedent(DESCRIPTION))
 
     subparsers = parser.add_subparsers(help='Landsat Utility',
                                        dest='subs')
@@ -149,7 +210,7 @@ def main(args):
                 if result['status'] == 'SUCCESS':
                     print('%s items were found' % result['total_returned'])
                     if args.onlysearch:
-                        print(result)
+                        print(json.dumps(result, sort_keys=True, indent=4))
                     else:
                         gs = GsHelper()
                         print('Starting the download:')
