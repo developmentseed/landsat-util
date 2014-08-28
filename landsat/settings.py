@@ -39,9 +39,10 @@ HOME_DIR = os.path.expanduser('~')
 # Utility's base directory
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DOWNLOAD_DIR = HOME_DIR + '/landsat/output/imagery'
+DOWNLOAD_DIR = HOME_DIR + '/landsat/'
 ZIP_DIR = DOWNLOAD_DIR + '/zip'
 UNZIP_DIR = DOWNLOAD_DIR + '/unzip'
+PROCESSED_IMAGE = DOWNLOAD_DIR +'/processed'
 SCENE_FILE = DOWNLOAD_DIR + '/scene_list'
 
 ASSESTS_DIR = BASE_DIR + '/assests'
