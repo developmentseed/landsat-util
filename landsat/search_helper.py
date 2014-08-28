@@ -140,10 +140,12 @@ class Search(object):
         search_string = '+AND+'.join(map(str, query))
 
         if len(search_string) > 0:
-            search_string = search_string + '+AND+' + \
-                '+OR+'.join(map(str, rows_paths))
+            search_string = search_string + '+AND+(' + \
+                '+OR+'.join(map(str, rows_paths)) +')'
         else:
             search_string = '+OR+'.join(map(str, rows_paths))
+
+        print search_string
 
         return search_string
 
