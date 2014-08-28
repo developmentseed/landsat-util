@@ -7,7 +7,6 @@
 # License: CC0 1.0 Universal
 
 import json
-
 import requests
 
 import settings
@@ -70,8 +69,6 @@ class Search(object):
                                             cloud_min,
                                             cloud_max)
 
-        print search_string
-
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
         r = requests.get('%s?search=%s&limit=%s' % (self.api_url,
@@ -121,6 +118,8 @@ class Search(object):
                                for i in new_array])
         except ValueError:
             return ''
+        except TypeError:
+            raise Exception('Invalid Argument. Please try again!')
 
         if start_date and end_date:
             query.append(self._date_range_builder(start_date, end_date))
@@ -142,8 +141,8 @@ class Search(object):
         search_string = '+AND+'.join(map(str, query))
 
         if len(search_string) > 0:
-            search_string = search_string + '+AND+' + \
-                '+OR+'.join(map(str, rows_paths))
+            search_string = search_string + '+AND+(' + \
+                '+OR+'.join(map(str, rows_paths)) + ')'
         else:
             search_string = '+OR+'.join(map(str, rows_paths))
 

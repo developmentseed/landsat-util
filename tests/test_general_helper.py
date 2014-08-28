@@ -44,15 +44,23 @@ class TestGeneralHelper(unittest.TestCase):
     def test_create_paired_list(self):
         # Test correct input (string)
         output = g.create_paired_list('003,003,004,004')
-        self.assertEqual([('003', '003'), ('004', '004')], output)
+        self.assertEqual([['003', '003'], ['004', '004']], output)
 
         # Test correct input (list)
         output = g.create_paired_list(['003', '003', '004', '004'])
-        self.assertEqual([('003', '003'), ('004', '004')], output)
+        self.assertEqual([['003', '003'], ['004', '004']], output)
 
         # Test incorrect input
         self.assertRaises(ValueError, g.create_paired_list, '003,003,004')
         self.assertRaises(ValueError, g.create_paired_list, '')
+
+        # Test with paired list
+        output = g.create_paired_list([['003', '003'], ['004', '004']])
+        self.assertEqual([['003', '003'], ['004', '004']], output)
+
+        #Test with paired tupile
+        output = g.create_paired_list([('003', '003'), ('004', '004')])
+        self.assertEqual([('003', '003'), ('004', '004')], output)
 
 
     def test_check_create_folder(self):

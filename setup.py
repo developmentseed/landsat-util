@@ -38,7 +38,7 @@ def readme():
         return f.read()
 
 setup(name="landsat",
-      version='0.1.0',
+      version='0.2.1',
       description="A utility to search, download and process Landsat 8" +
       " satellite imagery",
       long_description=readme(),
@@ -55,6 +55,7 @@ setup(name="landsat",
           "elasticsearch==1.1.1",
           "gsutil==4.4",
           "requests==2.3.0",
-          "python-dateutil==2.2"
+          "python-dateutil==2.2",
+          "numpy"
       ],
       )

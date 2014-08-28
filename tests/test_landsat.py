@@ -21,94 +21,48 @@ except ImportError:
                                        '../landsat')))
     import landsat
 
-class MockOptions(object):
-    """ Create Mock commandline options """
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
-            setattr(self, k, v)
-
 
 class TestLandsat(unittest.TestCase):
-    dictionary = {
-        'rows_paths': None,
-        'start': None,
-        'end': None,
-        'cloud': None,
-        'limit': 100,
-        'direct': None,
-        'shapefile': None,
-        'country': None,
-        'umeta': None
-    }
 
     @classmethod
     def setUpClass(cls):
         cls.base_dir = os.path.abspath(os.path.dirname(__file__))
         cls.shapefile = cls.base_dir + '/samples/test_shapefile.shp'
+        cls.parser = landsat.args_options()
 
-    # @unittest.skip('Takes too much time')
-    def test_search_rows_paths_without_date_cloud(self):
-        self.dictionary['rows_paths'] = '136,008'
-        m = MockOptions(**self.dictionary)
+    def test_search_pr_correct(self):
+        # Correct search
+        args = ['search', '--onlysearch', 'pr', '008', '008']
 
-        self.assertRaises(SystemExit, landsat.main, m)
+        with self.assertRaises(SystemExit) as cm:
+            landsat.main(self.parser.parse_args(args))
 
-    # @unittest.skip('Takes too much time')
-    def test_search_rows_paths_w_date_no_cloud(self):
-        self.dictionary['rows_paths'] = '008,136'
-        self.dictionary['start'] = 'May 1 2013'
-        self.dictionary['end'] = 'May 15 2013'
+        self.assertEqual(cm.exception.code, 0)
 
-        m = MockOptions(**self.dictionary)
+    def test_search_pr_wrong_input(self):
+        args = ['search', '--onlysearch', 'pr', 'what?']
 
-        self.assertRaises(SystemExit, landsat.main, m)
+        with self.assertRaises(SystemExit) as cm:
+            landsat.main(self.parser.parse_args(args))
 
-    # @unittest.skip('Takes too much time')
-    def test_search_rows_paths_w_date_cloud(self):
-        self.dictionary['rows_paths'] = '008,136'
-        self.dictionary['start'] = 'May 1 2013'
-        self.dictionary['end'] = 'May 15 2013'
-        self.dictionary['cloud'] = 100
+        self.assertNotEqual(cm.exception.code, 0)
 
-        m = MockOptions(**self.dictionary)
+    def test_search_shapefile_correct(self):
+        args = ['search', '--onlysearch', 'shapefile', self.shapefile]
 
-        self.assertRaises(SystemExit, landsat.main, m)
+        with self.assertRaises(SystemExit) as cm:
+            landsat.main(self.parser.parse_args(args))
 
-    # @unittest.skip('Takes too much time')
-    def test_direct_search(self):
-        self.dictionary['direct'] = True
-        self.dictionary['rows_paths'] = '136,008'
-        self.dictionary['start'] = 'May 1 2013'
-        self.dictionary['end'] = 'May 15 2013'
+        self.assertEqual(cm.exception.code, 0)
 
-        m = MockOptions(**self.dictionary)
+    def test_search_shapefile_incorrect(self):
+        args = ['search', '--onlysearch', 'shapefile', 'whatever']
 
-        self.assertRaises(SystemExit, landsat.main, m)
+        with self.assertRaises(Exception) as cm:
+            landsat.main(self.parser.parse_args(args))
 
-    # @unittest.skip('Takes too much time')
-    def test_shapefile(self):
-        self.dictionary['shapefile'] = self.shapefile
-
-        m = MockOptions(**self.dictionary)
-
-        self.assertRaises(SystemExit, landsat.main, m)
-
-    # @unittest.skip('Takes too much time')
-    def test_country(self):
-        self.dictionary['country'] = 'Maldives'
-
-        m = MockOptions(**self.dictionary)
-
-        self.assertRaises(SystemExit, landsat.main, m)
-
-    def test_metada(self):
-        self.dictionary['umeta'] = True
-
-        m = MockOptions(**self.dictionary)
-
-        self.assertRaises(SystemExit, landsat.main, m)
-
+        self.assertEqual(cm.exception.args[0],
+                         'Invalid Argument. Please try again!')
 
 
 

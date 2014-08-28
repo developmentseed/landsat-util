@@ -11,195 +11,252 @@
 from __future__ import print_function
 import sys
 import subprocess
-from optparse import OptionParser, OptionGroup
+import argparse
+import textwrap
+import json
 
 from dateutil.parser import parse
 
 from gs_helper import GsHelper
 from clipper_helper import Clipper
-from metadata_helper import Metadata
 from search_helper import Search
-from general_helper import georgian_day, year, reformat_date
+from general_helper import reformat_date
+from image_helper import Process
+import settings
 
 
-def define_options():
+DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
+search, download, and process Landsat imagery.
 
-    help_text = """
-    Landsat-util helps you with searching Landsat8 metadata and downloading the
-    images within the search criteria.
+    Commands:
+        Search:
+        landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
+                     [--onlysearch] [--imageprocess]
+                     {pr,shapefile,country}
 
-    With landsat-util you can also find rows and paths of an area by searching
-    a country name or using a custom shapefile and use the result to further
-    narrow your search.
+        positional arguments:
+            {pr,shapefile,country}
+                                Search commands
+            pr                  Activate paths and rows
+            shapefile           Activate Shapefile
+            country             Activate country
 
-    Syntax:
-    %prog [OPTIONS]
+            optional arguments:
+            -h, --help            show this help message and exit
+            -l LIMIT, --limit LIMIT
+                                Search return results limit default is 100
 
-    Example uses:
-    To search and download images or row 003 and path 003 with a data range
-    with cloud coverage of maximum 3.0%:
-        %prog -s 01/01/2014 -e 06/01/2014 -l 100 -c 3 -i "003,003"
+            -s START, --start START
+                                Start Date - Most formats are accepted e.g.
+                                Jun 12 2014 OR 06/12/2014
+
+            -e END, --end END   End Date - Most formats are accepted e.g.
+                                Jun 12 2014 OR 06/12/2014
+
+            -c CLOUD, --cloud CLOUD
+                                Maximum cloud percentage default is 20 perct
+
+            -d, --download        Use this flag to download found images
+
+            --imageprocess      If this flag is used, the images are downloaded
+                                and process. Be cautious as it might take a
+                                long time to both download and process large
+                                batches of images
+
+            --pansharpen        Whether to also pansharpen the process image.
+                                Pansharpening takes a long time
+
+        Download:
+        landsat download [-h] sceneID [sceneID ...]
+
+        positional arguments:
+            sceneID     Provide Full sceneID, e.g. LC81660392014196LGN00
+
+        Process:
+        landsat.py process [-h] [--pansharpen] path
+
+        positional arguments:
+            path          Path to the compressed image file
+
+        optional arguments:
+            --pansharpen  Whether to also pansharpen the process image.
+                          Pansharpening takes a long time
 """
 
-    parser = OptionParser(usage=help_text)
 
-    search = OptionGroup(parser, "Search",
-                         "To search Landsat's Metadata use these options:")
+def args_options():
+    parser = argparse.ArgumentParser(prog='landsat',
+                        formatter_class=argparse.RawDescriptionHelpFormatter,
+                        description=textwrap.dedent(DESCRIPTION))
 
-    search.add_option("-i", "--rows_paths",
-                       help="Include a search array in this format:"
-                       "\"path,row,path,row, ... \"",
-                       metavar="\"path,row,path,row, ... \"")
-    search.add_option("-s", "--start",
-                      help="Start Date - Format: MM/DD/YYYY",
-                      metavar="01/27/2014")
-    search.add_option("-e", "--end",
-                      help="End Date - Format: MM/DD/YYYY",
-                      metavar="02/27/2014")
-    search.add_option("-c", "--cloud",
-                      help="Maximum cloud percentage",
-                      metavar="1.00")
-    search.add_option("-l", "--limit",
-                      help="Limit results. Max is 100",
-                      default=100,
-                      metavar="100")
-    search.add_option("-d", "--direct",
-                      help="Only search scene_files and don't use the API",
-                      action='store_true',
-                      dest='direct')
+    subparsers = parser.add_subparsers(help='Landsat Utility',
+                                       dest='subs')
 
-    parser.add_option_group(search)
+    # Search Logic
+    parser_search = subparsers.add_parser('search',
+                                          help='Search Landsat metdata')
 
-    clipper = OptionGroup(parser, "Clipper",
-                          "To find rows and paths of a shapefile or a country "
-                          "use these options:")
+    # Global search options
+    parser_search.add_argument('-l', '--limit', default=100, type=int,
+                               help='Search return results limit\n'
+                               'default is 100')
+    parser_search.add_argument('-s', '--start',
+                               help='Start Date - Most formats are accepted '
+                               'e.g. Jun 12 2014 OR 06/12/2014')
+    parser_search.add_argument('-e', '--end',
+                               help='End Date - Most formats are accepted '
+                               'e.g. Jun 12 2014 OR 06/12/2014')
+    parser_search.add_argument('-c', '--cloud', type=float, default=20.0,
+                               help='Maximum cloud percentage '
+                               'default is 20 perct')
+    parser_search.add_argument('-d', '--download', action='store_true',
+                               help='Use this flag to download found images')
+    parser_search.add_argument('--imageprocess', action='store_true',
+                               help='If this flag is used, the images are '
+                               'downloaded and process. Be cautious as it '
+                               'might take a long time to both download and '
+                               'process large batches of images')
+    parser_search.add_argument('--pansharpen', action='store_true',
+                               help='Whether to also pansharpen the process '
+                               'image. Pan sharpening takes a long time')
 
-    clipper.add_option("-f", "--shapefile",
-                       help="Path to a shapefile for generating the rows and"
-                       "path.",
-                       metavar="/path/to/my_shapefile.shp")
-    clipper.add_option("-o", "--country",
-                       help="Enter country NAME or CODE that will designate "
-                       "imagery area, for a list of country syntax visit: "
-                       "http://goo.gl/8H9wuq",
-                       metavar="Italy")
+    search_subparsers = parser_search.add_subparsers(help='Search commands',
+                                                     dest='search_subs')
 
-    parser.add_option_group(clipper)
+    search_pr = search_subparsers.add_parser('pr',
+                                             help="Activate paths and rows")
+    search_pr.add_argument('paths_rows',
+                           metavar='path_row',
+                           type=int,
+                           nargs="+",
+                           help="Provide paths and rows")
 
-    metadata = OptionGroup(parser, "Metadata Updater",
-                           "Use this option to update Landsat API if you have"
-                           "a local copy running")
+    search_shapefile = search_subparsers.add_parser('shapefile',
+                                                    help="Activate Shapefile")
+    search_shapefile.add_argument('path',
+                                  help="Path to shapefile")
 
-    metadata.add_option("-u", "--update-metadata",
-                        help="Update ElasticSearch Metadata. Requires access"
-                        "to an Elastic Search instance",
-                        action='store_true',
-                        dest='umeta')
+    search_country = search_subparsers.add_parser('country',
+                                                  help="Activate country")
+    search_country.add_argument('name', help="Country name e.g. ARE")
 
-    parser.add_option_group(metadata)
+    parser_download = subparsers.add_parser('download',
+                                            help='Download images from Google Storage')
+    parser_download.add_argument('scenes',
+                                 metavar='sceneID',
+                                 nargs="+",
+                                 help="Provide Full sceneID, e.g. "
+                                 "LC81660392014196LGN00")
+
+    parser_process = subparsers.add_parser('process',
+                                           help='Process Landsat imagery')
+    parser_process.add_argument('path',
+                                help='Path to the compressed image file')
+    parser_process.add_argument('--pansharpen', action='store_true',
+                                help='Whether to also pansharpen the process '
+                                'image. Pan sharpening takes a long time')
 
     return parser
 
 
-def main(options, args=None):
+def main(args):
     """
     Main function - launches the program
     """
 
-    # Raise an error if no option is given
-    raise_error = True
-
-    # Execute rows_paths sequence
-    if options.rows_paths:
-        raise_error = False
-        array = rows_paths_check(options.rows_paths)
-        date_rng = None
-        gs = GsHelper()
-
-        if options.start:
-            options.start = reformat_date(parse(options.start))
-
-        if options.end:
-            options.end = reformat_date(parse(options.end))
-
-        if options.rows_paths:
-            if options.direct:
-                files = gs.search(options.rows_paths, start=options.start,
-                                  end=options.end)
-
-                if files:
-                    if gs.batch_download(files):
-                        gs.unzip()
-                        print("%s images were downloaded and unzipped!"
-                                  % len(files))
-                        exit("Your unzipped images are located here: %s" %
-                                 gs.unzip_dir)
-                else:
-                    exit("No Images found. Change your search parameters.")
+    if args:
+        if args.subs == 'process':
+            p = Process(args.path)
+            if args.pansharpen:
+                p.full_with_pansharpening()
             else:
-                s = Search()
-                result = s.search(row_paths=options.rows_paths,
-                                  start_date=options.start,
-                                  end_date=options.end,
-                                  cloud_max=options.cloud,
-                                  limit=options.limit)
+                p.full()
 
+            exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
+
+        elif args.subs == 'search':
+
+            try:
+                if args.start:
+                    args.start = reformat_date(parse(args.start))
+
+                if args.end:
+                    args.end = reformat_date(parse(args.end))
+            except TypeError:
+                exit("You date format is incorrect. Please try again!", 1)
+
+            s = Search()
+            if args.search_subs == 'pr':
+                result = s.search(row_paths=args.paths_rows,
+                                  limit=args.limit,
+                                  start_date=args.start,
+                                  end_date=args.end,
+                                  cloud_max=args.cloud)
+
+            elif args.search_subs == 'shapefile':
+                clipper = Clipper()
+                result = s.search(clipper.shapefile(args.path),
+                                  limit=args.limit,
+                                  start_date=args.start,
+                                  end_date=args.end,
+                                  cloud_max=args.cloud)
+            elif args.search_subs == 'country':
+                clipper = Clipper()
+                prs = clipper.country(args.name)
+                if prs:
+                    result = s.search(prs,
+                                      limit=args.limit,
+                                      start_date=args.start,
+                                      end_date=args.end,
+                                      cloud_max=args.cloud)
+            try:
                 if result['status'] == 'SUCCESS':
-                    print('%s items were found' % result['total_returned'])
-                    print('Starting the download:')
-                    for item in result['results']:
-                        gs.single_download(row=item['row'],
-                                           path=item['path'],
-                                           name=item['sceneID'])
-                        gs.unzip()
-                        print("%s images were downloaded and unzipped!"
+                    print('%s items were found' % result['total'])
+                    if result['total'] > 100:
+                        exit('Too many results. Please narrow your search')
+                    else:
+                        print(json.dumps(result, sort_keys=True, indent=4))
+                    # If only search
+                    if args.download:
+                        gs = GsHelper()
+                        print('Starting the download:')
+                        for item in result['results']:
+                            gs.single_download(row=item['row'],
+                                               path=item['path'],
+                                               name=item['sceneID'])
+                        print("%s images were downloaded"
                               % result['total_returned'])
-                        exit("Your unzipped images are located here: %s" %
-                             gs.unzip_dir)
+                        if args.imageprocess:
+                            for item in result['results']:
+                                p = Process('%s/%s.tar.bz' % (gs.zip_dir,
+                                                              item['sceneID']))
+                                if args.pansharpen:
+                                    p.full_with_pansharpening()
+                                else:
+                                    p.full()
+                        else:
+                            exit("The downloaded images are located here: %s" %
+                                 gs.zip_dir)
+                    else:
+                        exit('Done!')
                 elif result['status'] == 'error':
                     exit(result['message'])
-
-    if options.shapefile:
-        raise_error = False
-        clipper = Clipper()
-        clipper.shapefile(options.shapefile)
-        exit("Shapefile clipped")
-
-    if options.country:
-        raise_error = False
-        clipper = Clipper()
-        clipper.country(options.country)
-        exit("Process Completed")
-
-    if options.umeta:
-        raise_error = False
-        meta = Metadata()
-        print('Starting Metadata Update using Elastic Search ...\n')
-        if meta.populate():
-            exit('Task Completed!')
-        else:
-            exit('Error!')
-
-    if raise_error:
-        parser.print_help()
-        exit('\nYou must specify an argument.')
+            except KeyError:
+                exit('Too Many API queries. You can only query DevSeed\'s '
+                     'API 5 times per minute', 1)
+        elif args.subs == 'download':
+            gs = GsHelper()
+            print('Starting the download:')
+            for scene in args.scenes:
+                gs.single_download(row=gs.extract_row_path(scene)[1],
+                                   path=gs.extract_row_path(scene)[0],
+                                   name=scene)
+            exit("The downloaded images are located here: %s" % gs.zip_dir)
 
 
-def exit(message):
+def exit(message, code=0):
     print(message)
-    sys.exit()
-
-
-def rows_paths_check(rows_paths):
-    """
-    Turn the search text into paired groups of two
-    """
-    array = rows_paths.split(',')
-    paired = []
-    for i in xrange(0, len(array), 2):
-        paired.append(array[i:i + 2])
-
-    return paired
+    sys.exit(code)
 
 
 def package_installed(package):
@@ -218,11 +275,11 @@ def package_installed(package):
 
 
 def __main__():
+
     global parser
-    parser = define_options()
-    (options, args) = parser.parse_args()
-    main(options, args)
+    parser = args_options()
+    args = parser.parse_args()
+    main(args)
 
 if __name__ == "__main__":
     __main__()
-

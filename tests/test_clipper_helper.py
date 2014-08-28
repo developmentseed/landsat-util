@@ -10,10 +10,7 @@
 
 import os
 import sys
-import errno
-import shutil
 import unittest
-from tempfile import mkdtemp, mkstemp
 
 try:
     from landsat.clipper_helper import Clipper
@@ -33,28 +30,15 @@ class TestClipperHelper(unittest.TestCase):
         cls.base_dir = os.path.abspath(os.path.dirname(__file__))
         cls.shapefile = cls.base_dir + '/samples/test_shapefile.shp'
 
-
-    @classmethod
-    def tearDownClass(cls):
-        # try:
-        #     shutil.rmtree(cls.temp_folder_base)
-        # except OSError as exc:
-        #     if exc.errno != errno.ENOENT:
-        #         raise
-        pass
-
-
     def test_shapefile(self):
         # Test with correct shapefile
-        self.assertEqual([(u'009', u'045'), (u'008', u'045')],
+        self.assertEqual([[u'009', u'045'], [u'008', u'045']],
                          self.c.shapefile(self.shapefile))
-
 
     def test_country(self):
         # Test output of a known country
-        self.assertEqual([('145', u'057'), ('145', u'058')],
+        self.assertEqual([['145', u'057'], ['145', u'058']],
                          self.c.country('Maldives'))
-
 
 
 if __name__ == '__main__':

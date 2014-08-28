@@ -3,4 +3,4 @@ include .gitignore
 include LICENSE
 recursive-include landsat/assests *.prj *.sbn *.sbx
 recursive-include landsat/assests *.shp *.xml *.shx *.html *.txt *.dbf
-recursive-include docs *.html
+recursive-include doc *.html

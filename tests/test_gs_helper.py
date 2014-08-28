@@ -34,7 +34,7 @@ class TestGsHelper(unittest.TestCase):
         cls.g.download_dir = cls.temp_folder + '/download'
         cls.g.zip_dir = cls.g.download_dir + '/zip'
         cls.g.unzip_dir = cls.g.download_dir + '/unzip'
-        cls.g.scene_file = cls.g.download_dir + 'scene_list'
+        cls.g.scene_file = cls.g.download_dir + '/scene_list'
 
     @classmethod
     def tearDownClass(cls):
@@ -55,7 +55,7 @@ class TestGsHelper(unittest.TestCase):
         # test a search with known result
         query = '003,003'
         start = '01/01/2014'
-        end = '06/01/2014'
+        end = '01/06/2014'
 
         self.assertEqual(1, len(self.g.search(query, start, end)))
 

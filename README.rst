@@ -1,4 +1,4 @@
-Landsat Utility
+Landsat-util
 ===============
 
 A utility to search, download and process Landsat 8 satellite imagery.
@@ -14,32 +14,44 @@ Installation
 
 **On Mac**
 
-You need to install gdal before using this tool. You can try brew:
+Use brew to install landsat-util:
 
 .. code-block:: console
 
-    $: brew udpate
-    $: brew install gdal
+  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/image/Formula/landsat-util.rb
 
-**On Ubuntu (Tested on Ubuntu 14.04)**
+For the dev version try:
 
-Install PIP and some other  dependencies for a successful install of requirements.txt
+.. code-block:: console
+
+  $: https://raw.githubusercontent.com/developmentseed/landsat-util/image/Formula/landsat-util.rb --HEAD
+
+**On Ubuntu**
+
+Use pip to install landsat-util:
 
 .. code-block:: console
 
     $: sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $: sudo apt-get update
-    $: sudo apt-get install python-pip build-essential libssl-dev libffi-dev python-dev python-gdal -y
+    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin -y
+    $: sudo pip install -U git+git://github.com/developmentseed/landsat-util.git
 
-**Installing Landsat8 Utility**
+**On Other systems**
 
-Either use pip or easy_install to install the utility:
+Make sure you have these dependencies:
+
+- GDAL
+- ImageMagick
+- Orfeo-40
+
+Then Run:
 
 .. code-block:: console
 
-    $: pip install git+git://github.com/developmentseed/landsat-util.git
+    $: pip install -U git+git://github.com/developmentseed/landsat-util.git
 
-or download the repository and run:
+Alternatively, you can also download the package and run:
 
 .. code-block:: console
 
@@ -52,89 +64,76 @@ Usage
 
     $: landsat -h
 
-.. code-block:: console
+**Search**
 
-   Usage:
-        Landsat-util helps you with searching Landsat8 metadata and downloading the
-        images within the search criteria.
-
-        With landsat-util you can also find rows and paths of an area by searching
-        a country name or using a custom shapefile and use the result to further
-        narrow your search.
-
-        Syntax:
-        landsat.py [OPTIONS]
-
-        Example uses:
-        To search and download images or row 003 and path 003 with a data range
-        with cloud coverage of maximum 3.0%:
-            landsat.py -s 01/01/2014 -e 06/01/2014 -l 100 -c 3 -i "003,003"
-
-
-    Options:
-      -h, --help            show this help message and exit
-
-      Search:
-        To search Landsat's Metadata use these options:
-
-        -i "path,row,path,row, ... ", --rows_paths="path,row,path,row, ... "
-                            Include a search array in this
-                            format:"path,row,path,row, ... "
-
-        -s 01/27/2014, --start=01/27/2014
-                        Start Date - Format: MM/DD/YYYY
-        -e 02/27/2014, --end=02/27/2014
-                            End Date - Format: MM/DD/YYYY
-        -c 1.00, --cloud=1.00
-                            Maximum cloud percentage
-        -l 100, --limit=100
-                            Limit results. Max is 100
-        -d, --direct        Only search scene_files and don't use the API
-
-      Clipper:
-        To find rows and paths of a shapefile or a country use these options:
-
-        -f /path/to/my_shapefile.shp, --shapefile=/path/to/my_shapefile.shp
-                            Path to a shapefile for generating the rows andpath.
-        -o Italy, --country=Italy
-                            Enter country NAME or CODE that will designate imagery
-                            area, for a list of country syntax visit:
-                            http://goo.gl/8H9wuq
-
-      Metadata Updater:
-        Use this option to update Landsat API if you havea local copy running
-
-        -u, --update-metadata
-                            Update ElasticSearch Metadata. Requires accessto an
-                            Elastic Search instance
-
-**Example**
+To Search rows and paths with date and cloud coverage limit and download images
 
 .. code-block:: console
 
-    $: landsat -m --rows_paths="013,044" --cloud=5 --start=04/01/2014
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
-Make sure to use right format for rows and paths. For example instead of using ``3`` use ``003``.
-
-**Output folder structure**
-
-The output is saved in the home directory of the user
+To only search the rows and paths but not to download
 
 .. code-block:: console
 
-  |-- Home Folder
-  |     |-- output
-  |     |   |-- imagery
-  |     |   |   |-- file_scene
-  |     |   |   |-- zip
-  |     |   |   |   |-- LC80030032014174LGN00.tar.bz
-  |     |   |   |-- unzip
-  |     |   |   |   |-- LC80030032014174LGN00
-  |     |   |   |   |-- LC80030032014174LGN00_B1.TIF
-  |     |   |   |   |-- LC80030032014174LGN00_B2.TIF
-  |     |   |   |   |-- LC80030032014174LGN00_B3.TIF
-  |     |   |   |   |-- LC80030032014174LGN00_B4.TIF
-  |     |   |   |     |-- LC80030032014174LGN00_MTL.txt
+    $: landsat search --onlysearch --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+
+To find rows and paths in a shapefile and download with dates and cloud coverage
+
+.. code-block:: console
+
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+
+To find rows and paths in a shapefile and download and process images all together
+
+.. code-block:: console
+
+    $: landsat search --imageprocess --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+
+To find rows and paths of a country and download images (The full list is http://goo.gl/8H9wuq)
+
+.. code-block:: console
+
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country Singapore
+
+**Download**
+
+To download scene images directily
+
+.. code-block:: console
+
+    $: landsat download LC80030032014142LGN00 LC80030032014158LGN00
+
+**Image Process**
+
+To process images that are aleady downloaded. Remember, the system only accepts zip files
+
+.. code-block:: console
+
+    $: landsat process path/to/LC80030032014158LGN00.tar.bz
+
+To pan sharpen the image
+
+.. code-block:: console
+
+    $: landsat process --pansharpen path/to/LC80030032014158LGN00.tar.bz
 
 
+Important Notes
+===============
 
+- All downloaded and processed images are stored at your home directory in landsat forlder: ``~/landsat``
+
+- If you are not sure what images you are looking for, make sure to use ``--onlysearch`` flag to view the results first. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
+
+- Image processing is a very heavy and resource consuming task. Each process takes about 20-30 mins. We recommend that you run the processes in smaller badges
+
+
+To Do List
+++++++++++
+
+- Add longitude latitude search
+- Add Sphinx Documentation
+- Improve console output
+- Add more color options such as false color, true color, etc.
+- Connect search to Google Address API
