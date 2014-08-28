@@ -64,7 +64,7 @@ class Clipper(object):
             rps = self.__generate_path_row('landsat-tiles.shp', 'landsat-tiles')
             self._cleanup()
             return rps
-        except OgrError:
+        except ogr2ogr.OgrError:
             return False
 
     def _cleanup(self):
