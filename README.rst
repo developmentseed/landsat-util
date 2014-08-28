@@ -18,7 +18,7 @@ Use brew to install landsat-util:
 
 .. code-block:: console
 
-  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/image/Formula/landsat-util.rb
+  $: https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb
 
 For the dev version try:
 
