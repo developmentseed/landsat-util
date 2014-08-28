@@ -37,9 +37,9 @@ def create_paired_list(i):
         [('003','003'), ('004', '004')]
     """
 
-    if type(i) is str:
+    if isinstance(i, str):
         array = i.split(',')
-    elif type(i) is list:
+    elif isinstance(i, list):
         array = i
 
     # Make sure the elements in the list are even and pairable
