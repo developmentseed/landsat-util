@@ -4,6 +4,7 @@ class LandsatUtil < Formula
   homepage "http://www.developmentseed.org"
   url "https://github.com/developmentseed/landsat-util/archive/v0.1.0.tar.gz"
   sha1 "522e460c7cb8c229c3bf4e3d965b0c9f5924c1e9"
+  head "https://github.com/developmentseed/landsat-util.git", :branch => 'image'
 
   depends_on "gdal"
   depends_on "imagemagick"
