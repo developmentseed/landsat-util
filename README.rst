@@ -1,7 +1,7 @@
 Landsat-util
 ===============
 
-A utility to search, download and process Landsat 8 satellite imagery.
+Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
 
 This tool uses Development Seed's `API for Landsat Metdata <https://github.com/developmentseed/landsat-api>`_.
 
@@ -124,10 +124,11 @@ Important Notes
 
 - All downloaded and processed images are stored at your home directory in landsat forlder: ``~/landsat``
 
-- If you are not sure what images you are looking for, make sure to use ``--onlysearch`` flag to view the results first. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
+- If you are not sure what images you are looking for, make sure to use ``--onlysearch`` flag to view the results first. The image thumbnail web address that is included in the results can be used to make sure that clouds are not obscuring the subject of interest. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
 
-- Image processing is a very heavy and resource consuming task. Each process takes about 20-30 mins. We recommend that you run the processes in smaller badges
+- Image processing is a very heavy and resource consuming task. Each process takes about 20-30 mins. We recommend that you run the processes in smaller badges. Pansharpening, while increasing image resolution 2x, substantially increases processing time.
 
+- Country based search queries can return a large number of images; for countries that return large search results we recommend selecting best imagery based on thumbnails and then using the download tool to install specific imagery based on Landsat scene ID.
 
 To Do List
 ++++++++++
@@ -136,4 +137,6 @@ To Do List
 - Add Sphinx Documentation
 - Improve console output
 - Add more color options such as false color, true color, etc.
+- Add capacity for NDVI output
+- Add alternative projections (currently only option is default web-mercator; EPSG: 3857)
 - Connect search to Google Address API
