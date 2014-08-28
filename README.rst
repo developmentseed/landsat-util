@@ -24,7 +24,7 @@ For the dev version try:
 
 .. code-block:: console
 
-  $: https://raw.githubusercontent.com/developmentseed/landsat-util/image/Formula/landsat-util.rb --HEAD
+  $: https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
 
 **On Ubuntu**
 
