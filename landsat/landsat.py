@@ -64,6 +64,9 @@ search, download, and process Landsat imagery.
                                 long time to both download and process large
                                 batches of images
 
+            --pansharpen        Whether to also pansharpen the process image.
+                                Pansharpening takes a long time
+
         Download:
         landsat download [-h] sceneID [sceneID ...]
 
@@ -116,6 +119,9 @@ def args_options():
                                'downloaded and process. Be cautious as it '
                                'might take a long time to both download and '
                                'process large batches of images')
+    parser_search.add_argument('--pansharpen', action='store_true',
+                               help='Whether to also pansharpen the process '
+                               'image. Pan sharpening takes a long time')
 
     search_subparsers = parser_search.add_subparsers(help='Search commands',
                                                      dest='search_subs')
@@ -224,7 +230,10 @@ def main(args):
                             for item in result['results']:
                                 p = Process('%s/%s.tar.bz' % (gs.zip_dir,
                                                               item['sceneID']))
-                                p.full()
+                                if args.pansharpen:
+                                    p.full_with_pansharpening()
+                                else:
+                                    p.full()
                         else:
                             exit("The downloaded images are located here: %s" %
                                  gs.zip_dir)
