@@ -41,7 +41,7 @@ def create_paired_list(i):
         array = i.split(',')
     elif isinstance(i, list):
         # Make sure it is not already paired
-        if isinstance(i[0], list):
+        if isinstance(i[0], list) or isinstance(i[0], tuple):
             return i
         else:
             array = i
@@ -50,7 +50,7 @@ def create_paired_list(i):
 
     # Make sure the elements in the list are even and pairable
     if len(array) % 2 == 0:
-        new_array = [tuple(array[i:i + 2])
+        new_array = [list(array[i:i + 2])
                      for i in range(0, len(array), 2)]
         return new_array
     else:
