@@ -175,6 +175,19 @@ class Process(object):
 
         subprocess.check_call(argv)
 
+        argv = ['listgeo', '-tfw',
+                '%s/%s_B8.TIF' % (self.warp_path, self.image)]
+
+        subprocess.check_call(argv)
+
+        shutil.copy('%s/%s_B8.tfw' % (self.warp_path, self.image),
+                    '%s/final-pan.tfw' % self.final_path)
+
+        argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
+                '%s/final-pan.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+
         return '%s/final-pan.TIF' % self.final_path
 
     def _create_mask(self):
