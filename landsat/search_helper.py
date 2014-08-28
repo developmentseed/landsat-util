@@ -145,8 +145,6 @@ class Search(object):
         else:
             search_string = '+OR+'.join(map(str, rows_paths))
 
-        print search_string
-
         return search_string
 
     def _row_path_builder(self, path, row):
