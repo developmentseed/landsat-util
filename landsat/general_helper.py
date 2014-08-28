@@ -40,7 +40,13 @@ def create_paired_list(i):
     if isinstance(i, str):
         array = i.split(',')
     elif isinstance(i, list):
-        array = i
+        # Make sure it is not already paired
+        if len(i[0]) == 2:
+            return i
+        else:
+            array = i
+    else:
+        return i
 
     # Make sure the elements in the list are even and pairable
     if len(array) % 2 == 0:
