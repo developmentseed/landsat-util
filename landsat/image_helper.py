@@ -87,7 +87,6 @@ class Process(object):
             self.path = path
 
         self.temp = mkdtemp()
-        # self.temp = '/var/folders/m1/66c70kws2_1g9y34b2pgccsm0000gn/T/tmpfe89l0'
         self.src_image_path = self.temp + '/' + self.image
         self.warp_path = self.temp + '/' + self.image + '/warp'
         self.scaled_path = self.temp + '/' + self.image + '/scaled'
@@ -178,7 +177,6 @@ class Process(object):
 
         return '%s/final-pan.TIF' % self.final_path
 
-
     def _create_mask(self):
 
         argv = ['gdal_calc.py',
@@ -259,28 +257,14 @@ class Process(object):
 
         print 'Convert: averaging'
 
-        # Third conversion
-        argv = ['convert',
-                '%s/rgb-sig.TIF' % self.final_path,
-                '%s/rgb-scaled-cc.TIF' % self.final_path]
-
-        if os.path.exists('%s/eq-hist.tif' % self.final_path):
-            argv.append('%s/eq-hist.tif' % self.final_path)
-
-        argv.extend(['-evaluate-sequence', 'mean',
-                     '%s/average-test.TIF' % self.final_path])
-
-        subprocess.check_call(argv)
-
         # Fourth conversion
         argv = ['convert',
-                '%s/average-test.TIF' % self.final_path,
+                '%s/rgb-sig.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path,
                 '-evaluate-sequence', 'mean',
                 '%s/final-color.TIF' % self.final_path]
 
         subprocess.check_call(argv)
-
 
     def _image_correction(self):
         try:
@@ -332,7 +316,6 @@ class Process(object):
             print e.args[0]
             print "Skipping Image Correction using OpenCV"
 
-
     def _combine(self):
         argv = ['convert', '-identify', '-combine']
 
@@ -351,7 +334,6 @@ class Process(object):
         argv.append('%s/rgb-scaled.TIF' % self.final_path)
 
         subprocess.check_call(argv)
-
 
     def _scale_pan(self):
         """ scaling pan to min max with 2 percent cut """
