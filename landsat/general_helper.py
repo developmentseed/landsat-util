@@ -34,7 +34,7 @@ def create_paired_list(i):
         i - the format must be 003,003,004,004 (commas with no space)
 
     Returns:
-        [('003','003'), ('004', '004')]
+        [['003','003'], ['004', '004']]
     """
 
     if isinstance(i, str):
