@@ -7,7 +7,6 @@
 # License: CC0 1.0 Universal
 
 import json
-
 import requests
 
 import settings
@@ -119,6 +118,8 @@ class Search(object):
                                for i in new_array])
         except ValueError:
             return ''
+        except TypeError:
+            raise Exception('Invalid Argument. Please try again!')
 
         if start_date and end_date:
             query.append(self._date_range_builder(start_date, end_date))
@@ -141,7 +142,7 @@ class Search(object):
 
         if len(search_string) > 0:
             search_string = search_string + '+AND+(' + \
-                '+OR+'.join(map(str, rows_paths)) +')'
+                '+OR+'.join(map(str, rows_paths)) + ')'
         else:
             search_string = '+OR+'.join(map(str, rows_paths))
 
