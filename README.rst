@@ -18,13 +18,13 @@ Use brew to install landsat-util:
 
 .. code-block:: console
 
-  $: https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb
+  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb
 
 For the dev version try:
 
 .. code-block:: console
 
-  $: https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
+  $: brew instsall https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
 
 **On Ubuntu**
 
