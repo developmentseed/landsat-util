@@ -127,3 +127,13 @@ Important Notes
 - If you are not sure what images you are looking for, make sure to use ``--onlysearch`` flag to view the results first. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
 
 - Image processing is a very heavy and resource consuming task. Each process takes about 20-30 mins. We recommend that you run the processes in smaller badges
+
+
+To Do List
+++++++++++
+
+- Add longitude latitude search
+- Add Sphinx Documentation
+- Improve console output
+- Add more color options such as false color, true color, etc.
+- Connect search to Google Address API
