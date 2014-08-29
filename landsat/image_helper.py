@@ -2,7 +2,7 @@
 #
 #
 # Author: developmentseed
-# Contributer: scisco, KAPPS-, KAPPS-
+# Contributer: scisco, KAPPS-
 #
 # License: CC0 1.0 Universal
 
