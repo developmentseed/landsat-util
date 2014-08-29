@@ -24,7 +24,7 @@ For the dev version try:
 
 .. code-block:: console
 
-  $: brew instsall https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
+  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
 
 **On Ubuntu**
 
@@ -66,23 +66,24 @@ Usage
 
 **Search**
 
-To Search rows and paths with date and cloud coverage limit and download images
+To search paths and rows with date and cloud coverage limit and download images
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
 To only search the rows and paths but not to download
 
 .. code-block:: console
 
-    $: landsat search --onlysearch --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
 To find rows and paths in a shapefile and download with dates and cloud coverage
+- We recommend `geojson.io <http://geojson.io/#map=2/20.0/0.0>`_ for shapefile generation (quicker and easier than using GIS software)
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
 
 To find rows and paths in a shapefile and download and process images all together
 
@@ -94,7 +95,7 @@ To find rows and paths of a country and download images (The full list is http:/
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country Singapore
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country 'Singapore'
 
 **Download**
 
@@ -140,3 +141,5 @@ To Do List
 - Add capacity for NDVI output
 - Add alternative projections (currently only option is default web-mercator; EPSG: 3857)
 - Connect search to Google Address API
+- Include 16-bit image variant in output
+- Add support for color correct looping over multiple compressed inputs (currently just 1)
