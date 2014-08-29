@@ -166,7 +166,7 @@ class GsHelper(object):
         for line in scene:
             url = line.split('/')
             file_name = url[len(url) - 1]
-            f_query = (file_name[3:6], file_name[6:9])
+            f_query = [file_name[3:6], file_name[6:9]]
             jd = int(file_name[13:16].lstrip('0'))  # Julian Day
             year = int(file_name[9:13])
 
