@@ -3,7 +3,7 @@ Landsat-util
 
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
 
-This tool uses Development Seed's `API for Landsat Metdata <https://github.com/developmentseed/landsat-api>`_.
+This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.
 
 This API is accessible here: http://api.developmentseed.com:8000/landsat
 
