@@ -95,7 +95,7 @@ To find rows and paths of a country and download images (The full list is http:/
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country Singapore
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country 'Singapore'
 
 **Download**
 
