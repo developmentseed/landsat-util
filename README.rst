@@ -70,19 +70,19 @@ To search paths and rows with date and cloud coverage limit and download images
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
 To only search the rows and paths but not to download
 
 .. code-block:: console
 
-    $: landsat search --onlysearch --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
 To find rows and paths in a shapefile and download with dates and cloud coverage
 
 .. code-block:: console
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
 
 To find rows and paths in a shapefile and download and process images all together
 
