@@ -89,11 +89,11 @@ Additionally filter your search using the following parameters:
 
 Search by path and row:
 
-``$: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100``
+``$: landsat search --cloud 4 --start "january 1 2014" --end "january 10 2014" pr 009 045``
 
 Search by country (The full list of countries is http://goo.gl/8H9wuq):
- 
-``$: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country 'Singapore'``
+
+``$: landsat search --cloud 4 --start "january 1 2014" --end "August 25 2014" country 'Isle of Man'``
 
 Search by custom shapefile:
 
@@ -108,11 +108,11 @@ You can download tiles using their unique sceneID, which you get from landsat se
 
 Download images by their custom sceneID, which you get from landsat search:
 
-``$: landsat download LC80030032014142LGN00 LC80030032014158LGN00``
+``$: landsat download LC80090452014008LGN00``
 
 Search and download tiles all at once with the --download flag:
 
-``$: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100``
+``$: landsat search --download --cloud 4 --start "january 01 2014" --end "january 10 2014" pr 009 045``
 
 Step 3: Image processing
 ============
@@ -123,15 +123,15 @@ You can process your downloaded tiles with our custom image processing algorithm
 
 Process images that are already downloaded. Remember, the program only accepts zip files:
 
-``$: landsat process path/to/LC80030032014158LGN00.tar.bz``
+``$: landsat process path/to/LC80090452014008LGN00.tar.bz``
 
 Process *and* pansharpen a downloaded image:
 
-``$: landsat process --pansharpen path/to/LC80030032014158LGN00.tar.bz``
+``$: landsat process --pansharpen path/to/LC80090452014008LGN00.tar.bz``
 
 Search, download, and process images all at once using the --imageprocess flag:
 
-``$: landsat search --imageprocess --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp``
+``$: landsat search --imageprocess --cloud 6 --start "january 01 2014" --end "january 10 2014" shapefile path/to/shapefile.shp``
 
 
 Important Notes
