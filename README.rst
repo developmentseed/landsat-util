@@ -24,7 +24,7 @@ For the dev version try:
 
 .. code-block:: console
 
-  $: brew instsall https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
+  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
 
 **On Ubuntu**
 
@@ -66,7 +66,7 @@ Usage
 
 **Search**
 
-To Search rows and paths with date and cloud coverage limit and download images
+To search paths and rows with date and cloud coverage limit and download images
 
 .. code-block:: console
 
