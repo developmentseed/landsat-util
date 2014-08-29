@@ -140,3 +140,4 @@ To Do List
 - Add capacity for NDVI output
 - Add alternative projections (currently only option is default web-mercator; EPSG: 3857)
 - Connect search to Google Address API
+- Include 16-bit image variant in output
