@@ -79,7 +79,7 @@ To only search the rows and paths but not to download
     $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
 
 To find rows and paths in a shapefile and download with dates and cloud coverage
-- We recommend `geojson.io <http://geojson.io/#map=2/20.0/0.0>` for shapefile generation (quicker and easier than using GIS software)
+- We recommend `geojson.io <http://geojson.io/#map=2/20.0/0.0>`_ for shapefile generation (quicker and easier than using GIS software)
 
 .. code-block:: console
 
