@@ -34,7 +34,7 @@ Use pip to install landsat-util:
 
     $: sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $: sudo apt-get update
-    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin -y
+    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin imagemagick geotiff-bin -y
     $: sudo pip install -U git+git://github.com/developmentseed/landsat-util.git
 
 **On Other systems**
