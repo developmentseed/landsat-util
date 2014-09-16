@@ -62,7 +62,6 @@ class TestGeneralHelper(unittest.TestCase):
         output = g.create_paired_list([('003', '003'), ('004', '004')])
         self.assertEqual([('003', '003'), ('004', '004')], output)
 
-
     def test_check_create_folder(self):
         new_path = g.check_create_folder(self.temp_folder_test)
 
@@ -104,6 +103,15 @@ class TestGeneralHelper(unittest.TestCase):
         self.assertEqual('2014', g.reformat_date('2014', '%d/%m/%Y'))
         self.assertEqual('2014', g.reformat_date('2014', 'juberish'))
 
+    def test_verbosity(self):
+        v = g.Verbosity(True)
+
+        self.assertEqual('test', v.output('test'))
+
+        v = g.Verbosity(False)
+
+        self.assertEqual(None, v.output('test'))
+        self.assertEqual('test', v.output('test', normal=True))
 
 if __name__ == '__main__':
     unittest.main()

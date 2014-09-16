@@ -11,6 +11,43 @@ import sys
 from cStringIO import StringIO
 from datetime import datetime
 
+from termcolor import colored
+
+
+class Verbosity(object):
+
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
+    def output(self, value, normal=False, color=None, error=False,
+               arrow=False, indent=None):
+        """ Handles verbosity of this calls.
+        if priority is set to 1, the value is printed
+
+        if class instance verbose is True, the value is printed
+        """
+
+        if error and value and self.verbose:
+            return self._print(value, color='red', indent=indent)
+
+        if self.verbose or normal:
+            return self._print(value, color, arrow, indent)
+
+        return
+
+    def _print(self, msg, color, arrow=False, indent=None):
+        """ Print the msg with the color provided """
+        msg = colored(msg, color)
+
+        if arrow:
+            msg = colored('===> ', 'blue') + msg
+
+        if indent:
+            msg = ('     ' * indent) + msg
+
+        print msg
+        return msg
+
 
 class Capturing(list):
 
@@ -23,9 +60,11 @@ class Capturing(list):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
 
+
 def exit(message):
     print message
     sys.exit()
+
 
 def create_paired_list(i):
     """ Create a list of paired items from a string
