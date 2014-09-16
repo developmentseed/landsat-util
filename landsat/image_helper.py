@@ -54,6 +54,8 @@ class Process(object):
         if path:
             self.path = path
 
+        self.verbosity.output('* Image Processing Started\n', normal=True)
+
         self.temp = mkdtemp()
         self.src_image_path = self.temp + '/' + self.image
         self.warp_path = self.temp + '/' + self.image + '/warp'
@@ -61,13 +63,17 @@ class Process(object):
         self.final_path = self.temp + '/' + self.image + '/final'
         self.delivery_path = self.destination + '/' + self.image
 
+        self.verbosity.output("Creating temp folder at:",
+                              normal=True, arrow=True)
+
+        self.verbosity.output(self.temp, normal=True, indent=1)
+
         check_create_folder(self.src_image_path)
         check_create_folder(self.warp_path)
         check_create_folder(self.scaled_path)
         check_create_folder(self.final_path)
         check_create_folder(self.delivery_path)
 
-        self.verbosity.output('Image Processing Started\n', normal=True)
         self._unzip(zip_image, self.src_image_path)
 
     def full(self):

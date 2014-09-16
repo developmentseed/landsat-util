@@ -165,3 +165,6 @@ class Search(object):
             Accepts bottom and top range in float, e.g. 1.00
         """
         return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
+
+# API link for coordinates search
+# http://api.developmentseed.com:8000/landsat?search=lowerLeftCornerLatitude:%3C35.696111+AND+upperRightCornerLatitude:%3E35.696111+AND+lowerRightCornerLongitude:%3C51.423056+AND+upperLeftCornerLongitude:%3E51.423056+AND+acquisitionDate:[2014-01-01+TO+2014-01-30]
