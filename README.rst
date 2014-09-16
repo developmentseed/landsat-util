@@ -3,7 +3,7 @@ Landsat-util
 
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
 
-This tool uses Development Seed's `API for Landsat Metdata <https://github.com/developmentseed/landsat-api>`_.
+This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.
 
 This API is accessible here: http://api.developmentseed.com:8000/landsat
 
@@ -34,7 +34,7 @@ Use pip to install landsat-util:
 
     $: sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $: sudo apt-get update
-    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin -y
+    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin imagemagick geotiff-bin -y
     $: sudo pip install -U git+git://github.com/developmentseed/landsat-util.git
 
 **On Other systems**
@@ -57,67 +57,81 @@ Alternatively, you can also download the package and run:
 
     $: python setup.py install
 
-Usage
-=====
+Overview: What can landsat-util do?
+============
+Landsat-util has three main functions:
 
-.. code-block:: console
+- **Search** for landsat tiles based on several search parameters.
+- **Download** landsat images.
+- **Image processing** and pan sharpening on landsat images.
 
-    $: landsat -h
+These three functions can be performed separately or all at once.
 
-**Search**
+**Help**: Type ``landsat -h`` for detailed usage parameters.
 
-To search paths and rows with date and cloud coverage limit and download images
+Step 1: Search
+============
 
-.. code-block:: console
+Search returns information about all landsat tiles that match your criteria.  This includes a link to an unprocessed preview of the tile.  The most important result is the tile's *sceneID*, which you will need to download the tile (see step 2 below).
 
-    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+Search for landsat tiles in a given geographical region, using any of the following:
 
-To only search the rows and paths but not to download
+- **Paths and rows**: If you know the paths and rows you want to search for.
+- **Country name**: If you know what country you want imagery for.
+- **Custom shapefile**: Use a tool such as http://geojson.io/ to generate custom shapefiles bounding your geographical region of interest.  Landsat-util will download tiles within this shapefile.
 
-.. code-block:: console
+Additionally filter your search using the following parameters:
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" pr 165 100
+- **Start and end dates** for when imagery was taken
+- **Maximum percent cloud cover** (default is 20%)
 
-To find rows and paths in a shapefile and download with dates and cloud coverage
-- We recommend `geojson.io <http://geojson.io/#map=2/20.0/0.0>`_ for shapefile generation (quicker and easier than using GIS software)
+**Examples of search**:
 
-.. code-block:: console
+Search by path and row:
 
-    $: landsat search --download --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+``$: landsat search --cloud 4 --start "january 1 2014" --end "january 10 2014" pr 009 045``
 
-To find rows and paths in a shapefile and download and process images all together
+Search by country (The full list of countries is http://goo.gl/8H9wuq):
 
-.. code-block:: console
+``$: landsat search --cloud 4 --start "january 1 2014" --end "August 25 2014" country 'Isle of Man'``
 
-    $: landsat search --imageprocess --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp
+Search by custom shapefile:
 
-To find rows and paths of a country and download images (The full list is http://goo.gl/8H9wuq)
+``$: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp``
 
-.. code-block:: console
+Step 2: Download
+============
 
-    $: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" country 'Singapore'
+You can download tiles using their unique sceneID, which you get from landsat search.
 
-**Download**
+**Examples of download**:
 
-To download scene images directily
+Download images by their custom sceneID, which you get from landsat search:
 
-.. code-block:: console
+``$: landsat download LC80090452014008LGN00``
 
-    $: landsat download LC80030032014142LGN00 LC80030032014158LGN00
+Search and download tiles all at once with the --download flag:
 
-**Image Process**
+``$: landsat search --download --cloud 4 --start "january 01 2014" --end "january 10 2014" pr 009 045``
 
-To process images that are aleady downloaded. Remember, the system only accepts zip files
+Step 3: Image processing
+============
 
-.. code-block:: console
+You can process your downloaded tiles with our custom image processing algorithms.  In addition, you can choose to pansharpen your images.
 
-    $: landsat process path/to/LC80030032014158LGN00.tar.bz
+**Examples of image processing**:
 
-To pan sharpen the image
+Process images that are already downloaded. Remember, the program only accepts zip files:
 
-.. code-block:: console
+``$: landsat process path/to/LC80090452014008LGN00.tar.bz``
 
-    $: landsat process --pansharpen path/to/LC80030032014158LGN00.tar.bz
+Process *and* pansharpen a downloaded image:
+
+``$: landsat process --pansharpen path/to/LC80090452014008LGN00.tar.bz``
+
+Search, download, and process images all at once using the --imageprocess flag:
+
+``$: landsat search --imageprocess --cloud 6 --start "january 01 2014" --end "january 10 2014" shapefile path/to/shapefile.shp``
 
 
 Important Notes
