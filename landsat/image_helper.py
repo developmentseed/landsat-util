@@ -7,7 +7,6 @@
 # License: CC0 1.0 Universal
 
 import os
-import subprocess
 import errno
 import shutil
 import tarfile
@@ -139,7 +138,7 @@ class Process(object):
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/comp.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['otbcli_BundleToPerfectSensor',
                 # '-ram', '6500',
@@ -148,7 +147,7 @@ class Process(object):
                 '-out', '%s/pan.TIF' % self.final_path,
                 'uint16']
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         for i in range(1, 4):
             self.gdal_translate('%s/pan.TIF' % self.final_path,
@@ -168,18 +167,18 @@ class Process(object):
 
         argv.append('%s/pan.TIF' % self.final_path)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['convert', '-depth', '8',
                 '%s/pan.TIF' % self.final_path,
                 '%s/final-pan.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['listgeo', '-tfw',
                 '%s/%s_B8.TIF' % (self.warp_path, self.image)]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         shutil.copy('%s/%s_B8.tfw' % (self.warp_path, self.image),
                     '%s/final-pan.tfw' % self.final_path)
@@ -187,7 +186,7 @@ class Process(object):
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/final-pan.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         self.verbosity.output('Done',
                               normal=True, indent=1)
@@ -206,7 +205,7 @@ class Process(object):
                 '--calc=1*(A>0)',
                 '--type=UInt16']
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         for i in range(1, 4):
             self.gdal_translate('%s/final-color.TIF' % self.final_path,
@@ -221,7 +220,7 @@ class Process(object):
                     '--calc=A*B',
                     '--type=UInt16']
 
-            self._subprocess(argv)
+            self.verbosity.subprocess(argv)
 
         self.verbosity.output('Done',
                               normal=True, indent=1)
@@ -236,18 +235,18 @@ class Process(object):
 
         argv.append('%s/comp.TIF' % self.final_path)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['convert', '-depth', '8',
                 '%s/comp.TIF' % self.final_path,
                 '%s/final.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['listgeo', '-tfw',
                 '%s/%s_B%s.TIF' % (self.warp_path, self.image, self.bands[0])]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         shutil.copy('%s/%s_B%s.tfw' % (self.warp_path, self.image,
                                        self.bands[0]),
@@ -256,7 +255,7 @@ class Process(object):
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/final.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         self.verbosity.output('Done',
                               normal=True, indent=1)
@@ -277,7 +276,7 @@ class Process(object):
                 '%s/rgb-null.TIF' % self.final_path,
                 '%s/rgb-sig.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         # Second conversion
         argv = ['convert', '-verbose',
@@ -286,7 +285,7 @@ class Process(object):
                 '%s/rgb-scaled.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         # Fourth conversion
         argv = ['convert', '-verbose',
@@ -295,7 +294,7 @@ class Process(object):
                 '-evaluate-sequence', 'mean',
                 '%s/final-color.TIF' % self.final_path]
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         self.verbosity.output('Done',
                               normal=True, indent=1)
@@ -312,7 +311,7 @@ class Process(object):
 
         argv.append('%s/rgb-null.TIF' % self.final_path)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         argv = ['convert', '-identify', '-combine']
 
@@ -321,7 +320,7 @@ class Process(object):
 
         argv.append('%s/rgb-scaled.TIF' % self.final_path)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         self.verbosity.output('Done',
                               normal=True, indent=1)
@@ -437,7 +436,7 @@ class Process(object):
         self.verbosity.output('gdalwarping %s' % get_filename(src),
                               normal=True, arrow=True)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         return True
 
@@ -456,15 +455,6 @@ class Process(object):
         argv.append(src)
         argv.append(dst)
 
-        self._subprocess(argv)
+        self.verbosity.subprocess(argv)
 
         return True
-
-    def _subprocess(self, argv):
-        if self.verbose:
-            proc = subprocess.Popen(argv, stderr=subprocess.PIPE)
-        else:
-            proc = subprocess.Popen(argv, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-
-        self.verbosity.output(proc.stderr.read(), error=True)
