@@ -10,6 +10,7 @@ import os
 import sys
 from cStringIO import StringIO
 from datetime import datetime
+import subprocess
 
 from termcolor import colored
 
@@ -34,6 +35,25 @@ class Verbosity(object):
             return self._print(value, color, arrow, indent)
 
         return
+
+    def subprocess(self, argv):
+        """ Execute subprocess commands with proper ouput """
+
+        if self.verbose:
+            proc = subprocess.Popen(argv, stderr=subprocess.PIPE)
+        else:
+            proc = subprocess.Popen(argv, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+
+        self.output(proc.stderr.read(), error=True)
+
+        return
+
+    def exit(self, message):
+        """ Print an exist message and exit """
+
+        self.output(message, normal=True, color="green")
+        sys.exit()
 
     def _print(self, msg, color, arrow=False, indent=None):
         """ Print the msg with the color provided """
@@ -62,7 +82,8 @@ class Capturing(list):
 
 
 def exit(message):
-    print message
+    v = Verbosity()
+    v.output(message, normal=True, color="green")
     sys.exit()
 
 
