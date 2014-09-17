@@ -56,6 +56,7 @@ setup(name="landsat",
           "gsutil==4.4",
           "requests==2.3.0",
           "python-dateutil==2.2",
-          "numpy"
+          "numpy",
+          "termcolor==1.1.0"
       ],
       )
