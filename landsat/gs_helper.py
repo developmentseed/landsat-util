@@ -13,19 +13,21 @@ import tarfile
 
 from dateutil.parser import parse
 
-from general_helper import check_create_folder, create_paired_list, exit
+from general_helper import (check_create_folder, create_paired_list, exit,
+                            Verbosity)
 import settings
 
 
 class GsHelper(object):
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.scene_file_url = settings.SCENE_FILE_URL
         self.download_dir = settings.DOWNLOAD_DIR
         self.zip_dir = settings.ZIP_DIR
         self.unzip_dir = settings.UNZIP_DIR
         self.scene_file = settings.SCENE_FILE
         self.source_url = settings.SOURCE_URL
+        self.verbosity = Verbosity(verbose)
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
@@ -122,16 +124,16 @@ class GsHelper(object):
 
         if not os.path.isfile(self.scene_file):
             # Download the file
-            subprocess.call(
-                ["gsutil", "cp", "-n",
-                 self.scene_file_url, "%s.zip" % self.scene_file])
+            self.verbosity.subprocess(["gsutil", "cp", "-n",
+                                       self.scene_file_url, "%s.zip" %
+                                       self.scene_file])
 
             # Unzip the file
             zip = ZipFile('%s.zip' % self.scene_file, 'r')
             zip.extractall(path=self.download_dir)
             zip.close()
 
-            print "scene_file unziped"
+            self.verbosity("scene_file unziped", normal=True, arrow=True)
 
 #       return open(self.scene_file, 'r')
 
