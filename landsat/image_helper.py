@@ -102,7 +102,7 @@ class Process(object):
 
         self._unzip(zip_image, self.src_image_path)
 
-    def full(self):
+    def full(self, ndvi=False, no_clouds=False):
         """ Conducts the full image processing """
         self._warp()
         self._scale_pan()
@@ -111,6 +111,11 @@ class Process(object):
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
+        if ndvi:
+            if no_clouds:
+                self._ndvi(no_clouds=True)
+            else:
+                self._ndvi()
         self._cleanup()
 
         return
@@ -473,7 +478,7 @@ class Process(object):
             bqa_tuple = struct.unpack('f' * bqa_band.XSize, bqa_scanline)
 
             for i in range(len(red_tuple)):
-                if bqa_tuple[i] in cloud_values and no_clouds is True:
+                if bqa_tuple[i] in cloud_values and no_clouds:
                     ndvi = 0
                 else:
                     ndvi_lower = (nir_tuple[i] + red_tuple[i])

@@ -155,6 +155,11 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
+    parser_process.add_argument('--ndvi', action='store_true',
+                                help='Whether to create a NDVI from the image ')
+    parser_process.add_argument('--noclouds', action='store_true',
+                                help='Whether to remove clouds and cirrus from '
+                                'the NDVI image. ')
 
     return parser
 
@@ -169,6 +174,11 @@ def main(args):
             p = Process(args.path)
             if args.pansharpen:
                 p.full_with_pansharpening()
+            elif args.ndvi:
+                if args.noclouds:
+                    p.full(ndvi=True, no_clouds=True)
+                else:
+                    p.full(ndvi=True)
             else:
                 p.full()
 
