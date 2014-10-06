@@ -113,9 +113,10 @@ class Process(object):
         shutil.copy(final_image, self.delivery_path)
         if ndvi:
             if no_clouds:
-                self._ndvi(no_clouds=True)
+                ndvi_image = self._ndvi(no_clouds=True)
             else:
-                self._ndvi()
+                ndvi_image = self._ndvi()
+            shutil.copy(ndvi_image, self.delivery_path)
         self._cleanup()
 
         return
@@ -496,7 +497,8 @@ class Process(object):
                 buf_type=gdal.GDT_Float32)
             del outputLine
 
-        print 'NDVI Created in %s' % outputFile
+        print 'NDVI Created'
+        return outputFile
 
     def _unzip(self, src, dst):
         print "Unzipping %s - It might take some time" % self.image
