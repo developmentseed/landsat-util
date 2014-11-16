@@ -58,6 +58,9 @@ search, download, and process Landsat imagery.
 
             -d, --download        Use this flag to download found images
 
+            -b BAND1 BAND2 BAND3, --bands BAND1 BAND2 BAND3 
+                                The default bands are 4, 3, 2         
+
             --imageprocess      If this flag is used, the images are downloaded
                                 and process. Be cautious as it might take a
                                 long time to both download and process large
@@ -152,6 +155,7 @@ def args_options():
                                            help='Process Landsat imagery')
     parser_process.add_argument('path',
                                 help='Path to the compressed image file')
+    parser_process.add_argument('-b', '--bands', nargs=3, help='Specify which bands to use')
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
@@ -167,6 +171,8 @@ def main(args):
     if args:
         if args.subs == 'process':
             p = Process(args.path)
+            if args.bands:
+              p.bands = args.bands
             if args.pansharpen:
                 p.full_with_pansharpening()
             else:

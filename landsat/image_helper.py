@@ -90,7 +90,8 @@ class Process(object):
 
         self.verbosity.output('\nThe final image is stored here:',
                               normal=True)
-        self.verbosity.output(self.delivery_path + '/final.TIF\n',
+        band_string = ''.join(str(band) for band in self.bands)
+        self.verbosity.output(self.delivery_path + '/%s.TIF\n' % band_string,
                               normal=True, color='green')
 
         return
@@ -111,7 +112,8 @@ class Process(object):
 
         self.verbosity.output('\nThe final image is stored here:',
                               normal=True)
-        self.verbosity.output(self.delivery_path + '/final-pan.TIF\n',
+        band_string = ''.join(str(band) for band in self.bands)
+        self.verbosity.output(self.delivery_path + '/%s-pan.TIF\n' % band_string,
                               normal=True, color='green')
 
         return
@@ -188,10 +190,14 @@ class Process(object):
 
         self.verbosity.subprocess(argv)
 
+        band_string = ''.join(str(band) for band in self.bands)
+        argv = ['mv', '%s/final-pan.TIF' % self.final_path, '%s/%s-pan.TIF' % (self.final_path,band_string) ]
+        self.verbosity.subprocess(argv)
+
         self.verbosity.output('Done',
                               normal=True, indent=1)
 
-        return '%s/final-pan.TIF' % self.final_path
+        return '%s/%s-pan.TIF' % (self.final_path, band_string)
 
     def _create_mask(self):
 
@@ -257,10 +263,15 @@ class Process(object):
 
         self.verbosity.subprocess(argv)
 
+        band_string = ''.join(str(band) for band in self.bands)
+        argv = ['mv', '%s/final.TIF' % self.final_path, '%s/%s.TIF' % (self.final_path,band_string) ]
+        self.verbosity.subprocess(argv)
+
+
         self.verbosity.output('Done',
                               normal=True, indent=1)
 
-        return '%s/final.TIF' % self.final_path
+        return '%s/%s.TIF' % (self.final_path, band_string)
 
     def _final_conversions(self):
         """ Final color conversions. Return final image temp path """
