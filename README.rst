@@ -129,10 +129,14 @@ Process *and* pansharpen a downloaded image:
 
 ``$: landsat process --pansharpen path/to/LC80090452014008LGN00.tar.bz``
 
+Use different bands to produce a false color image (default is 4, 3, 2)
+
+``$: landsat process path/to/LC80090452014008LGN00.tar.bz --bands 7 5 3``
+
+
 Search, download, and process images all at once using the --imageprocess flag:
 
 ``$: landsat search --imageprocess --cloud 6 --start "january 01 2014" --end "january 10 2014" shapefile path/to/shapefile.shp``
-
 
 Important Notes
 ===============
