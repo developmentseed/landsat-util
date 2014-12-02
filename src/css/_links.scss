@@ -1,0 +1,16 @@
+@import 'settings';
+
+a {
+
+	color: $color-blue;
+	text-decoration: none;
+	transition: color 0.4s ease-in;
+	font-weight: 500;
+
+	&:hover {
+		color: $color-blue-light;
+		transition: color 0.4s ease-out;
+	}
+
+}
+

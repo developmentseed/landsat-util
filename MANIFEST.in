@@ -1,6 +1,0 @@
-include README.md
-include .gitignore
-include LICENSE
-recursive-include landsat/assests *.prj *.sbn *.sbx
-recursive-include landsat/assests *.shp *.xml *.shx *.html *.txt *.dbf
-recursive-include doc *.html

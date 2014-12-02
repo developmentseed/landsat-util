@@ -1,0 +1,64 @@
+@import 'modular-scale';
+@import 'layout';
+@import 'links';
+@import 'lists';
+@import 'typography';
+@import 'settings';
+
+body {
+	padding: 4rem;
+}
+
+
+h1,
+h2 { 
+	text-transform: uppercase;
+	// On hover, section headings are highlighted.
+	transition: color 0.5s ease;
+}
+
+strong { 
+	font-weight: 500;
+}
+
+pre {
+	display: inline-block;
+	white-space: pre;
+	padding: 0.5em 1em;
+	background: $color-grey;
+	margin: 0 0 1rem 0;
+}
+
+code {
+	font-family: $font-monospace;
+	color: $color-base;
+	background: $color-grey;
+	padding: 0.5em;
+	font-weight: 400;
+	font-size: 80%;
+}
+
+pre code { 
+	padding: 0;
+}
+
+// Need to explicitly set the following two declarations
+// in order for the map to display.
+.map {
+	min-height: 400px;
+	margin-bottom: 1rem;
+}
+
+header,
+section {
+	margin-bottom: 4rem;
+}
+
+section:hover h2 { 
+	color: red;
+	transition: color 0.5s ease;
+}
+
+.range {
+	width:100%;
+}

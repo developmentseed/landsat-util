@@ -1,0 +1,18 @@
+<section>
+
+	<h2>Process</h2>
+
+	<p>Our download has finished, and we have our data. If you unzip the scenes, you'll notice that rather than having a single image, we have 11. Each of those images contains a particular range of frequencies along the electromagnetic spectrum. While they may be useful alone, the real power of landsat imagery lies in combining those bands together.</p>
+
+	<p>Landsat-util makes it easy to automate the process of generating true-color images; let's go ahead and do that.</p>
+
+	<pre><code>landsat process --pansharpen ~/landsat/zip/LC80220392014099LGN00.tar.bz
+landsat process --pansharpen ~/landsat/zip/LC80220392014019LGN00.tar.bz</code></pre>
+
+	<p>Once processed, we can do all sorts of amazing things with the data. Here I've followed Mapbox's <a href='https://www.mapbox.com/tilemill/docs/guides/landsat-8-imagery/'>instructions</a> on using Tilemill to generate map tiles.</p>
+
+	<div id='compare' class='map'></div>
+	<input id='range' class='range' type='range' min='0' max='1.0' step='any' />
+	<script src='src/js/compare.js'></script>
+
+</section>

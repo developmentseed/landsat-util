@@ -1,0 +1,41 @@
+@import 'settings';
+
+html {
+	text-rendering: optimizeLegibility;
+	font-feature-settings: kern;
+	font-size: 15px;
+}
+
+@media screen and (min-width: 40rem) { html { font-size: 16px; }}
+@media screen and (min-width: 50rem) { html { font-size: 17px; }}
+@media screen and (min-width: 60rem) { html { font-size: 18px; }}
+
+body { 
+	font-size: ms(0);
+	font-family: $font-body;
+	line-height: 1.5;
+	color: $color-base;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: $font-heading;
+	font-weight: 500;
+	color: $color-base-dark;
+	margin: 0 0 1rem;
+}
+
+h6, h5, h4	{ font-size: ms(0); }
+h3					{ font-size: ms(1); }
+h2					{ font-size: ms(2); }
+h1					{ font-size: ms(3); }
+
+
+p, dl, ol, ul {
+	font-size: ms(0);
+	margin: 0 0 1rem;
+}
+
+p {
+	margin: 0 0 1rem;
+	max-width: 40rem;
+}
