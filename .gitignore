@@ -15,3 +15,5 @@ MANIFEST
 metadata.csv
 txt.txt
 
+.sass-cache/
+node_modules/
