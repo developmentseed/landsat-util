@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='utf-8'>
+		<title>Landsat-util — A utility to search, download and process Landsat 8 satellite imagery</title>
+
+		<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'/>
+		<meta name="description" content="A Landsat-util guide">
+		<meta name='keywords' content='landsat, landsat-util, cli, developmentseed, katahdin' />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link rel='stylesheet' href='site.css'>
+
+		<script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.4/mapbox.js'></script>
+		<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.4/mapbox.css' rel='stylesheet' />
+	</head>
+
+	<body>
+
+		<header>
+
+	<h1>
+		Landsat-util
+		<a href='https://github.com/developmentseed/landsat-util'><img src='http://img.shields.io/github/tag/developmentseed/landsat-util.svg?style=flat-square' /></a>
+		<a href='https://github.com/developmentseed/landsat-util/issues'><img src='http://img.shields.io/github/issues/developmentseed/landsat-util.svg?style=flat-square' /></a>
+	</h1>
+
+	<p>
+		Landsat-util is a command-line tool created by <a href='http://developmentseed.org'>Development Seed</a> 
+		to enable simple and rapid searching, downloading, and processing of 
+		Landsat imagery. Whether you're a remote sensing expert or a newbie, 
+		landsat-util will speed up your workflow considerably.
+	</p>
+
+	<p>
+		This is a guide to getting started with landsat-util. For the full 
+		documentation, head over to <a href='https://github.com/developmentseed/landsat-util'>Github</a>.
+	</p>
+
+</header>
+
+		<section id='install'>
+	<h2>Install</h2>
+
+	<p>Before we begin, we need to install landsat-util.</p>
+
+	<p><strong>On OSX use <a href='http://brew.sh'>homebrew</a>:</strong></p>
+	<pre><code>brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb</code></pre>
+
+	<p><strong>On Ubuntu, use pip:</strong></p>
+	<pre><code>sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+sudo apt-get update
+sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin imagemagick geotiff-bin -y
+sudo pip install -U git+git://github.com/developmentseed/landsat-util.git</code></pre>
+
+	<p>If you're on Windows, or want to build from source, see the <a href='https://github.com/developmentseed/landsat-util#installation'>documentation</a>.</p>
+
+</section>
+
+		<section id='locate'>
+
+	<h2>Locate</h2>
+	<p>
+		There are a number of ways to use landsat-util to download imagery, but it's
+		easiest if you know the path and row of the location you're interested in.
+	</p>
+
+	<p><strong>Use the map to identify the path and row of the location you're interested in.</strong></p>
+
+	<div id='paths-and-rows' class='map'></div>
+	<script src='src/js/paths-and-rows.js'></script>
+
+	<p>For this guide, we're going to be using the scenes available at Path 22 - Row 39, which includes New Orleans.</p>
+
+</section>
+
+		<section id='search'>
+
+	<h2>Search</h2>
+
+	<p>The first thing we'll use landsat-util for is to search through the available imagery for the scenes that match our criteria. In addition to providing our path and row, we can also filter by start and end date, and maximum percent cloud cover.</p>
+
+	<pre><code>landsat search --start 'january 1 2014' --end 'july 1 2014' pr 022 039</code></pre>
+
+	<p>Running that will provide you with JSON that includes two important keys to take note of: <strong>thumbnail</strong> and <strong>sceneID</strong>. Preview <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014099LGN00.jpg'>each</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014003LGN00.jpg'>of</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014019LGN00.jpg'>the</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014115LGN00.jpg'>thumbnails</a> to conform that the results are appropriate, and then make not of the sceneID's that you'd like to download.</p>
+
+	<p>We're going to use <strong>LC80220392014099LGN00</strong> and <strong>LC80220392014019LGN00</strong> for the next step.</p>
+
+</section>
+
+		<section id='download'>
+
+	<h2>Download</h2>
+
+	<p>Next, let's download the scenes.</p>
+
+	<pre><code>landsat download LC80220392014019LGN00
+landsat download LC80220392014099LGN00</code></pre>
+
+	<p>Scenes will be downloaded to your ~/landsat directory. If the directory doesn't exist, it will be created for you. Each download will be around 700mb, so go take a walk and make some coffee.</p>
+
+</section>
+
+		<section>
+
+	<h2>Process</h2>
+
+	<p>Our download has finished, and we have our data. If you unzip the scenes, you'll notice that rather than having a single image, we have 11. Each of those images contains a particular range of frequencies along the electromagnetic spectrum. While they may be useful alone, the real power of landsat imagery lies in combining those bands together.</p>
+
+	<p>Landsat-util makes it easy to automate the process of generating true-color images; let's go ahead and do that.</p>
+
+	<pre><code>landsat process --pansharpen ~/landsat/zip/LC80220392014099LGN00.tar.bz
+landsat process --pansharpen ~/landsat/zip/LC80220392014019LGN00.tar.bz</code></pre>
+
+	<p>Once processed, we can do all sorts of amazing things with the data. Here I've followed Mapbox's <a href='https://www.mapbox.com/tilemill/docs/guides/landsat-8-imagery/'>instructions</a> on using Tilemill to generate map tiles.</p>
+
+	<div id='compare' class='map'></div>
+	<input id='range' class='range' type='range' min='0' max='1.0' step='any' />
+	<script src='src/js/compare.js'></script>
+
+</section>
+
+		<section>
+
+	<h2>Fin!</h2>
+
+	<p>Hope this was helpful. If you have any questions, find me on Twitter at <a href='https://twitter.com/jqtrde'>@jqtrde</a> or head over to the <a href='https://github.com/developmentseed/landsat-util'>Github repository</a>.</p>
+
+</section>
+
+
+		<script src="//use.typekit.net/bih2ama.js"></script>
+		<script>try{Typekit.load();}catch(e){}</script>
+	</body>
+</html>

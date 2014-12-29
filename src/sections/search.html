@@ -1,0 +1,13 @@
+<section id='search'>
+
+	<h2>Search</h2>
+
+	<p>The first thing we'll use landsat-util for is to search through the available imagery for the scenes that match our criteria. In addition to providing our path and row, we can also filter by start and end date, and maximum percent cloud cover.</p>
+
+	<pre><code>landsat search --start 'january 1 2014' --end 'july 1 2014' pr 022 039</code></pre>
+
+	<p>Running that will provide you with JSON that includes two important keys to take note of: <strong>thumbnail</strong> and <strong>sceneID</strong>. Preview <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014099LGN00.jpg'>each</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014003LGN00.jpg'>of</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014019LGN00.jpg'>the</a> <a href='http://earthexplorer.usgs.gov/browse/landsat_8/2014/022/039/LC80220392014115LGN00.jpg'>thumbnails</a> to conform that the results are appropriate, and then make not of the sceneID's that you'd like to download.</p>
+
+	<p>We're going to use <strong>LC80220392014099LGN00</strong> and <strong>LC80220392014019LGN00</strong> for the next step.</p>
+
+</section>

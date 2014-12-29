@@ -1,0 +1,17 @@
+<section id='install'>
+	<h2>Install</h2>
+
+	<p>Before we begin, we need to install landsat-util.</p>
+
+	<p><strong>On OSX use <a href='http://brew.sh'>homebrew</a>:</strong></p>
+	<pre><code>brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb</code></pre>
+
+	<p><strong>On Ubuntu, use pip:</strong></p>
+	<pre><code>sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+sudo apt-get update
+sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin imagemagick geotiff-bin -y
+sudo pip install -U git+git://github.com/developmentseed/landsat-util.git</code></pre>
+
+	<p>If you're on Windows, or want to build from source, see the <a href='https://github.com/developmentseed/landsat-util#installation'>documentation</a>.</p>
+
+</section>
