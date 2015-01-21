@@ -16,6 +16,12 @@ from termcolor import colored
 
 
 class Verbosity(object):
+    """
+    Verbosity class the generates beautiful stdout outputs.
+
+    Main method:
+    output()
+    """
 
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -26,9 +32,18 @@ class Verbosity(object):
         if priority is set to 1, the value is printed
 
         if class instance verbose is True, the value is printed
+
+        @param
+        - value: (string) the message to be printed
+        - nomral: (boolean) if set to true the message is always printed,
+                  otherwise it is only shown if verbosity is set
+        - color: (string) The color of the message, choices: 'red', 'green', 'blue'
+        - error: (boolean) if set to true the message appears in red
+        - arrow: (boolean) if set to true an arrow appears before the message
+        - indent: (integer) indents the message based on the number provided
         """
 
-        if error and value and self.verbose:
+        if error and value and (normal or self.verbose):
             return self._print(value, color='red', indent=indent)
 
         if self.verbose or normal:
