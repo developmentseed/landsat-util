@@ -7,6 +7,7 @@
 # License: CC0 1.0 Universal
 
 import os
+import sys
 import errno
 import shutil
 import tarfile
@@ -400,7 +401,12 @@ class Process(object):
 
                 self.verbosity.output('Done', indent=2)
 
-        return [min(min_max_list), max(min_max_list)]
+        try:
+            return [min(min_max_list), max(min_max_list)]
+        except ValueError:
+            self.verbosity.output('The zip file is corrupted', normal=True, error=True)
+            self._cleanup()
+            sys.exit()
 
     def _warp(self):
         """ Warping the images on provided bands + band 8 """
