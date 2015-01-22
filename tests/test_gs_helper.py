@@ -13,7 +13,7 @@ import sys
 import errno
 import shutil
 import unittest
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkdtemp
 
 try:
     from landsat.gs_helper import GsHelper
@@ -55,7 +55,7 @@ class TestGsHelper(unittest.TestCase):
         # test a search with known result
         query = '003,003'
         start = '01/01/2014'
-        end = '01/06/2014'
+        end = '06/01/2014'
 
         self.assertEqual(1, len(self.g.search(query, start, end)))
 

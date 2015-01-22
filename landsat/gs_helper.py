@@ -13,19 +13,21 @@ import tarfile
 
 from dateutil.parser import parse
 
-from general_helper import check_create_folder, create_paired_list, exit
+from general_helper import (check_create_folder, create_paired_list, exit,
+                            Verbosity)
 import settings
 
 
 class GsHelper(object):
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.scene_file_url = settings.SCENE_FILE_URL
         self.download_dir = settings.DOWNLOAD_DIR
         self.zip_dir = settings.ZIP_DIR
         self.unzip_dir = settings.UNZIP_DIR
         self.scene_file = settings.SCENE_FILE
         self.source_url = settings.SOURCE_URL
+        self.verbosity = Verbosity(verbose)
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
@@ -122,16 +124,16 @@ class GsHelper(object):
 
         if not os.path.isfile(self.scene_file):
             # Download the file
-            subprocess.call(
-                ["gsutil", "cp", "-n",
-                 self.scene_file_url, "%s.zip" % self.scene_file])
+            self.verbosity.subprocess(["gsutil", "cp", "-n",
+                                       self.scene_file_url, "%s.zip" %
+                                       self.scene_file])
 
             # Unzip the file
             zip = ZipFile('%s.zip' % self.scene_file, 'r')
             zip.extractall(path=self.download_dir)
             zip.close()
 
-            print "scene_file unziped"
+            self.verbosity.output("scene_file unziped", normal=True, arrow=True)
 
 #       return open(self.scene_file, 'r')
 
@@ -155,18 +157,18 @@ class GsHelper(object):
         end_jd = end.timetuple().tm_yday
 
         if start and end:
-            print ('Searching for images from %s to %s'
-                   % (start.strftime('%b %d, %Y'),
-                       end.strftime('%b %d, %Y')))
+            self.verbosity.output('Searching for images from %s to %s'
+                           % (start.strftime('%b %d, %Y'),
+                              end.strftime('%b %d, %Y')), normal=True, arrow=True)
 
-        print 'Rows and Paths searched: '
-        print query
+        self.verbosity.output('Rows and Paths searched: ', normal=True, arrow=True)
+        self.verbosity.output(query, normal=True)
 
         scene.seek(0)
         for line in scene:
             url = line.split('/')
             file_name = url[len(url) - 1]
-            f_query = (file_name[3:6], file_name[6:9])
+            f_query = [file_name[3:6], file_name[6:9]]
             jd = int(file_name[13:16].lstrip('0'))  # Julian Day
             year = int(file_name[9:13])
 
@@ -191,14 +193,14 @@ class GsHelper(object):
                     file_list.append(line.replace('\n', ''))
                     found += 1
 
-        print "Search completed! %s images found." % found
+        self.verbosity.output("Search completed! %s images found." % found, normal=True, arrow=True)
         return file_list
 
     def _download_images(self, files):
 
         check_create_folder(self.zip_dir)
 
-        print "Downloading %s files from Google Storage..." % len(files)
+        self.verbosity.output("Downloading %s files from Google Storage..." % len(files), normal=True, indent=4)
 
         for url in files:
             url_brk = url.split('/')
@@ -219,7 +221,7 @@ class GsHelper(object):
                 # Create folder
                 check_create_folder('%s/%s' % (self.unzip_dir, image_name[0]))
 
-                print "Unzipping %s ...be patient!" % image
+                self.verbosity.output("Unzipping %s ...be patient!" % image, normal=True, indent=4)
                 # Unzip
                 tar = tarfile.open('%s/%s' % (self.zip_dir, image))
                 tar.extractall(path='%s/%s' % (self.unzip_dir, image_name[0]))
@@ -230,7 +232,7 @@ class GsHelper(object):
 
     def _check_if_not_unzipped(self, folder_name):
         if os.path.exists('%s/%s' % (self.unzip_dir, folder_name)):
-            print "%s is already unzipped" % folder_name
+            self.verbosity.output("%s is already unzipped" % folder_name, normal=True, error=True, indent=4)
             return False
         else:
             return True
