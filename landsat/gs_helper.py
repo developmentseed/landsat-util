@@ -133,7 +133,7 @@ class GsHelper(object):
             zip.extractall(path=self.download_dir)
             zip.close()
 
-            self.verbosity("scene_file unziped", normal=True, arrow=True)
+            self.verbosity.output("scene_file unziped", normal=True, arrow=True)
 
 #       return open(self.scene_file, 'r')
 
@@ -157,12 +157,12 @@ class GsHelper(object):
         end_jd = end.timetuple().tm_yday
 
         if start and end:
-            print ('Searching for images from %s to %s'
-                   % (start.strftime('%b %d, %Y'),
-                       end.strftime('%b %d, %Y')))
+            self.verbosity.output('Searching for images from %s to %s'
+                           % (start.strftime('%b %d, %Y'),
+                              end.strftime('%b %d, %Y')), normal=True, arrow=True)
 
-        print 'Rows and Paths searched: '
-        print query
+        self.verbosity.output('Rows and Paths searched: ', normal=True, arrow=True)
+        self.verbosity.output(query, normal=True)
 
         scene.seek(0)
         for line in scene:
@@ -193,14 +193,14 @@ class GsHelper(object):
                     file_list.append(line.replace('\n', ''))
                     found += 1
 
-        print "Search completed! %s images found." % found
+        self.verbosity.output("Search completed! %s images found." % found, normal=True, arrow=True)
         return file_list
 
     def _download_images(self, files):
 
         check_create_folder(self.zip_dir)
 
-        print "Downloading %s files from Google Storage..." % len(files)
+        self.verbosity.output("Downloading %s files from Google Storage..." % len(files), normal=True, indent=4)
 
         for url in files:
             url_brk = url.split('/')
@@ -221,7 +221,7 @@ class GsHelper(object):
                 # Create folder
                 check_create_folder('%s/%s' % (self.unzip_dir, image_name[0]))
 
-                print "Unzipping %s ...be patient!" % image
+                self.verbosity.output("Unzipping %s ...be patient!" % image, normal=True, indent=4)
                 # Unzip
                 tar = tarfile.open('%s/%s' % (self.zip_dir, image))
                 tar.extractall(path='%s/%s' % (self.unzip_dir, image_name[0]))
@@ -232,7 +232,7 @@ class GsHelper(object):
 
     def _check_if_not_unzipped(self, folder_name):
         if os.path.exists('%s/%s' % (self.unzip_dir, folder_name)):
-            print "%s is already unzipped" % folder_name
+            self.verbosity.output("%s is already unzipped" % folder_name, normal=True, error=True, indent=4)
             return False
         else:
             return True

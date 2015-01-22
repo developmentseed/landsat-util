@@ -20,7 +20,7 @@ from dateutil.parser import parse
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from search_helper import Search
-from general_helper import reformat_date
+from general_helper import reformat_date, Verbosity
 from image_helper import Process
 import settings
 
@@ -86,8 +86,8 @@ search, download, and process Landsat imagery.
 
 def args_options():
     parser = argparse.ArgumentParser(prog='landsat',
-                        formatter_class=argparse.RawDescriptionHelpFormatter,
-                        description=textwrap.dedent(DESCRIPTION))
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=textwrap.dedent(DESCRIPTION))
 
     subparsers = parser.add_subparsers(help='Landsat Utility',
                                        dest='subs')
@@ -164,6 +164,8 @@ def main(args):
     Main function - launches the program
     """
 
+    v = Verbosity(False)
+
     if args:
         if args.subs == 'process':
             p = Process(args.path)
@@ -211,21 +213,21 @@ def main(args):
                                       cloud_max=args.cloud)
             try:
                 if result['status'] == 'SUCCESS':
-                    print('%s items were found' % result['total'])
+                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
                     if result['total'] > 100:
                         exit('Too many results. Please narrow your search')
                     else:
-                        print(json.dumps(result, sort_keys=True, indent=4))
+                        v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
                     # If only search
                     if args.download:
                         gs = GsHelper()
-                        print('Starting the download:')
+                        v.output('Starting the download:', normal=True, arrow=True)
                         for item in result['results']:
                             gs.single_download(row=item['row'],
                                                path=item['path'],
                                                name=item['sceneID'])
-                        print("%s images were downloaded"
-                              % result['total_returned'])
+                        v.output("%s images were downloaded"
+                                 % result['total_returned'], normal=True, arrow=True)
                         if args.imageprocess:
                             for item in result['results']:
                                 p = Process('%s/%s.tar.bz' % (gs.zip_dir,
@@ -238,7 +240,7 @@ def main(args):
                             exit("The downloaded images are located here: %s" %
                                  gs.zip_dir)
                     else:
-                        exit('Done!')
+                        exit('Search completed!')
                 elif result['status'] == 'error':
                     exit(result['message'])
             except KeyError:
@@ -246,16 +248,22 @@ def main(args):
                      'API 5 times per minute', 1)
         elif args.subs == 'download':
             gs = GsHelper()
-            print('Starting the download:')
+            v.output('Starting the download:', normal=True, arrow=True)
             for scene in args.scenes:
                 gs.single_download(row=gs.extract_row_path(scene)[1],
                                    path=gs.extract_row_path(scene)[0],
                                    name=scene)
-            exit("The downloaded images are located here: %s" % gs.zip_dir)
+            exit("Downloaded images are located here: %s" % gs.zip_dir)
 
 
 def exit(message, code=0):
-    print(message)
+
+    v = Verbosity(True)
+    if code == 0:
+        v.output(message, arrow=True)
+        v.output('Done!', arrow=True)
+    else:
+        v.output(message, error=True)
     sys.exit(code)
 
 
@@ -264,13 +272,15 @@ def package_installed(package):
     Check if a package is installed on the machine
     """
 
-    print("Checking if %s is installed on the system" % package)
+    v = Verbosity(True)
+
+    v.output("Checking if %s is installed on the system" % package, arrow=True)
     installed = not subprocess.call(["which", package])
     if installed:
-        print("%s is installed" % package)
+        v.output("%s is installed" % package)
         return True
     else:
-        print("You have to install %s first!" % package)
+        v.output("You have to install %s first!" % package, error=True)
         return False
 
 

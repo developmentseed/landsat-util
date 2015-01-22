@@ -15,14 +15,16 @@ from tempfile import mkdtemp
 import ogr2ogr
 import settings
 import ogrinfo
-from general_helper import (Capturing, check_create_folder, three_digit,
+from general_helper import (Capturing, Verbosity, three_digit,
                             get_file, create_paired_list)
+
 
 class Clipper(object):
 
-    def __init__(self):
+    def __init__(self, verbosity=False):
         self.assests_dir = settings.ASSESTS_DIR
         self.shapefile_output = mkdtemp()
+        self.verbosity = Verbosity(verbosity)
 
     def shapefile(self, file):
         """
@@ -33,6 +35,9 @@ class Clipper(object):
         """
 
         try:
+
+            self.verbosity.output("Clipping...", normal=True, arrow=True)
+
             if self.__srs_adjustment(file, 'a'):
                 if self.__srs_adjustment(file, 't'):
                     if self.__clip_shapefile(file):
@@ -43,7 +48,6 @@ class Clipper(object):
             return False
         except ogr2ogr.OgrError:
             return False
-
 
     def country(self, name):
         """
@@ -59,6 +63,7 @@ class Clipper(object):
         """
 
         try:
+            self.verbosity.output("Clipping...", normal=True, arrow=True)
             self.__extract_country(name)
             self.__clip_shapefile('country.shp')
             rps = self.__generate_path_row('landsat-tiles.shp', 'landsat-tiles')
@@ -84,13 +89,12 @@ class Clipper(object):
             type - type key, consult ogr2ogr documentation
         """
 
-        print "Executing SRS adjustments"
+        self.verbosity.output("Executing SRS adjustments", normal=True, indent=1)
 
         output = '%s/%s' % (self.shapefile_output, get_file(file))
         argv = ['', '-%s_srs' % load, type, os.path.dirname(output), file]
 
         if os.path.isfile(output):
-            input = output
             argv.insert(1, '-overwrite')
 
         ogr2ogr.main(argv)
@@ -104,7 +108,7 @@ class Clipper(object):
             name - name of the country shapefile name e.g. country.shp
         """
 
-        print "Extracting the country: %s" % name
+        self.verbosity.output("Extracting the country: %s" % name, normal=True, indent=1)
 
         input = '%s/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp' % \
                 self.assests_dir
@@ -121,7 +125,7 @@ class Clipper(object):
 
     def __clip_shapefile(self, file):
         """ Create a new shapefile with rows and paths added to it """
-        print "Clipping the shapefile: %s" % get_file(file)
+        self.verbosity.output("Clipping the shapefile: %s" % get_file(file), normal=True, indent=1)
 
         clipper = '%s/%s' % (self.shapefile_output, get_file(file))
         output = '%s/landsat-tiles.shp' % self.shapefile_output
@@ -138,7 +142,7 @@ class Clipper(object):
     def __generate_path_row(self, source, layer=''):
         """ Filter rows and paths based on the clipped shapefile """
 
-        print "Generating paths and rows"
+        self.verbosity.output("Generating paths and rows", normal=True, indent=1)
 
         source = self.shapefile_output + '/' + source
         with Capturing() as output:
@@ -147,7 +151,6 @@ class Clipper(object):
                  '-sql',
                  'SELECT PATH, ROW FROM "%s"' % layer, source, layer
                  ])
-
 
         # Convert the above output into a list with rows and paths
         rp = [re.sub(r'([A-Z]|[a-z]|\s|\(|\)|\'|\"|=|,|:|\.0|\.)', '', a)
@@ -161,6 +164,6 @@ class Clipper(object):
         s.write(','.join(rp))
         s.close()
 
-        print 'The paths and rows are: "%s"' % ','.join(rp)
+        self.verbosity.output('The paths and rows are: "%s"' % ','.join(rp), normal=True, indent=1)
 
         return create_paired_list(rp)
