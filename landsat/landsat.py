@@ -223,41 +223,38 @@ def main(args):
                                       start_date=args.start,
                                       end_date=args.end,
                                       cloud_max=args.cloud)
-            try:
-                if result['status'] == 'SUCCESS':
-                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
-                    if result['total'] > 100:
-                        exit('Too many results. Please narrow your search', 1)
-                    else:
-                        v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    # If only search
-                    if args.download:
-                        gs = GsHelper()
-                        v.output('Starting the download:', normal=True, arrow=True)
+
+            if result['status'] == 'SUCCESS':
+                v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                if result['total'] > 100:
+                    exit('Too many results. Please narrow your search', 1)
+                else:
+                    v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
+                # If only search
+                if args.download:
+                    gs = GsHelper()
+                    v.output('Starting the download:', normal=True, arrow=True)
+                    for item in result['results']:
+                        gs.single_download(row=item['row'],
+                                           path=item['path'],
+                                           name=item['sceneID'])
+                    v.output("%s images were downloaded"
+                             % result['total_returned'], normal=True, arrow=True)
+                    if args.imageprocess:
                         for item in result['results']:
-                            gs.single_download(row=item['row'],
-                                               path=item['path'],
-                                               name=item['sceneID'])
-                        v.output("%s images were downloaded"
-                                 % result['total_returned'], normal=True, arrow=True)
-                        if args.imageprocess:
-                            for item in result['results']:
-                                p = Process('%s/%s.tar.bz' % (gs.zip_dir,
-                                                              item['sceneID']))
-                                if args.pansharpen:
-                                    p.full_with_pansharpening()
-                                else:
-                                    p.full()
-                        else:
-                            exit("The downloaded images are located here: %s" %
-                                 gs.zip_dir)
+                            p = Process('%s/%s.tar.bz' % (gs.zip_dir,
+                                                          item['sceneID']))
+                            if args.pansharpen:
+                                p.full_with_pansharpening()
+                            else:
+                                p.full()
                     else:
-                        exit('Search completed!')
-                elif result['status'] == 'error':
-                    exit(result['message'], 1)
-            except KeyError:
-                exit('Too Many API queries. You can only query DevSeed\'s '
-                     'API 5 times per minute', 1)
+                        exit("The downloaded images are located here: %s" %
+                             gs.zip_dir)
+                else:
+                    exit('Search completed!')
+            elif result['status'] == 'error':
+                exit(result['message'], 1)
         elif args.subs == 'download':
             gs = GsHelper()
             v.output('Starting the download:', normal=True, arrow=True)
