@@ -172,7 +172,10 @@ def main(args):
     if args:
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            p = Process(args.path, verbose=verbose)
+            try:
+                p = Process(args.path, verbose=verbose)
+            except IOError:
+                exit("Zip file corrupted", 1)
             if args.pansharpen:
                 p.full_with_pansharpening()
             else:
