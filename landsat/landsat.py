@@ -292,4 +292,7 @@ def __main__():
     main(args)
 
 if __name__ == "__main__":
-    __main__()
+    try:
+        __main__()
+    except KeyboardInterrupt:
+        exit('Received Ctrl + C... Exiting! Bye.', 1)
