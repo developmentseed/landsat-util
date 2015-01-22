@@ -30,56 +30,58 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-        landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [--imageprocess]
-                     {pr,shapefile,country}
+            landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [--imageprocess]
+                         {pr,shapefile,country}
 
-        positional arguments:
-            {pr,shapefile,country}
-                                Search commands
-            pr                  Activate paths and rows
-            shapefile           Activate Shapefile
-            country             Activate country
+            positional arguments:
+                {pr,shapefile,country}
+                                    Search commands
+                pr                  Activate paths and rows
+                shapefile           Activate Shapefile
+                country             Activate country
 
-            optional arguments:
-            -h, --help            show this help message and exit
-            -l LIMIT, --limit LIMIT
-                                Search return results limit default is 100
+                optional arguments:
+                -h, --help            show this help message and exit
+                -l LIMIT, --limit LIMIT
+                                    Search return results limit default is 100
 
-            -s START, --start START
-                                Start Date - Most formats are accepted e.g.
-                                Jun 12 2014 OR 06/12/2014
+                -s START, --start START
+                                    Start Date - Most formats are accepted e.g.
+                                    Jun 12 2014 OR 06/12/2014
 
-            -e END, --end END   End Date - Most formats are accepted e.g.
-                                Jun 12 2014 OR 06/12/2014
+                -e END, --end END   End Date - Most formats are accepted e.g.
+                                    Jun 12 2014 OR 06/12/2014
 
-            -c CLOUD, --cloud CLOUD
-                                Maximum cloud percentage default is 20 perct
+                -c CLOUD, --cloud CLOUD
+                                    Maximum cloud percentage default is 20 perct
 
-            -d, --download        Use this flag to download found images
+                -d, --download        Use this flag to download found images
 
-            --imageprocess      If this flag is used, the images are downloaded
-                                and process. Be cautious as it might take a
-                                long time to both download and process large
-                                batches of images
+                --imageprocess      If this flag is used, the images are downloaded
+                                    and process. Be cautious as it might take a
+                                    long time to both download and process large
+                                    batches of images
 
-            --pansharpen        Whether to also pansharpen the process image.
-                                Pansharpening takes a long time
+                --pansharpen        Whether to also pansharpen the process image.
+                                    Pansharpening takes a long time
 
         Download:
-        landsat download [-h] sceneID [sceneID ...]
+            landsat download [-h] sceneID [sceneID ...]
 
-        positional arguments:
-            sceneID     Provide Full sceneID, e.g. LC81660392014196LGN00
+            positional arguments:
+                sceneID     Provide Full sceneID, e.g. LC81660392014196LGN00
 
         Process:
-        landsat.py process [-h] [--pansharpen] path
+            landsat.py process [-h] [--pansharpen] path
 
-        positional arguments:
-            path          Path to the compressed image file
+            positional arguments:
+                path          Path to the compressed image file
 
-        optional arguments:
-            --pansharpen  Whether to also pansharpen the process image.
-                          Pansharpening takes a long time
+            optional arguments:
+                --pansharpen  Whether to also pansharpen the process image.
+                              Pansharpening takes a long time
+
+                -v, --verbose
 """
 
 
@@ -154,6 +156,8 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
+    parser_process.add_argument('-v', '--verbose', action='store_true',
+                                help='Turn on verbosity')
 
     return parser
 
@@ -167,7 +171,8 @@ def main(args):
 
     if args:
         if args.subs == 'process':
-            p = Process(args.path)
+            verbose = True if args.verbose else False
+            p = Process(args.path, verbose=verbose)
             if args.pansharpen:
                 p.full_with_pansharpening()
             else:
