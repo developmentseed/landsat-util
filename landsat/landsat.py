@@ -201,11 +201,16 @@ def main(args):
 
             elif args.search_subs == 'shapefile':
                 clipper = Clipper()
-                result = s.search(clipper.shapefile(args.path),
-                                  limit=args.limit,
-                                  start_date=args.start,
-                                  end_date=args.end,
-                                  cloud_max=args.cloud)
+                prs = clipper.shapefile(args.path)
+                if prs:
+                    result = s.search(prs,
+                                      limit=args.limit,
+                                      start_date=args.start,
+                                      end_date=args.end,
+                                      cloud_max=args.cloud)
+                else:
+                    result = {'status': 'error',
+                              'message': 'There was a problem reading the shapefile!'}
             elif args.search_subs == 'country':
                 clipper = Clipper()
                 prs = clipper.country(args.name)
@@ -246,7 +251,7 @@ def main(args):
                     else:
                         exit('Search completed!')
                 elif result['status'] == 'error':
-                    exit(result['message'])
+                    exit(result['message'], 1)
             except KeyError:
                 exit('Too Many API queries. You can only query DevSeed\'s '
                      'API 5 times per minute', 1)
@@ -254,10 +259,12 @@ def main(args):
             gs = GsHelper()
             v.output('Starting the download:', normal=True, arrow=True)
             for scene in args.scenes:
-                gs.single_download(row=gs.extract_row_path(scene)[1],
-                                   path=gs.extract_row_path(scene)[0],
-                                   name=scene)
-            exit("Downloaded images are located here: %s" % gs.zip_dir)
+                if gs.single_download(row=gs.extract_row_path(scene)[1],
+                                      path=gs.extract_row_path(scene)[0],
+                                      name=scene):
+                    exit("Downloaded images are located here: %s" % gs.zip_dir)
+                else:
+                    exit("Download error!", 1)
 
 
 def exit(message, code=0):
@@ -300,5 +307,5 @@ if __name__ == "__main__":
         __main__()
     except KeyboardInterrupt:
         exit('Received Ctrl + C... Exiting! Bye.', 1)
-    except:
-        exit('Unexpected Error: %s' % (sys.exc_info()[0]), 1)
+    # except:
+    #     exit('Unexpected Error: %s' % (sys.exc_info()[0]), 1)
