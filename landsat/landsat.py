@@ -30,8 +30,7 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-        landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
-                     [--onlysearch] [--imageprocess]
+        landsat.py search [-h] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [--imageprocess]
                      {pr,shapefile,country}
 
         positional arguments:
