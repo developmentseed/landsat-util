@@ -227,7 +227,7 @@ def main(args):
                 if result['status'] == 'SUCCESS':
                     v.output('%s items were found' % result['total'], normal=True, arrow=True)
                     if result['total'] > 100:
-                        exit('Too many results. Please narrow your search')
+                        exit('Too many results. Please narrow your search', 1)
                     else:
                         v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
                     # If only search
