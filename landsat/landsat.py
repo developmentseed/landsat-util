@@ -296,3 +296,5 @@ if __name__ == "__main__":
         __main__()
     except KeyboardInterrupt:
         exit('Received Ctrl + C... Exiting! Bye.', 1)
+    except:
+        exit('Unexpected Error: %s' % (sys.exc_info()[0]), 1)
