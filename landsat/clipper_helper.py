@@ -12,9 +12,9 @@ import errno
 import shutil
 from tempfile import mkdtemp
 
-import ogr2ogr
+from third_party import ogr2ogr
 import settings
-import ogrinfo
+from third_party import ogrinfo
 from general_helper import (Capturing, Verbosity, three_digit,
                             get_file, create_paired_list)
 

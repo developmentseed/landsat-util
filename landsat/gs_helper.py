@@ -86,7 +86,7 @@ class GsHelper(object):
                 ["gsutil", "cp", "-n", url, "%s/%s" % (self.zip_dir,
                                                        '%s.tar.bz' % name)])
             return True
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError, subprocess.CommandException:
             return False
 
     def batch_download(self, image_list):
