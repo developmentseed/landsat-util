@@ -177,7 +177,7 @@ def main(args):
                     if args.noclouds:
                         p.full_with_pansharpening(ndvi=True, no_clouds=True)
                     else:
-                        p.full_with_pansharpening(nvdi=True)
+                        p.full_with_pansharpening(ndvi=True)
                 else:
                     p.full_with_pansharpening()
             else:
@@ -185,7 +185,7 @@ def main(args):
                     if args.noclouds:
                         p.full(ndvi=True, no_clouds=True)
                     else:
-                        p.full(nvdi=True)
+                        p.full(ndvi=True)
                 else:
                     p.full()
 
