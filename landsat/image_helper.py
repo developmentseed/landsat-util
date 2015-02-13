@@ -463,7 +463,7 @@ class Process(object):
         cloud_values = [61440, 59424, 57344, 56320, 53248, 52256, 52224, 49184,
             49152, 48128, 45056, 43040, 39936, 36896, 36864, 32768, 31744, 28672]
 
-        outputFile = '%s/%s-ndvi.TIF' % (self.final_path, self.image)
+        outputFile = '%s/final-ndvi.TIF' % (self.final_path, self.image)
         driver = b4.GetDriver()
         outDataset = driver.Create(outputFile, b4.RasterXSize, b4.RasterYSize,
             1, gdal.GDT_Float32)
