@@ -2,7 +2,7 @@
 #
 #
 # Author: developmentseed
-# Contributer: scisco, KAPPS-
+# Contributor: scisco, KAPPS-, willemarcel
 #
 # License: CC0 1.0 Universal
 
@@ -12,6 +12,7 @@ import errno
 import shutil
 import tarfile
 from tempfile import mkdtemp
+import struct
 
 import numpy
 from osgeo import gdal
@@ -101,7 +102,7 @@ class Process(object):
 
         self._unzip(zip_image, self.src_image_path)
 
-    def full(self):
+    def full(self, ndvi=False, no_clouds=False):
         """ Conducts the full image processing """
         self._warp()
         self._scale_pan()
@@ -110,6 +111,12 @@ class Process(object):
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
+        if ndvi:
+            if no_clouds:
+                ndvi_image = self._ndvi(no_clouds=True)
+            else:
+                ndvi_image = self._ndvi()
+            shutil.copy(ndvi_image, self.delivery_path)
         self._cleanup()
 
         return
@@ -429,6 +436,69 @@ class Process(object):
             gdalwarp('%s/%s_B%s.TIF' % (self.src_image_path, self.image, band),
                      '%s/%s_B%s.TIF' % (self.warp_path, self.image, band),
                      t_srs='EPSG:3857')
+
+    def _ndvi(self, no_clouds=False):
+        """ Generate a NDVI image. If no_clouds=True, the area of clouds and
+        cirrus will be removed from the image and the NDVI value will be set
+        to zero in this area. """
+
+        b4 = gdal.Open('%s/%s_B4.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+        b5 = gdal.Open('%s/%s_B5.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+        bqa = gdal.Open('%s/%s_BQA.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+
+        red_band = b4.GetRasterBand(1)
+        nir_band = b5.GetRasterBand(1)
+        bqa_band = bqa.GetRasterBand(1)
+        numLines = red_band.YSize
+
+        cloud_values = [61440, 59424, 57344, 56320, 53248, 52256, 52224, 49184,
+            49152, 48128, 45056, 43040, 39936, 36896, 36864, 32768, 31744, 28672]
+
+        outputFile = '%s/%s_NDVI.TIF' % (self.final_path, self.image)
+        driver = b4.GetDriver()
+        outDataset = driver.Create(outputFile, b4.RasterXSize, b4.RasterYSize,
+            1, gdal.GDT_Float32)
+        outDataset.SetGeoTransform(b4.GetGeoTransform())
+        outDataset.SetProjection(b4.GetProjection())
+
+        for line in range(numLines):
+            outputLine = ''
+            red_scanline = red_band.ReadRaster(0, line, red_band.XSize, 1,
+                red_band.XSize, 1, gdal.GDT_Float32)
+            red_tuple = struct.unpack('f' * red_band.XSize, red_scanline)
+
+            nir_scanline = nir_band.ReadRaster(0, line, nir_band.XSize, 1,
+                nir_band.XSize, 1, gdal.GDT_Float32)
+            nir_tuple = struct.unpack('f' * nir_band.XSize, nir_scanline)
+
+            bqa_scanline = bqa_band.ReadRaster(0, line, bqa_band.XSize, 1,
+                bqa_band.XSize, 1, gdal.GDT_Float32)
+            bqa_tuple = struct.unpack('f' * bqa_band.XSize, bqa_scanline)
+
+            for i in range(len(red_tuple)):
+                if bqa_tuple[i] in cloud_values and no_clouds:
+                    ndvi = 0
+                else:
+                    ndvi_lower = (nir_tuple[i] + red_tuple[i])
+                    ndvi_upper = (nir_tuple[i] - red_tuple[i])
+                    ndvi = 0
+                    if ndvi_lower == 0:
+                        ndvi = 0
+                    else:
+                        ndvi = ndvi_upper / ndvi_lower
+
+                outputLine = outputLine + struct.pack('f', ndvi)
+
+            outDataset.GetRasterBand(1).WriteRaster(0, line, red_band.XSize, 1,
+                outputLine, buf_xsize=red_band.XSize, buf_ysize=1,
+                buf_type=gdal.GDT_Float32)
+            del outputLine
+
+        print 'NDVI Created'
+        return outputFile
 
     def _unzip(self, src, dst):
         print "Unzipping %s - It might take some time" % self.image
