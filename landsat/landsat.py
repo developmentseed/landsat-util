@@ -173,14 +173,21 @@ def main(args):
         if args.subs == 'process':
             p = Process(args.path)
             if args.pansharpen:
-                p.full_with_pansharpening()
-            elif args.ndvi:
-                if args.noclouds:
-                    p.full(ndvi=True, no_clouds=True)
+                if args.ndvi:
+                    if args.noclouds:
+                        p.full_with_pansharpening(ndvi=True, no_clouds=True)
+                    else:
+                        p.full_with_pansharpening(nvdi=True)
                 else:
-                    p.full(ndvi=True)
+                    p.full_with_pansharpening()
             else:
-                p.full()
+                if args.ndvi:
+                    if args.noclouds:
+                        p.full(ndvi=True, no_clouds=True)
+                    else:
+                        p.full(nvdi=True)
+                else:
+                    p.full()
 
             exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
 
