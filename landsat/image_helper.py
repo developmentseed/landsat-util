@@ -288,6 +288,16 @@ class Process(object):
                 '%s/rgb-sig.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path,
                 '-evaluate-sequence', 'mean',
+                '%s/final-col.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+
+        print 'Convert: Gamma'
+
+        # Fifth conversion
+        argv = ['convert',
+                '-gamma', '1.35',
+                '%s/final-col.TIF' % self.final_path,
                 '%s/final-color.TIF' % self.final_path]
 
         subprocess.check_call(argv)
