@@ -266,7 +266,8 @@ class Process(object):
         argv = ['convert',
                 '-channel', 'B', '-gamma', '0.97',
                 '-channel', 'R', '-gamma', '1.04',
-                '-channel', 'RGB', '-sigmoidal-contrast', '45x12%',
+                '-channel', 'G', '-gamma', '0.98',
+                '-channel', 'RGB', '-sigmoidal-contrast', '45x15%',
                 '%s/rgb-null.TIF' % self.final_path,
                 '%s/rgb-sig.TIF' % self.final_path]
 
