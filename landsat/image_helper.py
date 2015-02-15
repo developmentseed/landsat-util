@@ -264,10 +264,9 @@ class Process(object):
 
         # First conversion
         argv = ['convert',
-                '-channel', 'B', '-gamma', '0.97',
-                '-channel', 'R', '-gamma', '1.04',
-                '-channel', 'G', '-gamma', '0.98',
-                '-channel', 'RGB', '-sigmoidal-contrast', '45x15%',
+                '-channel', 'B', '-gamma', '0.98',
+                '-channel', 'R', '-gamma', '1.03',
+                '-channel', 'RGB', '-sigmoidal-contrast', '50x15%',
                 '%s/rgb-null.TIF' % self.final_path,
                 '%s/rgb-sig.TIF' % self.final_path]
 
@@ -275,8 +274,8 @@ class Process(object):
 
         # Second conversion
         argv = ['convert',
-                '-channel', 'B', '-gamma', '0.97',
-                '-channel', 'R', '-gamma', '1.04',
+                '-channel', 'B', '-gamma', '0.98',
+                '-channel', 'R', '-gamma', '1.03',
                 '%s/rgb-scaled.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path]
 
