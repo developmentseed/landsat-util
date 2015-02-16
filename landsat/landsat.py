@@ -160,6 +160,8 @@ def args_options():
     parser_process.add_argument('--noclouds', action='store_true',
                                 help='Whether to remove clouds and cirrus from '
                                 'the NDVI image. ')
+    parser_process.add_argument('--swirnir', action='store_true',
+                                help='Whether to create a SWIR NIR image.')
 
     return parser
 
@@ -173,21 +175,9 @@ def main(args):
         if args.subs == 'process':
             p = Process(args.path)
             if args.pansharpen:
-                if args.ndvi:
-                    if args.noclouds:
-                        p.full_with_pansharpening(ndvi=True, no_clouds=True)
-                    else:
-                        p.full_with_pansharpening(ndvi=True)
-                else:
-                    p.full_with_pansharpening()
+                p.full_with_pansharpening(args)
             else:
-                if args.ndvi:
-                    if args.noclouds:
-                        p.full(ndvi=True, no_clouds=True)
-                    else:
-                        p.full(ndvi=True)
-                else:
-                    p.full()
+                p.full(args)
 
             exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
 

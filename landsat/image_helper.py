@@ -63,12 +63,12 @@ class Process(object):
     Steps needed for a full process
     1) _wrap()
     2) _scale_pan()
-    3) _combine()
+    3) _combine_rgb()
     4) _image_correction()
     5) _final_conversions()
     """
 
-    def __init__(self, zip_image, bands=[4, 3, 2], path=None):
+    def __init__(self, zip_image, bands=[7, 5, 4, 3, 2], path=None):
         """ Initating the Process class
 
         Arguments:
@@ -102,40 +102,45 @@ class Process(object):
 
         self._unzip(zip_image, self.src_image_path)
 
-    def full(self, ndvi=False, no_clouds=False):
+    def full(self, args):
         """ Conducts the full image processing """
         self._warp()
         self._scale_pan()
-        self._combine()
+        self._combine_rgb()
         self._image_correction()
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
-        if ndvi:
-            if no_clouds:
+        if args.ndvi:
+            if args.noclouds:
                 ndvi_image = self._ndvi(no_clouds=True)
             else:
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
+        if args.swirnir:
+            swirnir_image = self._swirnir()
+            shutil.copy(swirnir_image, self.delivery_path)
         self._cleanup()
 
         return
 
-    def full_with_pansharpening(self, ndvi=False, no_clouds=False):
-
+    def full_with_pansharpening(self, args):
         self._warp()
         self._scale_pan()
-        self._combine()
+        self._combine_rgb()
         self._image_correction()
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
-        if ndvi:
-            if no_clouds:
+        if args.ndvi:
+            if args.noclouds:
                 ndvi_image = self._ndvi(no_clouds=True)
             else:
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
+        if args.swirnir:
+            swirnir_image = self._swirnir()
+            shutil.copy(swirnir_image, self.delivery_path)
         shutil.copy(self._pansharpen(), self.delivery_path)
         self._cleanup()
 
@@ -308,7 +313,7 @@ class Process(object):
 
             band_correction = [[2, 0.97], [4, 1.04]]
 
-            for band in self.bands:
+            for band in [4, 3, 2]:
 
                 print 'Starting the image processing'
 
@@ -352,10 +357,10 @@ class Process(object):
             print e.args[0]
             print "Skipping Image Correction using OpenCV"
 
-    def _combine(self):
+    def _combine_rgb(self):
         argv = ['convert', '-identify', '-combine']
 
-        for band in self.bands:
+        for band in [4, 3, 2]:
             argv.append('%s/%s_B%s.TIF' % (self.warp_path, self.image, band))
 
         argv.append('%s/rgb-null.TIF' % self.final_path)
@@ -364,7 +369,7 @@ class Process(object):
 
         argv = ['convert', '-identify', '-combine']
 
-        for band in self.bands:
+        for band in [4, 3, 2]:
             argv.append('%s/%s_B%s.TIF' % (self.scaled_path, self.image, band))
 
         argv.append('%s/rgb-scaled.TIF' % self.final_path)
@@ -452,7 +457,30 @@ class Process(object):
             gdalwarp('%s/%s_B%s.TIF' % (self.src_image_path, self.image, band),
                      '%s/%s_B%s.TIF' % (self.warp_path, self.image, band),
                      t_srs='EPSG:3857')
+    def _swirnir(self):
+        argv = ['convert', '-identify', '-combine']
 
+        for band in [7, 5, 3]:
+            argv.append('%s/%s_B%s.TIF' % (self.warp_path, self.image, band))
+
+        argv.append('%s/753-null.TIF' % self.final_path)
+
+        subprocess.check_call(argv)
+
+        # First conversion
+        argv = ['convert',
+                '-channel', 'B', '-brightness-contrast', '-5x50%',
+                '-channel', 'R', '-brightness-contrast', '5x30%',
+                '-channel', 'RGB', '-sigmoidal-contrast', '15x9%',
+                '%s/753-null.TIF' % self.final_path,
+                '%s/final-753.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+        outputFile = '%s/final-753.TIF' % (self.final_path)
+
+        print 'SWIR-NIR Created'
+        return outputFile
+       
     def _ndvi(self, no_clouds=False):
         """ Generate a NDVI image. If no_clouds=True, the area of clouds and
         cirrus will be removed from the image and the NDVI value will be set
