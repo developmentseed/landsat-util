@@ -467,12 +467,11 @@ class Process(object):
 
         subprocess.check_call(argv)
 
-        # First conversion
         argv = ['convert',
-                '-channel', 'R', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '5x30%',
-                '-channel', 'G', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '0x10%',
-                '-channel', 'B', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '-5x50%',
-                '-channel', 'RGB', '-gamma', '0.7', '-brightness-contrast', '-10x0%',
+                '-channel', 'RGB', '-sigmoidal-contrast', '5x15%',
+                '-channel', 'R', '-brightness-contrast', '30x80%',
+                '-channel', 'G', '-brightness-contrast', '5x30%',
+                '-channel', 'B', '-brightness-contrast', '35x30%',
                 '%s/753-null.TIF' % self.final_path,
                 '%s/753-16bit.TIF' % self.final_path]
 
