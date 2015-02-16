@@ -118,8 +118,7 @@ class Process(object):
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
-            swirnir_image = self._swirnir()
-            shutil.copy(swirnir_image, self.delivery_path)
+            self._swirnir()
         self._cleanup()
 
         return
@@ -139,8 +138,7 @@ class Process(object):
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
-            swirnir_image = self._swirnir()
-            shutil.copy(swirnir_image, self.delivery_path)
+            self._swirnir()
         shutil.copy(self._pansharpen(), self.delivery_path)
         self._cleanup()
 
@@ -457,7 +455,9 @@ class Process(object):
             gdalwarp('%s/%s_B%s.TIF' % (self.src_image_path, self.image, band),
                      '%s/%s_B%s.TIF' % (self.warp_path, self.image, band),
                      t_srs='EPSG:3857')
+
     def _swirnir(self):
+        print 'Processing SWIR-NIR'
         argv = ['convert', '-identify', '-combine']
 
         for band in [7, 5, 3]:
@@ -469,17 +469,39 @@ class Process(object):
 
         # First conversion
         argv = ['convert',
-                '-channel', 'B', '-brightness-contrast', '-5x50%',
-                '-channel', 'R', '-brightness-contrast', '5x30%',
-                '-channel', 'RGB', '-sigmoidal-contrast', '15x9%',
+                '-channel', 'R', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '5x30%',
+                '-channel', 'G', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '0x10%',
+                '-channel', 'B', '-sigmoidal-contrast', '15x9%', '-brightness-contrast', '-5x50%',
+                '-channel', 'RGB', '-gamma', '0.7', '-brightness-contrast', '-10x0%',
                 '%s/753-null.TIF' % self.final_path,
+                '%s/753-16bit.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+
+        finalfile = '%s/final-753.TIF' % (self.final_path)
+
+        argv = ['convert',
+                '-depth', '8',
+                '%s/753-16bit.TIF' % self.final_path,
+                finalfile]
+
+        subprocess.check_call(argv)
+        
+        argv = ['listgeo', '-tfw',
+                '%s/%s_B3.TIF' % (self.warp_path, self.image)]
+
+        subprocess.check_call(argv)
+
+        shutil.copy('%s/%s_B3.tfw' % (self.warp_path, self.image),
+                    '%s/final-753.tfw' % self.final_path)
+
+        argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/final-753.TIF' % self.final_path]
 
         subprocess.check_call(argv)
-        outputFile = '%s/final-753.TIF' % (self.final_path)
 
-        print 'SWIR-NIR Created'
-        return outputFile
+        shutil.copy(finalfile, self.delivery_path)
+        print 'SWIR-NIR Completed'
        
     def _ndvi(self, no_clouds=False):
         """ Generate a NDVI image. If no_clouds=True, the area of clouds and
