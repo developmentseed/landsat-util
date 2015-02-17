@@ -488,6 +488,9 @@ class Process(object):
         shutil.copy(final_image, self.delivery_path)
 
         print 'SWIR-NIR Completed'
+
+        if pansharp:
+          self._pansharpen('final-753.TIF')
        
     def _ndvi(self, noclouds=False):
         """ Generate a NDVI image. If noclouds=True, the area of clouds and
