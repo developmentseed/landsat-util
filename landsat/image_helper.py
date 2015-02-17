@@ -119,7 +119,7 @@ class Process(object):
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
             self._swirnir(pansharp=False)
-        self._cleanup()
+        # self._cleanup()
 
         return
 
@@ -137,10 +137,10 @@ class Process(object):
             else:
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
+        shutil.copy(self._pansharpen(), self.delivery_path)
         if args.swirnir:
             self._swirnir(pansharp=True)
-        shutil.copy(self._pansharpen(), self.delivery_path)
-        self._cleanup()
+        # self._cleanup()
 
         return
 
@@ -490,7 +490,7 @@ class Process(object):
         print 'SWIR-NIR Completed'
 
         if pansharp:
-          self._pansharpen('final-753.TIF')
+          shutil.copy(self._pansharpen('final-753.TIF'), self.delivery_path)
        
     def _ndvi(self, noclouds=False):
         """ Generate a NDVI image. If noclouds=True, the area of clouds and
