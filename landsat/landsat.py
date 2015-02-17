@@ -155,6 +155,13 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
+    parser_process.add_argument('--ndvi', action='store_true',
+                                help='Whether to create a NDVI from the image ')
+    parser_process.add_argument('--noclouds', action='store_true',
+                                help='Whether to remove clouds and cirrus from '
+                                'the NDVI image. ')
+    parser_process.add_argument('--swirnir', action='store_true',
+                                help='Whether to create a SWIR NIR image.')
 
     return parser
 
@@ -166,11 +173,14 @@ def main(args):
 
     if args:
         if args.subs == 'process':
-            p = Process(args.path)
-            if args.pansharpen:
-                p.full_with_pansharpening()
+            if args.swirnir:
+              p = Process(args.path, [7, 5, 4, 3, 2])
             else:
-                p.full()
+              p = Process(args.path)
+            if args.pansharpen:
+                p.full_with_pansharpening(args)
+            else:
+                p.full(args)
 
             exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
 

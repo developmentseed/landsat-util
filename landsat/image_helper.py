@@ -2,7 +2,7 @@
 #
 #
 # Author: developmentseed
-# Contributer: scisco, KAPPS-
+# Contributor: scisco, KAPPS-, willemarcel
 #
 # License: CC0 1.0 Universal
 
@@ -12,6 +12,7 @@ import errno
 import shutil
 import tarfile
 from tempfile import mkdtemp
+import struct
 
 import numpy
 from osgeo import gdal
@@ -62,7 +63,7 @@ class Process(object):
     Steps needed for a full process
     1) _wrap()
     2) _scale_pan()
-    3) _combine()
+    3) _combine_rgb()
     4) _image_correction()
     5) _final_conversions()
     """
@@ -101,29 +102,44 @@ class Process(object):
 
         self._unzip(zip_image, self.src_image_path)
 
-    def full(self):
+    def full(self, args):
         """ Conducts the full image processing """
         self._warp()
         self._scale_pan()
-        self._combine()
+        self._combine_rgb()
         self._image_correction()
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
+        if args.ndvi:
+            if args.noclouds:
+                ndvi_image = self._ndvi(noclouds=True)
+            else:
+                ndvi_image = self._ndvi()
+            shutil.copy(ndvi_image, self.delivery_path)
+        if args.swirnir:
+            self._swirnir(pansharp=False)
         self._cleanup()
 
         return
 
-    def full_with_pansharpening(self):
-
+    def full_with_pansharpening(self, args):
         self._warp()
         self._scale_pan()
-        self._combine()
+        self._combine_rgb()
         self._image_correction()
         self._final_conversions()
         final_image = self._create_mask()
         shutil.copy(final_image, self.delivery_path)
+        if args.ndvi:
+            if args.noclouds:
+                ndvi_image = self._ndvi(noclouds=True)
+            else:
+                ndvi_image = self._ndvi()
+            shutil.copy(ndvi_image, self.delivery_path)
         shutil.copy(self._pansharpen(), self.delivery_path)
+        if args.swirnir:
+            self._swirnir(pansharp=True)
         self._cleanup()
 
         return
@@ -136,20 +152,22 @@ class Process(object):
             if exc.errno != errno.ENOENT:
                 raise
 
-    def _pansharpen(self):
+    def _pansharpen(self, file_name='final-color.TIF'):
+        file_name = file_name.replace('.TIF', '')
+        compfile = '%s/comp-%s.TIF' % (self.final_path, file_name)
 
         shutil.copy('%s/%s_B4.tfw' % (self.warp_path, self.image),
-                    '%s/comp.tfw' % self.final_path)
+                    '%s/comp-%s.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/comp.TIF' % self.final_path]
+                compfile]
 
         subprocess.check_call(argv)
 
         argv = ['otbcli_BundleToPerfectSensor',
-                # '-ram', '6500',
+                '-ram', '1024',
                 '-inp', '%s/%s_B8.TIF' % (self.warp_path, self.image),
-                '-inxs', '%s/comp.TIF' % self.final_path,
+                '-inxs', compfile,
                 '-out', '%s/pan.TIF' % self.final_path,
                 'uint16']
 
@@ -171,7 +189,7 @@ class Process(object):
 
         argv = ['convert', '-depth', '8',
                 '%s/pan.TIF' % self.final_path,
-                '%s/final-pan.TIF' % self.final_path]
+                '%s/%s-pan.TIF' % (self.final_path, file_name)]
 
         subprocess.check_call(argv)
 
@@ -181,16 +199,19 @@ class Process(object):
         subprocess.check_call(argv)
 
         shutil.copy('%s/%s_B8.tfw' % (self.warp_path, self.image),
-                    '%s/final-pan.tfw' % self.final_path)
+                    '%s/%s-pan.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/final-pan.TIF' % self.final_path]
+                '%s/%s-pan.TIF' % (self.final_path, file_name)]
 
         subprocess.check_call(argv)
 
-        return '%s/final-pan.TIF' % self.final_path
+        os.remove('%s/pan.TIF' % self.final_path)
 
-    def _create_mask(self):
+        return '%s/%s-pan.TIF' % (self.final_path, file_name)
+
+    def _create_mask(self, file_name='final-color.TIF'):
+        file_name = file_name.replace('.TIF', '')
 
         argv = ['gdal_calc.py',
                 '-A', '%s/%s_B2.TIF' % (self.warp_path, self.image),
@@ -200,8 +221,10 @@ class Process(object):
 
         subprocess.check_call(argv)
 
+        finalfile = '%s/%s.TIF' % (self.final_path, file_name)
+
         for i in range(1, 4):
-            gdal_translate('%s/final-color.TIF' % self.final_path,
+            gdal_translate(finalfile,
                            '%s/band-%s.TIF' % (self.final_path, i),
                            b=i)
 
@@ -220,13 +243,14 @@ class Process(object):
         for i in range(1, 4):
             argv.append('%s/maksed-final-%s.TIF' % (self.final_path, i))
 
-        argv.append('%s/comp.TIF' % self.final_path)
+        compfile = '%s/comp-%s.TIF' % (self.final_path, file_name)
+        argv.append(compfile)
 
         subprocess.check_call(argv)
 
         argv = ['convert', '-depth', '8',
-                '%s/comp.TIF' % self.final_path,
-                '%s/final.TIF' % self.final_path]
+                compfile,
+                finalfile]
 
         subprocess.check_call(argv)
 
@@ -236,14 +260,14 @@ class Process(object):
         subprocess.check_call(argv)
 
         shutil.copy('%s/%s_B4.tfw' % (self.warp_path, self.image),
-                    '%s/final.tfw' % self.final_path)
+                    '%s/%s.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/final.TIF' % self.final_path]
+                '%s/%s.TIF' % (self.final_path, file_name)]
 
         subprocess.check_call(argv)
 
-        return '%s/final.TIF' % self.final_path
+        return '%s/%s.TIF' % (self.final_path, file_name)
 
     def _final_conversions(self):
         """ Final color conversions. Return final image temp path """
@@ -251,9 +275,9 @@ class Process(object):
 
         # First conversion
         argv = ['convert',
-                '-channel', 'B', '-gamma', '0.97',
-                '-channel', 'R', '-gamma', '1.04',
-                '-channel', 'RGB', '-sigmoidal-contrast', '40x15%',
+                '-channel', 'B', '-gamma', '0.98',
+                '-channel', 'R', '-gamma', '1.03',
+                '-channel', 'RGB', '-sigmoidal-contrast', '50x15%',
                 '%s/rgb-null.TIF' % self.final_path,
                 '%s/rgb-sig.TIF' % self.final_path]
 
@@ -261,8 +285,8 @@ class Process(object):
 
         # Second conversion
         argv = ['convert',
-                '-channel', 'B', '-gamma', '0.97',
-                '-channel', 'R', '-gamma', '1.04',
+                '-channel', 'B', '-gamma', '0.98',
+                '-channel', 'R', '-gamma', '1.03',
                 '%s/rgb-scaled.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path]
 
@@ -275,9 +299,25 @@ class Process(object):
                 '%s/rgb-sig.TIF' % self.final_path,
                 '%s/rgb-scaled-cc.TIF' % self.final_path,
                 '-evaluate-sequence', 'mean',
+                '%s/final-col.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+
+        print 'Convert: Gamma'
+
+        # Fifth conversion
+        argv = ['convert',
+                '-gamma', '1.35',
+                '%s/final-col.TIF' % self.final_path,
                 '%s/final-color.TIF' % self.final_path]
 
         subprocess.check_call(argv)
+
+        os.remove('%s/final-col.TIF' % self.final_path)
+        os.remove('%s/rgb-sig.TIF' % self.final_path)
+        os.remove('%s/rgb-scaled.TIF' % self.final_path)
+        os.remove('%s/rgb-scaled-cc.TIF' % self.final_path)
+        os.remove('%s/rgb-null.TIF' % self.final_path)
 
     def _image_correction(self):
         try:
@@ -285,7 +325,7 @@ class Process(object):
 
             band_correction = [[2, 0.97], [4, 1.04]]
 
-            for band in self.bands:
+            for band in [4, 3, 2]:
 
                 print 'Starting the image processing'
 
@@ -329,10 +369,10 @@ class Process(object):
             print e.args[0]
             print "Skipping Image Correction using OpenCV"
 
-    def _combine(self):
+    def _combine_rgb(self):
         argv = ['convert', '-identify', '-combine']
 
-        for band in self.bands:
+        for band in [4, 3, 2]:
             argv.append('%s/%s_B%s.TIF' % (self.warp_path, self.image, band))
 
         argv.append('%s/rgb-null.TIF' % self.final_path)
@@ -341,7 +381,7 @@ class Process(object):
 
         argv = ['convert', '-identify', '-combine']
 
-        for band in self.bands:
+        for band in [4, 3, 2]:
             argv.append('%s/%s_B%s.TIF' % (self.scaled_path, self.image, band))
 
         argv.append('%s/rgb-scaled.TIF' % self.final_path)
@@ -429,6 +469,101 @@ class Process(object):
             gdalwarp('%s/%s_B%s.TIF' % (self.src_image_path, self.image, band),
                      '%s/%s_B%s.TIF' % (self.warp_path, self.image, band),
                      t_srs='EPSG:3857')
+
+    def _swirnir(self, pansharp):
+        print 'Processing SWIR-NIR'
+        argv = ['convert', '-identify', '-combine']
+
+        for band in [7, 5, 3]:
+            argv.append('%s/%s_B%s.TIF' % (self.warp_path, self.image, band))
+
+        argv.append('%s/753-null.TIF' % self.final_path)
+
+        subprocess.check_call(argv)
+
+        argv = ['convert',
+                '-channel', 'RGB', '-sigmoidal-contrast', '5x15%',
+                '-channel', 'R', '-brightness-contrast', '30x80%',
+                '-channel', 'G', '-brightness-contrast', '5x30%',
+                '-channel', 'B', '-brightness-contrast', '35x30%',
+                '%s/753-null.TIF' % self.final_path,
+                '%s/final-753.TIF' % self.final_path]
+
+        subprocess.check_call(argv)
+
+        final_image = self._create_mask('final-753.TIF')
+
+        shutil.copy(final_image, self.delivery_path)
+
+        os.remove('%s/753-null.TIF' % self.final_path)
+
+        print 'SWIR-NIR Completed'
+
+        if pansharp:
+          shutil.copy(self._pansharpen('final-753.TIF'), self.delivery_path)
+       
+    def _ndvi(self, noclouds=False):
+        """ Generate a NDVI image. If noclouds=True, the area of clouds and
+        cirrus will be removed from the image and the NDVI value will be set
+        to zero in this area. """
+
+        b4 = gdal.Open('%s/%s_B4.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+        b5 = gdal.Open('%s/%s_B5.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+        bqa = gdal.Open('%s/%s_BQA.TIF' % (self.src_image_path, self.image),
+            gdal.GA_ReadOnly)
+
+        red_band = b4.GetRasterBand(1)
+        nir_band = b5.GetRasterBand(1)
+        bqa_band = bqa.GetRasterBand(1)
+        numLines = red_band.YSize
+
+        cloud_values = [61440, 59424, 57344, 56320, 53248, 52256, 52224, 49184,
+            49152, 48128, 45056, 43040, 39936, 36896, 36864, 32768, 31744, 28672]
+
+        outputFile = '%s/final-ndvi.TIF' % (self.final_path)
+        driver = b4.GetDriver()
+        outDataset = driver.Create(outputFile, b4.RasterXSize, b4.RasterYSize,
+            1, gdal.GDT_Float32)
+        outDataset.SetGeoTransform(b4.GetGeoTransform())
+        outDataset.SetProjection(b4.GetProjection())
+
+        for line in range(numLines):
+            outputLine = ''
+            red_scanline = red_band.ReadRaster(0, line, red_band.XSize, 1,
+                red_band.XSize, 1, gdal.GDT_Float32)
+            red_tuple = struct.unpack('f' * red_band.XSize, red_scanline)
+
+            nir_scanline = nir_band.ReadRaster(0, line, nir_band.XSize, 1,
+                nir_band.XSize, 1, gdal.GDT_Float32)
+            nir_tuple = struct.unpack('f' * nir_band.XSize, nir_scanline)
+
+            bqa_scanline = bqa_band.ReadRaster(0, line, bqa_band.XSize, 1,
+                bqa_band.XSize, 1, gdal.GDT_Float32)
+            bqa_tuple = struct.unpack('f' * bqa_band.XSize, bqa_scanline)
+
+            for i in range(len(red_tuple)):
+                if bqa_tuple[i] in cloud_values and noclouds:
+                    ndvi = 0
+                else:
+                    ndvi_lower = (nir_tuple[i] + red_tuple[i])
+                    ndvi_upper = (nir_tuple[i] - red_tuple[i])
+                    ndvi = 0
+                    if ndvi_lower == 0:
+                        ndvi = 0
+                    else:
+                        ndvi = ndvi_upper / ndvi_lower
+
+                outputLine = outputLine + struct.pack('f', ndvi)
+
+            outDataset.GetRasterBand(1).WriteRaster(0, line, red_band.XSize, 1,
+                outputLine, buf_xsize=red_band.XSize, buf_ysize=1,
+                buf_type=gdal.GDT_Float32)
+            del outputLine
+
+        print 'NDVI Created'
+        return outputFile
 
     def _unzip(self, src, dst):
         print "Unzipping %s - It might take some time" % self.image
