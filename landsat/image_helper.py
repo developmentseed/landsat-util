@@ -119,7 +119,7 @@ class Process(object):
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
             self._swirnir(pansharp=False)
-        # self._cleanup()
+        self._cleanup()
 
         return
 
@@ -140,7 +140,7 @@ class Process(object):
         shutil.copy(self._pansharpen(), self.delivery_path)
         if args.swirnir:
             self._swirnir(pansharp=True)
-        # self._cleanup()
+        self._cleanup()
 
         return
 
@@ -207,6 +207,8 @@ class Process(object):
 
         subprocess.check_call(argv)
 
+        os.remove('%s/pan.TIF' % self.final_path)
+
         return '%s/%s-pan.TIF' % (self.final_path, file_name)
 
     def _create_mask(self, file_name='final-color.TIF'):
@@ -249,7 +251,7 @@ class Process(object):
 
         argv = ['convert', '-depth', '8',
                 compfile,
-                '%s/final.TIF' % self.final_path]
+                finalfile]
 
         subprocess.check_call(argv)
 
@@ -311,6 +313,12 @@ class Process(object):
                 '%s/final-color.TIF' % self.final_path]
 
         subprocess.check_call(argv)
+
+        os.remove('%s/final-col.TIF' % self.final_path)
+        os.remove('%s/rgn-sig.TIF' % self.final_path)
+        os.remove('%s/rgb-scaled.TIF' % self.final_path)
+        os.remove('%s/rgb-scaled-cc.TIF' % self.final_path)
+        os.remove('%s/rgb-null.TIF' % self.final_path)
 
     def _image_correction(self):
         try:
@@ -487,6 +495,8 @@ class Process(object):
         final_image = self._create_mask('final-753.TIF')
 
         shutil.copy(final_image, self.delivery_path)
+
+        os.remove('%s/753-null.TIF' % self.final_path)
 
         print 'SWIR-NIR Completed'
 
