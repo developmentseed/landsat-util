@@ -113,12 +113,12 @@ class Process(object):
         shutil.copy(final_image, self.delivery_path)
         if args.ndvi:
             if args.noclouds:
-                ndvi_image = self._ndvi(no_clouds=True)
+                ndvi_image = self._ndvi(noclouds=True)
             else:
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
-            self._swirnir()
+            self._swirnir(pansharp=False)
         self._cleanup()
 
         return
@@ -133,12 +133,12 @@ class Process(object):
         shutil.copy(final_image, self.delivery_path)
         if args.ndvi:
             if args.noclouds:
-                ndvi_image = self._ndvi(no_clouds=True)
+                ndvi_image = self._ndvi(noclouds=True)
             else:
                 ndvi_image = self._ndvi()
             shutil.copy(ndvi_image, self.delivery_path)
         if args.swirnir:
-            self._swirnir()
+            self._swirnir(pansharp=True)
         shutil.copy(self._pansharpen(), self.delivery_path)
         self._cleanup()
 
@@ -152,20 +152,22 @@ class Process(object):
             if exc.errno != errno.ENOENT:
                 raise
 
-    def _pansharpen(self):
+    def _pansharpen(self, file_name='final-color.TIF'):
+        file_name = file_name.replace('.TIF', '')
+        compfile = '%s/comp-%s.TIF' % (self.final_path, file_name)
 
         shutil.copy('%s/%s_B4.tfw' % (self.warp_path, self.image),
-                    '%s/comp.tfw' % self.final_path)
+                    '%s/comp-%s.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/comp.TIF' % self.final_path]
+                compfile]
 
         subprocess.check_call(argv)
 
         argv = ['otbcli_BundleToPerfectSensor',
                 # '-ram', '6500',
                 '-inp', '%s/%s_B8.TIF' % (self.warp_path, self.image),
-                '-inxs', '%s/comp.TIF' % self.final_path,
+                '-inxs', compfile,
                 '-out', '%s/pan.TIF' % self.final_path,
                 'uint16']
 
@@ -187,7 +189,7 @@ class Process(object):
 
         argv = ['convert', '-depth', '8',
                 '%s/pan.TIF' % self.final_path,
-                '%s/final-pan.TIF' % self.final_path]
+                '%s/%s-pan.TIF' % (self.final_path, file_name)]
 
         subprocess.check_call(argv)
 
@@ -197,16 +199,17 @@ class Process(object):
         subprocess.check_call(argv)
 
         shutil.copy('%s/%s_B8.tfw' % (self.warp_path, self.image),
-                    '%s/final-pan.tfw' % self.final_path)
+                    '%s/%s-pan.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/final-pan.TIF' % self.final_path]
 
         subprocess.check_call(argv)
 
-        return '%s/final-pan.TIF' % self.final_path
+        return '%s/%s-pan.TIF' % (self.final_path, file_name)
 
-    def _create_mask(self):
+    def _create_mask(self, file_name='final-color.TIF'):
+        file_name = file_name.replace('.TIF', '')
 
         argv = ['gdal_calc.py',
                 '-A', '%s/%s_B2.TIF' % (self.warp_path, self.image),
@@ -216,8 +219,10 @@ class Process(object):
 
         subprocess.check_call(argv)
 
+        finalfile = '%s/%s.TIF' % (self.final_path, file_name)
+
         for i in range(1, 4):
-            gdal_translate('%s/final-color.TIF' % self.final_path,
+            gdal_translate(finalfile,
                            '%s/band-%s.TIF' % (self.final_path, i),
                            b=i)
 
@@ -236,12 +241,13 @@ class Process(object):
         for i in range(1, 4):
             argv.append('%s/maksed-final-%s.TIF' % (self.final_path, i))
 
-        argv.append('%s/comp.TIF' % self.final_path)
+        compfile = '%s/comp-%s.TIF' % (self.final_path, file_name)
+        argv.append(compfile)
 
         subprocess.check_call(argv)
 
         argv = ['convert', '-depth', '8',
-                '%s/comp.TIF' % self.final_path,
+                compfile,
                 '%s/final.TIF' % self.final_path]
 
         subprocess.check_call(argv)
@@ -252,14 +258,14 @@ class Process(object):
         subprocess.check_call(argv)
 
         shutil.copy('%s/%s_B4.tfw' % (self.warp_path, self.image),
-                    '%s/final.tfw' % self.final_path)
+                    '%s/%s.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/final.TIF' % self.final_path]
+                '%s/%s.TIF' % (self.final_path, file_name)]
 
         subprocess.check_call(argv)
 
-        return '%s/final.TIF' % self.final_path
+        return '%s/%s.TIF' % (self.final_path, file_name)
 
     def _final_conversions(self):
         """ Final color conversions. Return final image temp path """
@@ -456,7 +462,7 @@ class Process(object):
                      '%s/%s_B%s.TIF' % (self.warp_path, self.image, band),
                      t_srs='EPSG:3857')
 
-    def _swirnir(self):
+    def _swirnir(self, pansharp):
         print 'Processing SWIR-NIR'
         argv = ['convert', '-identify', '-combine']
 
@@ -473,37 +479,18 @@ class Process(object):
                 '-channel', 'G', '-brightness-contrast', '5x30%',
                 '-channel', 'B', '-brightness-contrast', '35x30%',
                 '%s/753-null.TIF' % self.final_path,
-                '%s/753-16bit.TIF' % self.final_path]
-
-        subprocess.check_call(argv)
-
-        finalfile = '%s/final-753.TIF' % (self.final_path)
-
-        argv = ['convert',
-                '-depth', '8',
-                '%s/753-16bit.TIF' % self.final_path,
-                finalfile]
-
-        subprocess.check_call(argv)
-        
-        argv = ['listgeo', '-tfw',
-                '%s/%s_B3.TIF' % (self.warp_path, self.image)]
-
-        subprocess.check_call(argv)
-
-        shutil.copy('%s/%s_B3.tfw' % (self.warp_path, self.image),
-                    '%s/final-753.tfw' % self.final_path)
-
-        argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
                 '%s/final-753.TIF' % self.final_path]
 
         subprocess.check_call(argv)
 
-        shutil.copy(finalfile, self.delivery_path)
+        final_image = self._create_mask('final-753.TIF')
+
+        shutil.copy(final_image, self.delivery_path)
+
         print 'SWIR-NIR Completed'
        
-    def _ndvi(self, no_clouds=False):
-        """ Generate a NDVI image. If no_clouds=True, the area of clouds and
+    def _ndvi(self, noclouds=False):
+        """ Generate a NDVI image. If noclouds=True, the area of clouds and
         cirrus will be removed from the image and the NDVI value will be set
         to zero in this area. """
 
@@ -544,7 +531,7 @@ class Process(object):
             bqa_tuple = struct.unpack('f' * bqa_band.XSize, bqa_scanline)
 
             for i in range(len(red_tuple)):
-                if bqa_tuple[i] in cloud_values and no_clouds:
+                if bqa_tuple[i] in cloud_values and noclouds:
                     ndvi = 0
                 else:
                     ndvi_lower = (nir_tuple[i] + red_tuple[i])
