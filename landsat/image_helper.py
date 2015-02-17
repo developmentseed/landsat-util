@@ -68,7 +68,7 @@ class Process(object):
     5) _final_conversions()
     """
 
-    def __init__(self, zip_image, bands=[7, 5, 4, 3, 2], path=None):
+    def __init__(self, zip_image, bands=[4, 3, 2], path=None):
         """ Initating the Process class
 
         Arguments:
@@ -315,7 +315,7 @@ class Process(object):
         subprocess.check_call(argv)
 
         os.remove('%s/final-col.TIF' % self.final_path)
-        os.remove('%s/rgn-sig.TIF' % self.final_path)
+        os.remove('%s/rgb-sig.TIF' % self.final_path)
         os.remove('%s/rgb-scaled.TIF' % self.final_path)
         os.remove('%s/rgb-scaled-cc.TIF' % self.final_path)
         os.remove('%s/rgb-null.TIF' % self.final_path)

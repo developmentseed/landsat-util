@@ -173,7 +173,10 @@ def main(args):
 
     if args:
         if args.subs == 'process':
-            p = Process(args.path)
+            if args.swirnir:
+              p = Process(args.path, [7, 5, 4, 3, 2])
+            else:
+              p = Process(args.path)
             if args.pansharpen:
                 p.full_with_pansharpening(args)
             else:
