@@ -165,8 +165,7 @@ class Process(object):
         subprocess.check_call(argv)
 
         argv = ['otbcli_BundleToPerfectSensor',
-                '-ram', '4096',
-                '-lmSpacing', '2',
+                '-ram', '1024',
                 '-inp', '%s/%s_B8.TIF' % (self.warp_path, self.image),
                 '-inxs', compfile,
                 '-out', '%s/pan.TIF' % self.final_path,
