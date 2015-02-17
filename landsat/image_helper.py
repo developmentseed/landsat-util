@@ -202,7 +202,7 @@ class Process(object):
                     '%s/%s-pan.tfw' % (self.final_path, file_name))
 
         argv = ['gdal_edit.py', '-a_srs', 'EPSG:3857',
-                '%s/final-pan.TIF' % self.final_path]
+                '%s/%s-pan.TIF' % (self.final_pathm, file_name)]
 
         subprocess.check_call(argv)
 
