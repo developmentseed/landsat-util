@@ -51,11 +51,11 @@ setup(name="landsat",
       license="CCO",
       platforms="Posix; MacOS X; Windows",
       install_requires=[
-          "GDAL==1.11.0",
+          "GDAL",
           "elasticsearch==1.1.1",
           "gsutil==4.4",
           "requests==2.3.0",
-          "python-dateutil==2.2",
+          "python-dateutil==2.4",
           "numpy"
       ],
       )
