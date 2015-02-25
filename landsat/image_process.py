@@ -84,7 +84,7 @@ class Process(Verbosity):
             b = numpy.empty(dst_shape, dtype=numpy.uint16)
             b8 = numpy.empty(dst_shape, dtype=numpy.uint16)
 
-            bands = self._rescale(bands[:3])
+            bands[:3] = self._rescale(bands[:3])
 
             new_bands = [r, g, b, b8]
 
@@ -94,6 +94,8 @@ class Process(Verbosity):
                 reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
                           dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
+            print numpy.sum(b8)
+
             self.output("Pansharpening", normal=True, arrow=True)
             # Pan sharpening
             m = r + b + g
@@ -102,6 +104,7 @@ class Process(Verbosity):
             self.output("calculating pan ratio", normal=True, color='green', indent=1)
             pan = 1/m * b8
             self.output("computing bands", normal=True, color='green', indent=1)
+
             r = r * pan
             b = b * pan
             g = g * pan
@@ -129,15 +132,14 @@ class Process(Verbosity):
                                    nodata=0, transform=dst_transform, photometric='RGB',
                                    crs=self.dst_crs)
 
-            for i, band in enumerate(new_bands[:3]):
+            new_bands = [r, g, b]
+
+            for i, band in enumerate(new_bands):
                 output.write_band(i+1, img_as_ubyte(band))
 
             return self.output_file
 
     def _percent_cut(self, color):
-        print numpy.logical_and(color > 0, color < 65535)
-        print color[numpy.logical_and(color > 0, color < 65535)]
-
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
 
     def _unzip(self, src, dst, scene):
