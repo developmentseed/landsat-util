@@ -1,5 +1,11 @@
 # Pansharpened Image Process using Rasterio
-# Author: Marc Farra
+# USGS Landsat Imagery Util
+#
+#
+# Author: developmentseed
+# Contributer: scisco, KAPPS-, kamicut
+#
+# License: CC0 1.0 Universal
 
 import time
 import warnings
