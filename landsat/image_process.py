@@ -1,6 +1,7 @@
 # Pansharpened Image Process using Rasterio
 # Author: Marc Farra
 
+import time
 import sys
 from os.path import join, dirname
 import tarfile
@@ -52,15 +53,18 @@ class Process(Verbosity):
         if zipped:
             self._unzip(join(self.src_path, self.scene) + '.tar.bz', join(self.src_path, self.scene), self.scene)
 
-    def pansherpen(self):
+    def run(self, pansharpen=True):
 
         self.output("* Image processing started", normal=True)
 
         with rasterio.drivers():
+            pixel = 30
             bands = []
 
             # Add bands 8 for pansharpenning
-            self.bands.append(8)
+            if pansharpen:
+                self.bands.append(8)
+                pixel = 15
 
             bands_path = []
             for band in self.bands:
@@ -69,15 +73,14 @@ class Process(Verbosity):
             for i, band in enumerate(self.bands):
                 bands.append(self._read_band(bands_path[i]))
 
-            # open band 8 separately
-            src = rasterio.open(bands_path[3])
+            src = rasterio.open(bands_path[-1])
 
             crn = self._get_bounderies(src)
 
-            dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/15),
-                         int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/15))
+            dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/pixel),
+                         int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/pixel))
 
-            dst_transform = (crn['ul']['x'][1][0], 15, 0.0, crn['ul']['y'][1][0], 0.0, -15)
+            dst_transform = (crn['ul']['x'][1][0], pixel, 0.0, crn['ul']['y'][1][0], 0.0, -pixel)
 
             r = numpy.empty(dst_shape, dtype=numpy.uint16)
             g = numpy.empty(dst_shape, dtype=numpy.uint16)
@@ -94,20 +97,19 @@ class Process(Verbosity):
                 reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
                           dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
-            print numpy.sum(b8)
+            if pansharpen:
+                self.output("Pansharpening", normal=True, arrow=True)
+                # Pan sharpening
+                m = r + b + g
+                m = m + 0.1
 
-            self.output("Pansharpening", normal=True, arrow=True)
-            # Pan sharpening
-            m = r + b + g
-            m = m + 0.1
+                self.output("calculating pan ratio", normal=True, color='green', indent=1)
+                pan = 1/m * b8
+                self.output("computing bands", normal=True, color='green', indent=1)
 
-            self.output("calculating pan ratio", normal=True, color='green', indent=1)
-            pan = 1/m * b8
-            self.output("computing bands", normal=True, color='green', indent=1)
-
-            r = r * pan
-            b = b * pan
-            g = g * pan
+                r = r * pan
+                b = b * pan
+                g = g * pan
 
             r = r.astype(numpy.uint16)
             g = g.astype(numpy.uint16)
@@ -189,9 +191,13 @@ class Process(Verbosity):
 
 if __name__ == '__main__':
 
+    start = time.time()
+
     p = Process(sys.argv[1],
                 src_path=sys.argv[2],
                 dst_path=sys.argv[2])
 
-    print p.pansherpen()
+    end = time.time()
 
+    print p.run(argv[3] == 't')
+    print (end - start)
