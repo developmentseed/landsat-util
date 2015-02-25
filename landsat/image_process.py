@@ -2,6 +2,7 @@
 # Author: Marc Farra
 
 import time
+import warnings
 import sys
 from os.path import join, dirname
 import tarfile
@@ -36,6 +37,7 @@ class Process(Verbosity):
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = scene
         self.bands = bands
+        self.pixel = 30
         self.src_path = src_path if src_path else dirname(dirname(__file__))
         self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
 
@@ -48,8 +50,6 @@ class Process(Verbosity):
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
-        # self.band8_path = join(self.scene_path, '%s_B8.TIF' % self.scene)
-
         if zipped:
             self._unzip(join(self.src_path, self.scene) + '.tar.bz', join(self.src_path, self.scene), self.scene)
 
@@ -57,89 +57,90 @@ class Process(Verbosity):
 
         self.output("* Image processing started", normal=True)
 
-        with rasterio.drivers():
-            pixel = 30
-            bands = []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with rasterio.drivers():
+                bands = []
 
-            # Add bands 8 for pansharpenning
-            if pansharpen:
-                self.bands.append(8)
-                pixel = 15
+                # Add bands 8 for pansharpenning
+                if pansharpen:
+                    self.bands.append(8)
+                    self.pixel = 15
 
-            bands_path = []
-            for band in self.bands:
-                bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
+                bands_path = []
+                for band in self.bands:
+                    bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
-            for i, band in enumerate(self.bands):
-                bands.append(self._read_band(bands_path[i]))
+                for i, band in enumerate(self.bands):
+                    bands.append(self._read_band(bands_path[i]))
 
-            src = rasterio.open(bands_path[-1])
+                src = rasterio.open(bands_path[-1])
 
-            crn = self._get_bounderies(src)
+                crn = self._get_bounderies(src)
 
-            dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/pixel),
-                         int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/pixel))
+                dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/self.pixel),
+                             int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/self.pixel))
 
-            dst_transform = (crn['ul']['x'][1][0], pixel, 0.0, crn['ul']['y'][1][0], 0.0, -pixel)
+                dst_transform = (crn['ul']['x'][1][0], self.pixel, 0.0, crn['ul']['y'][1][0], 0.0, -self.pixel)
 
-            r = numpy.empty(dst_shape, dtype=numpy.uint16)
-            g = numpy.empty(dst_shape, dtype=numpy.uint16)
-            b = numpy.empty(dst_shape, dtype=numpy.uint16)
-            b8 = numpy.empty(dst_shape, dtype=numpy.uint16)
+                r = numpy.empty(dst_shape, dtype=numpy.uint16)
+                g = numpy.empty(dst_shape, dtype=numpy.uint16)
+                b = numpy.empty(dst_shape, dtype=numpy.uint16)
+                b8 = numpy.empty(dst_shape, dtype=numpy.uint16)
 
-            bands[:3] = self._rescale(bands[:3])
+                bands[:3] = self._rescale(bands[:3])
 
-            new_bands = [r, g, b, b8]
+                new_bands = [r, g, b, b8]
 
-            self.output("Projecting", normal=True, arrow=True)
-            for i, band in enumerate(bands):
-                self.output("Projecting band %s" % (i + 1), normal=True, color='green', indent=1)
-                reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
-                          dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+                self.output("Projecting", normal=True, arrow=True)
+                for i, band in enumerate(bands):
+                    self.output("Projecting band %s" % (i + 1), normal=True, color='green', indent=1)
+                    reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
+                              dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
-            if pansharpen:
-                self.output("Pansharpening", normal=True, arrow=True)
-                # Pan sharpening
-                m = r + b + g
-                m = m + 0.1
+                if pansharpen:
+                    self.output("Pansharpening", normal=True, arrow=True)
+                    # Pan sharpening
+                    m = r + b + g
+                    m = m + 0.1
 
-                self.output("calculating pan ratio", normal=True, color='green', indent=1)
-                pan = 1/m * b8
-                self.output("computing bands", normal=True, color='green', indent=1)
+                    self.output("calculating pan ratio", normal=True, color='green', indent=1)
+                    pan = 1/m * b8
+                    self.output("computing bands", normal=True, color='green', indent=1)
 
-                r = r * pan
-                b = b * pan
-                g = g * pan
+                    r = r * pan
+                    b = b * pan
+                    g = g * pan
 
-            r = r.astype(numpy.uint16)
-            g = g.astype(numpy.uint16)
-            b = b.astype(numpy.uint16)
+                r = r.astype(numpy.uint16)
+                g = g.astype(numpy.uint16)
+                b = b.astype(numpy.uint16)
 
-            self.output("Color correcting", normal=True, arrow=True)
-            p2r, p98r = self._percent_cut(r)
-            p2g, p98g = self._percent_cut(g)
-            p2b, p98b = self._percent_cut(b)
-            r = exposure.rescale_intensity(r, in_range=(p2r, p98r))
-            g = exposure.rescale_intensity(g, in_range=(p2g, p98g))
-            b = exposure.rescale_intensity(b, in_range=(p2b, p98b))
+                self.output("Color correcting", normal=True, arrow=True)
+                p2r, p98r = self._percent_cut(r)
+                p2g, p98g = self._percent_cut(g)
+                p2b, p98b = self._percent_cut(b)
+                r = exposure.rescale_intensity(r, in_range=(p2r, p98r))
+                g = exposure.rescale_intensity(g, in_range=(p2g, p98g))
+                b = exposure.rescale_intensity(b, in_range=(p2b, p98b))
 
-            # Gamma correction
-            r = exposure.adjust_gamma(r, 1.1)
-            b = exposure.adjust_gamma(b, 0.9)
+                # Gamma correction
+                r = exposure.adjust_gamma(r, 1.1)
+                b = exposure.adjust_gamma(b, 0.9)
 
-            self.output("Writing output", normal=True, arrow=True)
-            output = rasterio.open(self.output_file, 'w', driver='GTiff',
-                                   width=dst_shape[1], height=dst_shape[0],
-                                   count=3, dtype=numpy.uint8,
-                                   nodata=0, transform=dst_transform, photometric='RGB',
-                                   crs=self.dst_crs)
+                self.output("Writing output", normal=True, arrow=True)
+                output = rasterio.open(self.output_file, 'w', driver='GTiff',
+                                       width=dst_shape[1], height=dst_shape[0],
+                                       count=3, dtype=numpy.uint8,
+                                       nodata=0, transform=dst_transform, photometric='RGB',
+                                       crs=self.dst_crs)
 
-            new_bands = [r, g, b]
+                new_bands = [r, g, b]
 
-            for i, band in enumerate(new_bands):
-                output.write_band(i+1, img_as_ubyte(band))
+                for i, band in enumerate(new_bands):
+                    output.write_band(i+1, img_as_ubyte(band))
 
-            return self.output_file
+                return self.output_file
 
     def _percent_cut(self, color):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
@@ -180,8 +181,8 @@ class Process(Verbosity):
         output['ul']['x'][1], output['ul']['y'][1] = transform(src.crs, self.projection,
                                                                [output['ul']['x'][0]],
                                                                [output['ul']['y'][0]])
-        output['lr']['x'][0] = output['ul']['x'][0] + 15 * src.shape[0]
-        output['lr']['y'][0] = output['ul']['y'][0] + 15 * src.shape[1]
+        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src.shape[0]
+        output['lr']['y'][0] = output['ul']['y'][0] + self.pixel * src.shape[1]
         output['lr']['x'][1], output['lr']['y'][1] = transform(src.crs, self.projection,
                                                                [output['lr']['x'][0]],
                                                                [output['lr']['y'][0]])
@@ -189,15 +190,23 @@ class Process(Verbosity):
         return output
 
 
+class timer(object):
+    """ A time class """
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        self.end = time.time()
+        print 'Time spent : {0:.2f} seconds'.format((self.end - self.start))
+
+
 if __name__ == '__main__':
 
-    start = time.time()
+    with timer():
+        p = Process(sys.argv[1],
+                    src_path=sys.argv[2],
+                    dst_path=sys.argv[2])
 
-    p = Process(sys.argv[1],
-                src_path=sys.argv[2],
-                dst_path=sys.argv[2])
 
-    end = time.time()
+        print p.run(sys.argv[3] == 't')
 
-    print p.run(argv[3] == 't')
-    print (end - start)
