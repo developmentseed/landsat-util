@@ -94,7 +94,8 @@ class Process(Verbosity):
                 b = numpy.empty(dst_shape, dtype=numpy.uint16)
                 b8 = numpy.empty(dst_shape, dtype=numpy.uint16)
 
-                bands[:3] = self._rescale(bands[:3])
+                if pansharpen:
+                    bands[:3] = self._rescale(bands[:3])
 
                 new_bands = [r, g, b, b8]
 
