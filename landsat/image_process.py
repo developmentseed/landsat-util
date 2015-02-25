@@ -7,10 +7,9 @@ import sys
 
 import numpy
 import rasterio
-from rasterio import Affine
 from rasterio.warp import reproject, RESAMPLING, transform
 
-from skimage import img_as_ubyte, exposure, img_as_float
+from skimage import img_as_ubyte, exposure
 from skimage import transform as sktransform
 
 tempdir = './'
@@ -30,8 +29,8 @@ with rasterio.drivers():
 
     print ('Getting extent')
     # Get extent and destination filesize
-    inProj = {'init':unicode.encode(src.crs['init'])}
-    outProj = {'init':'epsg:3857'}
+    inProj = {'init': unicode.encode(src.crs['init'])}
+    outProj = {'init': 'epsg:3857'}
     ulx1, uly1 = src.affine[2], src.affine[5]
     ulx2, uly2 = transform(src.crs, outProj, [ulx1], [uly1])
     lrx1, lry1 = ulx1 + 15 * src.shape[0], uly1 + 15 * src.shape[1]
@@ -59,15 +58,15 @@ with rasterio.drivers():
     print band4_s.shape, band3_s.shape, band2_s.shape
 
     print('Projecting')
-    for k, color, band in zip('1238', [r,g,b,b8], [band4_s, band3_s, band2_s, band8_s]):
-        print 'projecting band',k
-        reproject(band, color, src_transform = src.transform,
-            src_crs = src.crs,
-            dst_transform = dst_transform, dst_crs = dst_crs,
-            resampling = RESAMPLING.nearest)
-    
+    for k, color, band in zip('1238', [r, g, b, b8], [band4_s, band3_s, band2_s, band8_s]):
+        print 'projecting band', k
+        reproject(band, color, src_transform=src.transform,
+                  src_crs=src.crs,
+                  dst_transform=dst_transform, dst_crs=dst_crs,
+                  resampling=RESAMPLING.nearest)
+
     print('Pan-Sharpening')
-  
+
     # Pan sharpening
     m = r + b + g
     m = m + 0.1
@@ -85,8 +84,8 @@ with rasterio.drivers():
 
     # Percent cut
     def perc_cut(color):
-        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98)) 
-    
+        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
+
     print('Color Correcting')
     p2r, p98r = perc_cut(r)
     p2g, p98g = perc_cut(g)
@@ -111,5 +110,5 @@ with rasterio.drivers():
         crs=dst_crs) as dst:
         for k, arr in [(1, r), (2, g), (3, b)]:
             dst.write_band(k, img_as_ubyte(arr))
-            
+
 info = subprocess.call(['open', tiffname])
