@@ -7,7 +7,7 @@
 # License: CC0 1.0 Universal
 
 ##
-## Main Setting File
+# Main Setting File
 ##
 
 import os
