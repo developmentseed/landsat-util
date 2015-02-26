@@ -86,60 +86,46 @@ class Process(VerbosityMixin):
 
                 src = rasterio.open(bands_path[-1])
 
-                crn = self._get_bounderies(src)
+                # Only collect src data that is needed and delete the rest
+                src_data = {
+                    'transform': src.transform,
+                    'crs': src.crs,
+                    'affine': src.affine,
+                    'shape': src.shape
+                }
+                del src
+
+                crn = self._get_bounderies(src_data)
 
                 dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/self.pixel),
                              int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/self.pixel))
 
                 dst_transform = (crn['ul']['x'][1][0], self.pixel, 0.0, crn['ul']['y'][1][0], 0.0, -self.pixel)
 
-                r = numpy.empty(dst_shape, dtype=numpy.uint16)
-                g = numpy.empty(dst_shape, dtype=numpy.uint16)
-                b = numpy.empty(dst_shape, dtype=numpy.uint16)
-                b8 = numpy.empty(dst_shape, dtype=numpy.uint16)
+                # Delete crn since no longer needed
+                del crn
+
+                new_bands = []
+                for i in range(0, 3):
+                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
                 if pansharpen:
                     bands[:3] = self._rescale(bands[:3])
-
-                new_bands = [r, g, b, b8]
+                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
                 self.output("Projecting", normal=True, arrow=True)
                 for i, band in enumerate(bands):
-                    self.output("Projecting band %s" % self.bands[i], normal=True, color='green', indent=1)
-                    reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
+                    self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+                    reproject(band, new_bands[i], src_transform=src_data['transform'], src_crs=src_data['crs'],
                               dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
+                # Bands are no longer needed
+                del bands
+
                 if pansharpen:
-                    self.output("Pansharpening", normal=True, arrow=True)
-                    # Pan sharpening
-                    m = r + b + g
-                    m = m + 0.1
+                    new_bands = self._pansharpenning(new_bands)
 
-                    self.output("calculating pan ratio", normal=True, color='green', indent=1)
-                    pan = 1/m * b8
-                    self.output("computing bands", normal=True, color='green', indent=1)
-
-                    r = r * pan
-                    b = b * pan
-                    g = g * pan
-
-                r = r.astype(numpy.uint16)
-                g = g.astype(numpy.uint16)
-                b = b.astype(numpy.uint16)
-
-                self.output("Color correcting", normal=True, arrow=True)
-                p2r, p98r = self._percent_cut(r)
-                p2g, p98g = self._percent_cut(g)
-                p2b, p98b = self._percent_cut(b)
-                r = exposure.rescale_intensity(r, in_range=(p2r, p98r))
-                g = exposure.rescale_intensity(g, in_range=(p2g, p98g))
-                b = exposure.rescale_intensity(b, in_range=(p2b, p98b))
-
-                # Gamma correction
-                r = exposure.adjust_gamma(r, 1.1)
-                b = exposure.adjust_gamma(b, 0.9)
-
-                self.output("Writing output", normal=True, arrow=True)
+                self.output("Final Steps", normal=True, arrow=True)
 
                 output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
 
@@ -155,22 +141,56 @@ class Process(VerbosityMixin):
                                        nodata=0, transform=dst_transform, photometric='RGB',
                                        crs=self.dst_crs)
 
-                new_bands = [r, g, b]
-
                 for i, band in enumerate(new_bands):
+                    # Color Correction
+                    band = self._color_correction(band, self.bands[i])
+
+                    # Gamma Correction
+                    if i == 0:
+                        band = self._gamma_correction(band, 1.1)
+
+                    if i == 2:
+                        band = self._gamma_correction(band, 0.9)
+
+                    self.output("Writing band %s to file" % self.bands[i], normal=True, color='green', indent=1)
                     output.write_band(i+1, img_as_ubyte(band))
+
+                    new_bands[i] = None
 
                 return output_file
 
-    def _percent_cut(self, color):
-        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
+    def _pansharpenning(self, bands):
 
-    def _unzip(self, src, dst, scene):
-        """ Unzip tar files """
-        self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
-        tar = tarfile.open(src)
-        tar.extractall(path=dst)
-        tar.close()
+        self.output("Pansharpening", normal=True, arrow=True)
+        # Pan sharpening
+        m = sum(bands[:3])
+        m = m + 0.1
+
+        self.output("calculating pan ratio", normal=True, color='green', indent=1)
+        pan = 1/m * bands[-1]
+
+        del m
+        del bands[3]
+        self.output("computing bands", normal=True, color='green', indent=1)
+
+        for i, band in enumerate(bands):
+            bands[i] = band * pan
+
+        del pan
+
+        return bands
+
+    def _gamma_correction(self, band, value):
+        return exposure.adjust_gamma(band, value)
+
+    def _color_correction(self, band, band_id):
+        band = band.astype(numpy.uint16)
+
+        self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
+        p2, p98 = self._percent_cut(band)
+        band = exposure.rescale_intensity(band, in_range=(p2, p98))
+
+        return band
 
     def _read_band(self, band_path):
         """ Reads a band with rasterio """
@@ -181,14 +201,11 @@ class Process(VerbosityMixin):
         self.output("Rescaling", normal=True, arrow=True)
 
         for key, band in enumerate(bands):
-            self.output("Rescaling band %s" % (key + 1), normal=True, color='green', indent=1)
+            self.output("band %s" % self.bands[key], normal=True, color='green', indent=1)
             bands[key] = sktransform.rescale(band, 2)
             bands[key] = (bands[key] * 65535).astype('uint16')
 
         return bands
-
-    def _get_projection(self, src):
-        return {'init': unicode.encode(src.crs['init'])}
 
     def _get_bounderies(self, src):
 
@@ -196,18 +213,28 @@ class Process(VerbosityMixin):
         output = {'ul': {'x': [0, 0], 'y': [0, 0]},  # ul: upper left
                   'lr': {'x': [0, 0], 'y': [0, 0]}}  # lr: lower right
 
-        output['ul']['x'][0] = src.affine[2]
-        output['ul']['y'][0] = src.affine[5]
-        output['ul']['x'][1], output['ul']['y'][1] = transform(src.crs, self.projection,
+        output['ul']['x'][0] = src['affine'][2]
+        output['ul']['y'][0] = src['affine'][5]
+        output['ul']['x'][1], output['ul']['y'][1] = transform(src['crs'], self.projection,
                                                                [output['ul']['x'][0]],
                                                                [output['ul']['y'][0]])
-        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src.shape[0]
-        output['lr']['y'][0] = output['ul']['y'][0] + self.pixel * src.shape[1]
-        output['lr']['x'][1], output['lr']['y'][1] = transform(src.crs, self.projection,
+        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][0]
+        output['lr']['y'][0] = output['ul']['y'][0] + self.pixel * src['shape'][1]
+        output['lr']['x'][1], output['lr']['y'][1] = transform(src['crs'], self.projection,
                                                                [output['lr']['x'][0]],
                                                                [output['lr']['y'][0]])
 
         return output
+
+    def _percent_cut(self, color):
+        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
+
+    def _unzip(self, src, dst, scene):
+        """ Unzip tar files """
+        self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
+        tar = tarfile.open(src)
+        tar.extractall(path=dst)
+        tar.close()
 
     def _check_if_zipped(self, path):
         """ Checks if the filename shows a tar/zip file """
