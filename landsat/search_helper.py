@@ -1,9 +1,4 @@
-# USGS Landsat Imagery Util
-#
-#
-# Author: developmentseed
-# Contributer: scisco, KAPPS-, kamicut
-#
+# Landsat Util
 # License: CC0 1.0 Universal
 
 import json

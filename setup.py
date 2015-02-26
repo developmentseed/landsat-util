@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
-# USGS Landsat Imagery Util
-#
-#
-# Author: developmentseed
-# Contributer: scisco
-#
+# Landsat Util
 # License: CC0 1.0 Universal
 
 import sys
