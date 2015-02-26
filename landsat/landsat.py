@@ -272,8 +272,8 @@ def exit(message, code=0):
 
     v = VerbosityMixin()
     if code == 0:
-        v.output(message, arrow=True)
-        v.output('Done!', arrow=True)
+        v.output(message, normal=True, arrow=True)
+        v.output('Done!', normal=True, arrow=True)
     else:
         v.output(message, error=True)
     sys.exit(code)
