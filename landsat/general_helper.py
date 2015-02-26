@@ -8,6 +8,8 @@
 
 import os
 import sys
+import time
+import re
 from cStringIO import StringIO
 from datetime import datetime
 
@@ -24,6 +26,22 @@ class Capturing(list):
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
+
+
+class timer(object):
+    """
+    A time class
+
+    Usage:
+        with timer():
+            your code
+    """
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        self.end = time.time()
+        print 'Time spent : {0:.2f} seconds'.format((self.end - self.start))
 
 
 def exit(message):
@@ -133,3 +151,10 @@ def reformat_date(date, new_fmt='%Y-%m-%d'):
             return datetime.strptime(date, fmt).strftime(new_fmt)
     except ValueError:
         return date
+
+
+def convert_to_integer_list(value):
+    """ convert a comma separate string to a list where all values are integers """
+
+    new_list = re.findall('[0-9]', value)
+    return new_list if new_list else None
