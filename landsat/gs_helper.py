@@ -13,12 +13,12 @@ import tarfile
 
 from dateutil.parser import parse
 
-from general_helper import (check_create_folder, create_paired_list, exit,
-                            Verbosity)
+from general_helper import (check_create_folder, create_paired_list, exit)
+from mixins import VerbosityMixin
 import settings
 
 
-class GsHelper(object):
+class GsHelper(VerbosityMixin):
 
     def __init__(self, verbose=False):
         self.scene_file_url = settings.SCENE_FILE_URL
@@ -27,7 +27,6 @@ class GsHelper(object):
         self.unzip_dir = settings.UNZIP_DIR
         self.scene_file = settings.SCENE_FILE
         self.source_url = settings.SOURCE_URL
-        self.verbosity = Verbosity(verbose)
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
@@ -124,7 +123,7 @@ class GsHelper(object):
 
         if not os.path.isfile(self.scene_file):
             # Download the file
-            self.verbosity.subprocess(["gsutil", "cp", "-n",
+            self.subprocess(["gsutil", "cp", "-n",
                                        self.scene_file_url, "%s.zip" %
                                        self.scene_file])
 
@@ -133,7 +132,7 @@ class GsHelper(object):
             zip.extractall(path=self.download_dir)
             zip.close()
 
-            self.verbosity.output("scene_file unziped", normal=True, arrow=True)
+            self.output("scene_file unziped", normal=True, arrow=True)
 
 #       return open(self.scene_file, 'r')
 
@@ -157,12 +156,12 @@ class GsHelper(object):
         end_jd = end.timetuple().tm_yday
 
         if start and end:
-            self.verbosity.output('Searching for images from %s to %s'
-                           % (start.strftime('%b %d, %Y'),
-                              end.strftime('%b %d, %Y')), normal=True, arrow=True)
+            self.output('Searching for images from %s to %s'
+                        % (start.strftime('%b %d, %Y'),
+                           end.strftime('%b %d, %Y')), normal=True, arrow=True)
 
-        self.verbosity.output('Rows and Paths searched: ', normal=True, arrow=True)
-        self.verbosity.output(query, normal=True)
+        self.output('Rows and Paths searched: ', normal=True, arrow=True)
+        self.output(query, normal=True)
 
         scene.seek(0)
         for line in scene:
@@ -193,14 +192,14 @@ class GsHelper(object):
                     file_list.append(line.replace('\n', ''))
                     found += 1
 
-        self.verbosity.output("Search completed! %s images found." % found, normal=True, arrow=True)
+        self.output("Search completed! %s images found." % found, normal=True, arrow=True)
         return file_list
 
     def _download_images(self, files):
 
         check_create_folder(self.zip_dir)
 
-        self.verbosity.output("Downloading %s files from Google Storage..." % len(files), normal=True, indent=4)
+        self.output("Downloading %s files from Google Storage..." % len(files), normal=True, indent=4)
 
         for url in files:
             url_brk = url.split('/')
@@ -221,7 +220,7 @@ class GsHelper(object):
                 # Create folder
                 check_create_folder('%s/%s' % (self.unzip_dir, image_name[0]))
 
-                self.verbosity.output("Unzipping %s ...be patient!" % image, normal=True, indent=4)
+                self.output("Unzipping %s ...be patient!" % image, normal=True, indent=4)
                 # Unzip
                 tar = tarfile.open('%s/%s' % (self.zip_dir, image))
                 tar.extractall(path='%s/%s' % (self.unzip_dir, image_name[0]))
@@ -232,7 +231,7 @@ class GsHelper(object):
 
     def _check_if_not_unzipped(self, folder_name):
         if os.path.exists('%s/%s' % (self.unzip_dir, folder_name)):
-            self.verbosity.output("%s is already unzipped" % folder_name, normal=True, error=True, indent=4)
+            self.output("%s is already unzipped" % folder_name, normal=True, error=True, indent=4)
             return False
         else:
             return True

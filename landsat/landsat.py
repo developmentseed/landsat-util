@@ -20,7 +20,8 @@ from dateutil.parser import parse
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from search_helper import Search
-from general_helper import reformat_date, Verbosity
+from general_helper import reformat_date
+from mixins import VerbosityMixin
 from image_helper import Process
 import settings
 
@@ -167,7 +168,7 @@ def main(args):
     Main function - launches the program
     """
 
-    v = Verbosity(False)
+    v = VerbosityMixin()
 
     if args:
         if args.subs == 'process':
@@ -269,7 +270,7 @@ def main(args):
 
 def exit(message, code=0):
 
-    v = Verbosity(True)
+    v = VerbosityMixin()
     if code == 0:
         v.output(message, arrow=True)
         v.output('Done!', arrow=True)
@@ -283,7 +284,7 @@ def package_installed(package):
     Check if a package is installed on the machine
     """
 
-    v = Verbosity(True)
+    v = VerbosityMixin()
 
     v.output("Checking if %s is installed on the system" % package, arrow=True)
     installed = not subprocess.call(["which", package])
