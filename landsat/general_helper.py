@@ -1,9 +1,4 @@
-# USGS Landsat Imagery Util
-#
-#
-# Author: developmentseed
-# Contributer: scisco, KAPPS-, kamicut
-#
+# Landsat Util
 # License: CC0 1.0 Universal
 
 import os
@@ -156,5 +151,8 @@ def reformat_date(date, new_fmt='%Y-%m-%d'):
 def convert_to_integer_list(value):
     """ convert a comma separate string to a list where all values are integers """
 
-    new_list = re.findall('[0-9]', value)
-    return new_list if new_list else None
+    if value:
+        new_list = re.findall('[0-9]', value)
+        return new_list if new_list else None
+    else:
+        return value
