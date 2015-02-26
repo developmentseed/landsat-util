@@ -10,82 +10,12 @@ import os
 import sys
 from cStringIO import StringIO
 from datetime import datetime
-import subprocess
 
-from termcolor import colored
-
-
-class Verbosity(object):
-    """
-    Verbosity class the generates beautiful stdout outputs.
-
-    Main method:
-    output()
-    """
-
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-
-    def output(self, value, normal=False, color=None, error=False,
-               arrow=False, indent=None):
-        """ Handles verbosity of this calls.
-        if priority is set to 1, the value is printed
-
-        if class instance verbose is True, the value is printed
-
-        @param
-        - value: (string) the message to be printed
-        - nomral: (boolean) if set to true the message is always printed,
-                  otherwise it is only shown if verbosity is set
-        - color: (string) The color of the message, choices: 'red', 'green', 'blue'
-        - error: (boolean) if set to true the message appears in red
-        - arrow: (boolean) if set to true an arrow appears before the message
-        - indent: (integer) indents the message based on the number provided
-        """
-
-        if error and value and (normal or self.verbose):
-            return self._print(value, color='red', indent=indent)
-
-        if self.verbose or normal:
-            return self._print(value, color, arrow, indent)
-
-        return
-
-    def subprocess(self, argv):
-        """ Execute subprocess commands with proper ouput """
-
-        if self.verbose:
-            proc = subprocess.Popen(argv, stderr=subprocess.PIPE)
-        else:
-            proc = subprocess.Popen(argv, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-
-        self.output(proc.stderr.read(), error=True)
-
-        return
-
-    def exit(self, message):
-        """ Print an exist message and exit """
-
-        self.output(message, normal=True, color="green")
-        sys.exit()
-
-    def _print(self, msg, color, arrow=False, indent=None):
-        """ Print the msg with the color provided """
-        msg = colored(msg, color)
-
-        if arrow:
-            msg = colored('===> ', 'blue') + msg
-
-        if indent:
-            msg = ('     ' * indent) + msg
-
-        print msg
-        return msg
+from mixins import VerbosityMixin
 
 
 class Capturing(list):
-
+    """ Captures a subprocess stdout """
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._stringio = StringIO()
@@ -97,7 +27,7 @@ class Capturing(list):
 
 
 def exit(message):
-    v = Verbosity()
+    v = VerbosityMixin()
     v.output(message, normal=True, color="green")
     sys.exit()
 
