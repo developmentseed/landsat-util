@@ -13,13 +13,8 @@ class Search(object):
     def __init__(self):
         self.api_url = settings.API_URL
 
-    def search(self,
-               row_paths=None,
-               start_date=None,
-               end_date=None,
-               cloud_min=None,
-               cloud_max=None,
-               limit=1):
+    def search(self, row_paths=None, lat=None, lon=None, start_date=None, end_date=None, cloud_min=None,
+               cloud_max=None, limit=1):
         """
         The main method of Search class. It searches the DevSeed Landsat API
 
@@ -27,6 +22,8 @@ class Search(object):
 
         Arguments:
             row_paths -- A string in this format: "003,003,004,004". Must be in pairs
+            lat -- The latitude
+            lon -- The longitude
             start_date -- date string. format: YYYY-MM-DD
             end_date -- date string. format: YYYY-MM-DD
             cloud_min -- float specifying the minimum percentage. e.g. 4.3
@@ -50,7 +47,7 @@ class Search(object):
                         'sceneID': u'LC80030032014142LGN00',
                         'date': u'2014-05-22',
                         'path': u'003',
-                        'thumbnail': u'http://earthexplorer.usgs.gov/browse/landsat_8/2014/003/003/LC80030032014142LGN00.jpg',
+                        'thumbnail': u'http://....../landsat_8/2014/003/003/LC80030032014142LGN00.jpg',
                         'cloud': 33.36,
                         'row': u'003
                     }
@@ -58,11 +55,7 @@ class Search(object):
             }
         """
 
-        search_string = self._query_builder(row_paths,
-                                            start_date,
-                                            end_date,
-                                            cloud_min,
-                                            cloud_max)
+        search_string = self._query_builder(row_paths, lat, lon, start_date, end_date, cloud_min, cloud_max)
 
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
@@ -94,27 +87,23 @@ class Search(object):
 
         return result
 
-    def _query_builder(self,
-                       row_paths=None,
-                       start_date=None,
-                       end_date=None,
-                       cloud_min=None,
-                       cloud_max=None):
+    def _query_builder(self, row_paths=None, lat=None, lon=None, start_date=None, end_date=None,
+                       cloud_min=None, cloud_max=None):
         """ Builds the proper search syntax (query) for Landsat API """
 
         query = []
-        rows_paths = []
 
-        # Coverting rows and paths to paired list
-        try:
-            new_array = create_paired_list(row_paths)
+        if row_paths:
+            # Coverting rows and paths to paired list
+            try:
+                new_array = create_paired_list(row_paths)
+                rows_paths = ['(%s)' % self._row_path_builder(i[0], i[1]) for i in new_array]
+                search_string = '+OR+'.join(map(str, rows_paths))
 
-            rows_paths.extend(['(%s)' % self._row_path_builder(i[0], i[1])
-                               for i in new_array])
-        except ValueError:
-            return ''
-        except TypeError:
-            raise Exception('Invalid Argument. Please try again!')
+            except ValueError:
+                return ''
+            except TypeError:
+                raise Exception('Invalid Argument. Please try again!')
 
         if start_date and end_date:
             query.append(self._date_range_builder(start_date, end_date))
@@ -133,13 +122,13 @@ class Search(object):
             query.append(self._cloud_cover_prct_range_builder('-1',
                                                               cloud_max))
 
+        if lat and lon:
+            query.append(self._lat_lon_builder(lat, lon))
+
         search_string = '+AND+'.join(map(str, query))
 
         if len(search_string) > 0:
-            search_string = search_string + '+AND+(' + \
-                '+OR+'.join(map(str, rows_paths)) + ')'
-        else:
-            search_string = '+OR+'.join(map(str, rows_paths))
+            search_string = '+AND+'.join(map(str, query)) + '+AND+(' + search_string + ')'
 
         return search_string
 
@@ -161,5 +150,8 @@ class Search(object):
         """
         return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
 
-# API link for coordinates search
-# http://api.developmentseed.com:8000/landsat?search=lowerLeftCornerLatitude:%3C35.696111+AND+upperRightCornerLatitude:%3E35.696111+AND+lowerRightCornerLongitude:%3C51.423056+AND+upperLeftCornerLongitude:%3E51.423056+AND+acquisitionDate:[2014-01-01+TO+2014-01-30]
+    def _lat_lon_builder(self, lat, lon):
+        """ Builds lat and lon query """
+        return ('upperLeftCornerLatitude:[%s+TO+1000]+AND+lowerRightCornerLatitude:[-1000+TO+%s]'
+                '+AND+lowerLeftCornerLongitude:[-1000+TO+%s]+AND+upperRightCornerLongitude:[%s+TO+1000]'
+                % (lat, lat, lon, lon))
