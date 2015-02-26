@@ -20,9 +20,9 @@ from dateutil.parser import parse
 from gs_helper import GsHelper
 from clipper_helper import Clipper
 from search_helper import Search
-from general_helper import reformat_date
+from general_helper import reformat_date, convert_to_integer_list
 from mixins import VerbosityMixin
-from image_helper import Process
+from image_process import Process
 import settings
 
 
@@ -157,6 +157,8 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
+    parser_process.add_argument('--bands', help='specify band combinations. Default is 432'
+                                'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
 
@@ -174,15 +176,13 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             try:
-                p = Process(args.path, verbose=verbose)
+                bands = convert_to_integer_list(args.bands)
+                p = Process(args.path, bands=bands, verbose=verbose)
             except IOError:
                 exit("Zip file corrupted", 1)
-            if args.pansharpen:
-                p.full_with_pansharpening()
-            else:
-                p.full()
+            stored = p.run(args.pansharpen)
 
-            exit("The output is stored at %s." % settings.PROCESSED_IMAGE)
+            exit("The output is stored at %s." % stored)
 
         elif args.subs == 'search':
 
