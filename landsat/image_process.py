@@ -7,10 +7,9 @@
 #
 # License: CC0 1.0 Universal
 
-import time
 import warnings
 import sys
-from os.path import join, dirname
+from os.path import join
 import tarfile
 import numpy
 import rasterio
@@ -20,15 +19,16 @@ from skimage import img_as_ubyte, exposure
 from skimage import transform as sktransform
 
 import settings
-from general_helper import Verbosity
+from mixins import VerbosityMixin
+from general_helper import get_file, timer, check_create_folder
 
 
-class Process(Verbosity):
+class Process(VerbosityMixin):
     """
     Image procssing class
     """
 
-    def __init__(self, scene, bands=[4, 3, 2], src_path=None, dst_path=None, zipped=None, verbose=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False):
         """
         @params
         scene - the scene ID
@@ -36,32 +36,36 @@ class Process(Verbosity):
         src_path - The path to the source image bundle
         dst_path - The destination path
         zipped - Set to true if the scene is in zip format and requires unzipping
-        verbose - Whether to show verbose output
+        verbose - Whether to sh ow verbose output
         """
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
-        self.scene = scene
-        self.bands = bands
+        self.scene = get_file(path).replace('.tar.bz', '')
+        self.bands = bands if isinstance(bands, list) else [4, 3, 2]
         self.pixel = 30
-        self.src_path = src_path if src_path else dirname(dirname(__file__))
-        self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
 
-        self.output_file = join(self.dst_path, 'landsat-pan.TIF')
+        # Landsat source path
+        self.src_path = path.replace(get_file(path), '')
+
+        # Build destination folder if doesn't exits
+        self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
+        self.dst_path = check_create_folder(join(self.dst_path, self.scene))
         self.verbose = verbose
 
-        self.scene_path = join(self.src_path, scene)
+        # Path to the unzipped folder
+        self.scene_path = join(self.src_path, self.scene)
 
         self.bands_path = []
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
-        if zipped:
-            self._unzip(join(self.src_path, self.scene) + '.tar.bz', join(self.src_path, self.scene), self.scene)
+        if self._check_if_zipped(path):
+            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
 
     def run(self, pansharpen=True):
 
-        self.output("* Image processing started", normal=True)
+        self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -101,7 +105,7 @@ class Process(Verbosity):
 
                 self.output("Projecting", normal=True, arrow=True)
                 for i, band in enumerate(bands):
-                    self.output("Projecting band %s" % (i + 1), normal=True, color='green', indent=1)
+                    self.output("Projecting band %s" % self.bands[i], normal=True, color='green', indent=1)
                     reproject(band, new_bands[i], src_transform=src.transform, src_crs=src.crs,
                               dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
@@ -136,7 +140,16 @@ class Process(Verbosity):
                 b = exposure.adjust_gamma(b, 0.9)
 
                 self.output("Writing output", normal=True, arrow=True)
-                output = rasterio.open(self.output_file, 'w', driver='GTiff',
+
+                output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
+
+                if pansharpen:
+                    output_file += '_pan'
+
+                output_file += '.TIF'
+                output_file = join(self.dst_path, output_file)
+
+                output = rasterio.open(output_file, 'w', driver='GTiff',
                                        width=dst_shape[1], height=dst_shape[0],
                                        count=3, dtype=numpy.uint8,
                                        nodata=0, transform=dst_transform, photometric='RGB',
@@ -147,7 +160,7 @@ class Process(Verbosity):
                 for i, band in enumerate(new_bands):
                     output.write_band(i+1, img_as_ubyte(band))
 
-                return self.output_file
+                return output_file
 
     def _percent_cut(self, color):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
@@ -196,24 +209,19 @@ class Process(Verbosity):
 
         return output
 
+    def _check_if_zipped(self, path):
+        """ Checks if the filename shows a tar/zip file """
+        filename = get_file(path).split('.')
 
-class timer(object):
-    """ A time class """
-    def __enter__(self):
-        self.start = time.time()
+        if filename[-1] == '.tar.bz':
+            return True
 
-    def __exit__(self, type, value, traceback):
-        self.end = time.time()
-        print 'Time spent : {0:.2f} seconds'.format((self.end - self.start))
+        return False
 
 
 if __name__ == '__main__':
 
     with timer():
-        p = Process(sys.argv[1],
-                    src_path=sys.argv[2],
-                    dst_path=sys.argv[2])
+        p = Process(sys.argv[1])
 
-
-        print p.run(sys.argv[3] == 't')
-
+        print p.run(sys.argv[2] == 't')
