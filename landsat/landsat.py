@@ -23,7 +23,6 @@ from search_helper import Search
 from general_helper import reformat_date, convert_to_integer_list
 from mixins import VerbosityMixin
 from image_process import Process
-import settings
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -275,7 +274,7 @@ def exit(message, code=0):
         v.output(message, normal=True, arrow=True)
         v.output('Done!', normal=True, arrow=True)
     else:
-        v.output(message, error=True)
+        v.output(message, normal=True, error=True)
     sys.exit(code)
 
 
