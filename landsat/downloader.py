@@ -40,56 +40,74 @@ class Downloader(VerbosityMixin):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
                         for band in bands:
-                            self._amazon_s3(scene, band, path)
+                            self.amazon_s3(scene, band, path)
                     else:
                         raise Exception('Expected bands list')
                 else:
-                    self._google_storage(scene, self.download_dir)
+                    self.google_storage(scene, self.download_dir)
 
         else:
             raise Exception('Expected sceneIDs list')
 
-    def _google_storage(self, scene, path):
+    def google_storage(self, scene, path):
         """ Google Storage Downloader """
-        sat = self._scene_intrepreter(scene)
+        sat = self.scene_interpreter(scene)
 
         filename = scene + '.tar.bz'
-        url = join(self.google, sat['sat'], sat['path'], sat['row'], filename)
+        url = self.google_storage_url(sat)
 
-        if self._remote_file_exists(url):
-            self._fetch(url, path, filename)
+        if self.remote_file_exists(url):
+            self.fetch(url, path, filename)
 
         else:
             RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
 
-    def _amazon_s3(self, scene, band, path):
+    def amazon_s3(self, scene, band, path):
         """ Amazon S3 downloader """
-        sat = self._scene_intrepreter(scene)
+        sat = self.scene_interpreter(scene)
 
         filename = '%s_B%s.TIF' % (scene, band)
-        url = join(self.s3, sat['sat'], sat['path'], sat['row'], scene, filename)
+        url = self.amazon_s3_url(sat, filename)
 
-        if self._remote_file_exists(url):
-            self._fetch(url, path, filename)
+        if self.remote_file_exists(url):
+            self.fetch(url, path, filename)
 
         else:
             RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
-    def _fetch(self, url, path, filename):
+    def fetch(self, url, path, filename):
 
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
         if exists(join(path, filename)):
             size = getsize(join(path, filename))
-            headers = requests.head(url).headers
-            if size == int(headers['content-length']):
+            if size == self.get_remote_file_size(url):
                 self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
-                return
+                return False
 
         fetch(url, path)
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
-    def _remote_file_exists(self, url):
+        return True
+
+    def google_storage_url(self, sat):
+        """
+        Return a google storage url the contains the scene provided
+        @params
+        sat - expects an object created by scene_interpreter method
+        """
+        filename = sat['scene'] + '.tar.bz'
+        return join(self.google, sat['sat'], sat['path'], sat['row'], filename)
+
+    def amazon_s3_url(self, sat, filename):
+        """
+        Return an amazon s3 url the contains the scene and band provided
+        @params
+        sat - expects an object created by scene_interpreter method
+        """
+        return join(self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename)
+
+    def remote_file_exists(self, url):
         status = requests.head(url).status_code
 
         if status == 200:
@@ -97,12 +115,18 @@ class Downloader(VerbosityMixin):
         else:
             return False
 
-    def _scene_intrepreter(self, scene):
+    def get_remote_file_size(self, url):
+        """ Gets the filesize of a remote file """
+        headers = requests.head(url).headers
+        return int(headers['content-length'])
+
+    def scene_interpreter(self, scene):
         """ Conver sceneID to rows, paths and dates """
         anatomy = {
             'path': None,
             'row': None,
             'sat': None,
+            'scene': scene
         }
         if isinstance(scene, str) and len(scene) == 21:
             anatomy['path'] = scene[3:6]
