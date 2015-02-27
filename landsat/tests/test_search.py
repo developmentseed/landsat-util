@@ -1,7 +1,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-"""Tests for search_helper"""
+"""Tests for search"""
 
 import os
 import sys

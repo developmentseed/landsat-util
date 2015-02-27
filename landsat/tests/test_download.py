@@ -1,7 +1,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-"""Tests for gs_helper"""
+"""Tests for downloader"""
 
 import os
 import sys
