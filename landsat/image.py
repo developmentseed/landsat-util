@@ -15,7 +15,7 @@ from skimage import transform as sktransform
 
 import settings
 from mixins import VerbosityMixin
-from general_helper import get_file, timer, check_create_folder
+from utils import get_file, timer, check_create_folder, exit
 
 
 class Process(VerbosityMixin):
@@ -73,11 +73,15 @@ class Process(VerbosityMixin):
                     self.pixel = 15
 
                 bands_path = []
+
                 for band in self.bands:
                     bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
-                for i, band in enumerate(self.bands):
-                    bands.append(self._read_band(bands_path[i]))
+                try:
+                    for i, band in enumerate(self.bands):
+                        bands.append(self._read_band(bands_path[i]))
+                except IOError as e:
+                    exit(e.message, 1)
 
                 src = rasterio.open(bands_path[-1])
 
@@ -235,7 +239,7 @@ class Process(VerbosityMixin):
         """ Checks if the filename shows a tar/zip file """
         filename = get_file(path).split('.')
 
-        if filename[-1] == '.tar.bz':
+        if filename[-1] == 'bz':
             return True
 
         return False
