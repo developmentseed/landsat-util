@@ -43,7 +43,10 @@ class VerbosityMixin(object):
         return
 
     def subprocess(self, argv):
-        """ Execute subprocess commands with proper ouput """
+        """
+        Execute subprocess commands with proper ouput
+        This is no longer used in landsat-util
+        """
 
         if self.verbose:
             proc = subprocess.Popen(argv, stderr=subprocess.PIPE)
@@ -61,9 +64,10 @@ class VerbosityMixin(object):
         self.output(message, normal=True, color="green")
         sys.exit()
 
-    def _print(self, msg, color, arrow=False, indent=None):
+    def _print(self, msg, color=None, arrow=False, indent=None):
         """ Print the msg with the color provided """
-        msg = colored(msg, color)
+        if color:
+            msg = colored(msg, color)
 
         if arrow:
             msg = colored('===> ', 'blue') + msg
