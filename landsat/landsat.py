@@ -194,12 +194,7 @@ def main(args):
                 exit(result['message'], 1)
         elif args.subs == 'download':
             d = Downloader()
-
-            bands = None
-            if args.bands:
-                bands = args.bands.replace(' ', '').split(',')
-
-            d.download(args.scenes, bands)
+            d.download(args.scenes, convert_to_integer_list(args.bands))
 
 
 def __main__():
