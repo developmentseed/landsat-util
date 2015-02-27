@@ -5,7 +5,7 @@ import json
 import requests
 
 import settings
-from general_helper import three_digit, create_paired_list
+from utils import three_digit, create_paired_list
 
 
 class Search(object):
