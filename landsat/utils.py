@@ -39,10 +39,14 @@ class timer(object):
         print 'Time spent : {0:.2f} seconds'.format((self.end - self.start))
 
 
-def exit(message):
+def exit(message, code=0):
     v = VerbosityMixin()
-    v.output(message, normal=True, color="green")
-    sys.exit()
+    if code == 0:
+        v.output(message, normal=True, arrow=True)
+        v.output('Done!', normal=True, arrow=True)
+    else:
+        v.output(message, normal=True, error=True)
+    sys.exit(code)
 
 
 def create_paired_list(i):
