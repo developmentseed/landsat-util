@@ -4,8 +4,6 @@
 # License: CC0 1.0 Universal
 
 from __future__ import print_function
-import sys
-import subprocess
 import argparse
 import textwrap
 import json
@@ -13,10 +11,10 @@ import json
 from dateutil.parser import parse
 
 from downloader import Downloader
-from search_helper import Search
-from general_helper import reformat_date, convert_to_integer_list
+from search import Search
+from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
-from image_process import Process
+from image import Process
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -204,40 +202,13 @@ def main(args):
             d.download(args.scenes, bands)
 
 
-def exit(message, code=0):
-
-    v = VerbosityMixin()
-    if code == 0:
-        v.output(message, normal=True, arrow=True)
-        v.output('Done!', normal=True, arrow=True)
-    else:
-        v.output(message, normal=True, error=True)
-    sys.exit(code)
-
-
-def package_installed(package):
-    """
-    Check if a package is installed on the machine
-    """
-
-    v = VerbosityMixin()
-
-    v.output("Checking if %s is installed on the system" % package, arrow=True)
-    installed = not subprocess.call(["which", package])
-    if installed:
-        v.output("%s is installed" % package)
-        return True
-    else:
-        v.output("You have to install %s first!" % package, error=True)
-        return False
-
-
 def __main__():
 
     global parser
     parser = args_options()
     args = parser.parse_args()
-    main(args)
+    with timer():
+        main(args)
 
 if __name__ == "__main__":
     try:
