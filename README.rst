@@ -5,26 +5,22 @@ Landsat-util is a command line utility that makes it easy to search, download, a
 
 This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.
 
-This API is accessible here: http://api.developmentseed.com:8000/landsat
+This API is accessible here: https://api.developmentseed.org/landsat
 
 You can also run your own API and connect it to this tool.
 
 Installation
 ============
 
+sudo apt-get update
+sudo apt-get install python-pip python-numpy python-scipy libgdal-dev
+pip install -r requirements.txt
+
 **On Mac**
 
-Use brew to install landsat-util:
-
 .. code-block:: console
 
-  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb
-
-For the dev version try:
-
-.. code-block:: console
-
-  $: brew install https://raw.githubusercontent.com/developmentseed/landsat-util/master/Formula/landsat-util.rb --HEAD
+  $: pip install landsat-util
 
 **On Ubuntu**
 
@@ -32,30 +28,17 @@ Use pip to install landsat-util:
 
 .. code-block:: console
 
-    $: sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
     $: sudo apt-get update
-    $: sudo apt-get install git python-pip build-essential libssl-dev libffi-dev python-dev python-gdal libgdal1-dev gdal-bin imagemagick geotiff-bin -y
-    $: sudo pip install -U git+git://github.com/developmentseed/landsat-util.git
+    $: sudo apt-get update
+    $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev
+    $: pip install landsat-util
 
 **On Other systems**
 
-Make sure you have these dependencies:
-
-- GDAL
-- ImageMagick
-- Orfeo-40
-
-Then Run:
-
 .. code-block:: console
 
-    $: pip install -U git+git://github.com/developmentseed/landsat-util.git
+    $: pip install landsat-util
 
-Alternatively, you can also download the package and run:
-
-.. code-block:: console
-
-    $: python setup.py install
 
 Overview: What can landsat-util do?
 ============
@@ -65,7 +48,7 @@ Landsat-util has three main functions:
 - **Download** landsat images.
 - **Image processing** and pan sharpening on landsat images.
 
-These three functions can be performed separately or all at once.
+These three functions have to be performed separately.
 
 **Help**: Type ``landsat -h`` for detailed usage parameters.
 
@@ -77,8 +60,7 @@ Search returns information about all landsat tiles that match your criteria.  Th
 Search for landsat tiles in a given geographical region, using any of the following:
 
 - **Paths and rows**: If you know the paths and rows you want to search for.
-- **Country name**: If you know what country you want imagery for.
-- **Custom shapefile**: Use a tool such as http://geojson.io/ to generate custom shapefiles bounding your geographical region of interest.  Landsat-util will download tiles within this shapefile.
+- **Latidue and Longitude**: If you need the latitude and longitude of the point you want to search for.
 
 Additionally filter your search using the following parameters:
 
@@ -89,20 +71,19 @@ Additionally filter your search using the following parameters:
 
 Search by path and row:
 
-``$: landsat search --cloud 4 --start "january 1 2014" --end "january 10 2014" pr 009 045``
+``$: landsat search --cloud 4 --start "january 1 2014" --end "january 10 2014" -p 009,045``
 
-Search by country (The full list of countries is http://goo.gl/8H9wuq):
+Search by latitude and longitude:
 
-``$: landsat search --cloud 4 --start "january 1 2014" --end "August 25 2014" country 'Isle of Man'``
+``$: landsat search --lat 38.9004204 --lon -77.0237117``
 
-Search by custom shapefile:
-
-``$: landsat search --cloud 6 --start "july 01 2014" --end "august 1 2014" shapefile path/to/shapefile.shp``
 
 Step 2: Download
 ============
 
 You can download tiles using their unique sceneID, which you get from landsat search.
+
+Landsat-util will download a zip file that includes all the bands. You have the option of specifying the bands you want to down. In this case, landsat-util only downloads those bands if they are available online.
 
 **Examples of download**:
 
@@ -110,28 +91,36 @@ Download images by their custom sceneID, which you get from landsat search:
 
 ``$: landsat download LC80090452014008LGN00``
 
-Search and download tiles all at once with the --download flag:
+Download only band 4, 3 and 2 for a particular sceneID:
 
-``$: landsat search --download --cloud 4 --start "january 01 2014" --end "january 10 2014" pr 009 045``
+``$: landsat download LC80090452014008LGN00 --bands 432``
+
+Download multiple sceneIDs:
+
+``$: landsat download LC80090452014008LGN00 LC80090452015008LGN00 LC80090452013008LGN00``
 
 Step 3: Image processing
 ============
 
-You can process your downloaded tiles with our custom image processing algorithms.  In addition, you can choose to pansharpen your images.
+You can process your downloaded tiles with our custom image processing algorithms.  In addition, you can choose to pansharpen your images and specify which bands to process.
 
 **Examples of image processing**:
 
-Process images that are already downloaded. Remember, the program only accepts zip files:
+Process images that are already downloaded. Remember, the program accepts both zip files and unzipped folders:
 
 ``$: landsat process path/to/LC80090452014008LGN00.tar.bz``
 
+If unzipped:
+
+``$: landsat process path/to/LC80090452014008LGN00``
+
+Specify bands 3, 5 and 1:
+
+``$: landsat process path/to/LC80090452014008LGN00  --bands 351``
+
 Process *and* pansharpen a downloaded image:
 
-``$: landsat process --pansharpen path/to/LC80090452014008LGN00.tar.bz``
-
-Search, download, and process images all at once using the --imageprocess flag:
-
-``$: landsat search --imageprocess --cloud 6 --start "january 01 2014" --end "january 10 2014" shapefile path/to/shapefile.shp``
+``$: landsat process path/to/LC80090452014008LGN00.tar.bz --pansharpen``
 
 
 Important Notes
@@ -139,19 +128,24 @@ Important Notes
 
 - All downloaded and processed images are stored at your home directory in landsat forlder: ``~/landsat``
 
-- If you are not sure what images you are looking for, make sure to use ``--onlysearch`` flag to view the results first. The image thumbnail web address that is included in the results can be used to make sure that clouds are not obscuring the subject of interest. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
+- The image thumbnail web address that is included in the results can be used to make sure that clouds are not obscuring the subject of interest. Run the search again if you need to narrow down your result and then start downloading images. Each image is usually more than 700mb and it might takes a very long time if there are too many images to download
 
-- Image processing is a very heavy and resource consuming task. Each process takes about 20-30 mins. We recommend that you run the processes in smaller badges. Pansharpening, while increasing image resolution 2x, substantially increases processing time.
+- Image processing is a very heavy and resource consuming task. Each process takes about 5-10 mins. We recommend that you run the processes in smaller badges. Pansharpening, while increasing image resolution 2x, substantially increases processing time.
 
-- Country based search queries can return a large number of images; for countries that return large search results we recommend selecting best imagery based on thumbnails and then using the download tool to install specific imagery based on Landsat scene ID.
+- Landsat-util requires at least 2GB of Memory (RAM).
+
+Recently Added
+++++++++++
+
+- Add longitude latitude search
+- Improve console output
+- Add more color options such as false color, true color, etc.
+
 
 To Do List
 ++++++++++
 
-- Add longitude latitude search
 - Add Sphinx Documentation
-- Improve console output
-- Add more color options such as false color, true color, etc.
 - Add capacity for NDVI output
 - Add alternative projections (currently only option is default web-mercator; EPSG: 3857)
 - Connect search to Google Address API
