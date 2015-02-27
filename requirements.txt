@@ -1,1 +1,1 @@
--r requirements/release.txt
+-r requirements/base.txt
