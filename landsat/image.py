@@ -36,7 +36,7 @@ class Process(VerbosityMixin):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
-        self.scene = get_file(path).replace('.tar.bz', '')
+        self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
         self.pixel = 30
 
@@ -56,6 +56,8 @@ class Process(VerbosityMixin):
             self.bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
         if self._check_if_zipped(path):
+            print join(self.src_path, get_file(path))
+            print join(self.src_path, self.scene)
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
 
     def run(self, pansharpen=True):
@@ -123,6 +125,7 @@ class Process(VerbosityMixin):
 
                 if pansharpen:
                     new_bands = self._pansharpenning(new_bands)
+                    del self.bands[3]
 
                 self.output("Final Steps", normal=True, arrow=True)
 
@@ -239,7 +242,7 @@ class Process(VerbosityMixin):
         """ Checks if the filename shows a tar/zip file """
         filename = get_file(path).split('.')
 
-        if filename[-1] == 'bz':
+        if filename[-1] in ['bz', 'bz2']:
             return True
 
         return False
