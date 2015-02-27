@@ -25,7 +25,7 @@ search, download, and process Landsat imagery.
             landsat.py search [-p --pathrow] [--lat] [--lon] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
 
             optional arguments:
-                -p, --pathrow       Paths and Rows in order separated by comma. Use quotes ("001").
+                -p, --pathrow       Paths and Rows in order separated by comma. Use quotes "001,003".
                                     Example: path,row,path,row 001,001,190,204
 
                 --lat               Latitude
@@ -33,7 +33,7 @@ search, download, and process Landsat imagery.
                 --lon               Longitude
 
                 -l LIMIT, --limit LIMIT
-                                    Search return results limit default is 100
+                                    Search return results limit default is 10
 
                 -s START, --start START
                                     Start Date - Most formats are accepted e.g.
@@ -94,7 +94,7 @@ def args_options():
                                           help='Search Landsat metdata')
 
     # Global search options
-    parser_search.add_argument('-l', '--limit', default=100, type=int,
+    parser_search.add_argument('-l', '--limit', default=10, type=int,
                                help='Search return results limit\n'
                                'default is 100')
     parser_search.add_argument('-s', '--start',
@@ -175,7 +175,7 @@ def main(args):
             except ValueError:
                 exit("The latitude and longitude values must be valid numbers", 1)
 
-            result = s.search(row_paths=args.pathrow,
+            result = s.search(paths_rows=args.pathrow,
                               lat=lat,
                               lon=lon,
                               limit=args.limit,
