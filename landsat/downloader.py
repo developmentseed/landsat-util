@@ -5,7 +5,7 @@ from os.path import join, exists, getsize
 from homura import download as fetch
 import requests
 
-from general_helper import check_create_folder
+from utils import check_create_folder
 from mixins import VerbosityMixin
 import settings
 
@@ -118,5 +118,5 @@ if __name__ == '__main__':
 
     d = Downloader()
 
-    d.download(['LC81990242015046LGN00', 'LC80030172015001LGN00'])
-    # d.download(['LC80030172015001LGN00'], bands=[5, 4])
+    # d.download(['LC81990242015046LGN00', 'LC80030172015001LGN00'])
+    d.download(['LC80030172015001LGN00'], bands=[5, 4])
