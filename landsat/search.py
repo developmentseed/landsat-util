@@ -2,6 +2,7 @@
 # License: CC0 1.0 Universal
 
 import json
+import time
 import requests
 
 import settings
@@ -13,7 +14,7 @@ class Search(object):
     def __init__(self):
         self.api_url = settings.API_URL
 
-    def search(self, row_paths=None, lat=None, lon=None, start_date=None, end_date=None, cloud_min=None,
+    def search(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None, cloud_min=None,
                cloud_max=None, limit=1):
         """
         The main method of Search class. It searches the DevSeed Landsat API
@@ -21,7 +22,7 @@ class Search(object):
         Returns python dictionary
 
         Arguments:
-            row_paths -- A string in this format: "003,003,004,004". Must be in pairs
+            paths_rows -- A string in this format: "003,003,004,004". Must be in pairs
             lat -- The latitude
             lon -- The longitude
             start_date -- date string. format: YYYY-MM-DD
@@ -55,13 +56,12 @@ class Search(object):
             }
         """
 
-        search_string = self._query_builder(row_paths, lat, lon, start_date, end_date, cloud_min, cloud_max)
+        search_string = self.query_builder(paths_rows, lat, lon, start_date, end_date, cloud_min, cloud_max)
 
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
-        r = requests.get('%s?search=%s&limit=%s' % (self.api_url,
-                                                    search_string,
-                                                    limit))
+
+        r = requests.get('%s?search=%s&limit=%s' % (self.api_url, search_string, limit))
 
         r_dict = json.loads(r.text)
         result = {}
@@ -87,70 +87,73 @@ class Search(object):
 
         return result
 
-    def _query_builder(self, row_paths=None, lat=None, lon=None, start_date=None, end_date=None,
-                       cloud_min=None, cloud_max=None):
+    def query_builder(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None,
+                      cloud_min=None, cloud_max=None):
         """ Builds the proper search syntax (query) for Landsat API """
 
         query = []
+        or_string = ''
+        and_string = ''
+        search_string = ''
 
-        if row_paths:
+        if paths_rows:
             # Coverting rows and paths to paired list
-            try:
-                new_array = create_paired_list(row_paths)
-                rows_paths = ['(%s)' % self._row_path_builder(i[0], i[1]) for i in new_array]
-                search_string = '+OR+'.join(map(str, rows_paths))
-
-            except ValueError:
-                return ''
-            except TypeError:
-                raise Exception('Invalid Argument. Please try again!')
+            new_array = create_paired_list(paths_rows)
+            paths_rows = ['(%s)' % self.row_path_builder(i[0], i[1]) for i in new_array]
+            or_string = '+OR+'.join(map(str, paths_rows))
 
         if start_date and end_date:
-            query.append(self._date_range_builder(start_date, end_date))
+            query.append(self.date_range_builder(start_date, end_date))
         elif start_date:
-            query.append(self._date_range_builder(start_date, '2100-01-01'))
+            query.append(self.date_range_builder(start_date, '2100-01-01'))
         elif end_date:
-            query.append(self._date_range_builder('2009-01-01', end_date))
+            query.append(self.date_range_builder('2009-01-01', end_date))
 
         if cloud_min and cloud_max:
-            query.append(self._cloud_cover_prct_range_builder(cloud_min,
-                                                              cloud_max))
+            query.append(self.cloud_cover_prct_range_builder(cloud_min, cloud_max))
         elif cloud_min:
-            query.append(self._cloud_cover_prct_range_builder(cloud_min,
-                                                              '100'))
+            query.append(self.cloud_cover_prct_range_builder(cloud_min, '100'))
         elif cloud_max:
-            query.append(self._cloud_cover_prct_range_builder('-1',
-                                                              cloud_max))
+            query.append(self.cloud_cover_prct_range_builder('-1', cloud_max))
 
         if lat and lon:
-            query.append(self._lat_lon_builder(lat, lon))
+            query.append(self.lat_lon_builder(lat, lon))
 
-        search_string = '+AND+'.join(map(str, query))
+        if query:
+            and_string = '+AND+'.join(map(str, query))
 
-        if len(search_string) > 0:
-            search_string = '+AND+'.join(map(str, query)) + '+AND+(' + search_string + ')'
+        if and_string and or_string:
+            search_string = and_string + '+AND+(' + or_string + ')'
+        else:
+            search_string = or_string + and_string
 
         return search_string
 
-    def _row_path_builder(self, path, row):
-        """ Builds row and path query
-            Accepts row and path in XXX format, e.g. 003
+    def row_path_builder(self, path='', row=''):
         """
-        return 'row:%s+AND+path:%s' % (row, path)
+        Builds row and path query
+        Accepts row and path in XXX format, e.g. 003
+        """
+        return 'path:%s+AND+row:%s' % (path, row)
 
-    def _date_range_builder(self, start, end):
-        """ Builds date range query
-            Accepts start and end date in this format YYYY-MM-DD
+    def date_range_builder(self, start='2013-02-11', end=None):
         """
+        Builds date range query
+        Accepts start and end date in this format YYYY-MM-DD
+        """
+        if not end:
+            end = time.strftime('%Y-%m-%d')
+
         return 'acquisitionDate:[%s+TO+%s]' % (start, end)
 
-    def _cloud_cover_prct_range_builder(self, min, max):
-        """ Builds cloud cover percentage range query
-            Accepts bottom and top range in float, e.g. 1.00
+    def cloud_cover_prct_range_builder(self, min=0, max=100):
+        """
+        Builds cloud cover percentage range query
+        Accepts bottom and top range in float, e.g. 1.00
         """
         return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
 
-    def _lat_lon_builder(self, lat, lon):
+    def lat_lon_builder(self, lat=0, lon=0):
         """ Builds lat and lon query """
         return ('upperLeftCornerLatitude:[%s+TO+1000]+AND+lowerRightCornerLatitude:[-1000+TO+%s]'
                 '+AND+lowerLeftCornerLongitude:[-1000+TO+%s]+AND+upperRightCornerLongitude:[%s+TO+1000]'
