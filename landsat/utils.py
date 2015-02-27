@@ -49,7 +49,7 @@ def exit(message, code=0):
     sys.exit(code)
 
 
-def create_paired_list(i):
+def create_paired_list(value):
     """ Create a list of paired items from a string
 
     Arguments:
@@ -59,21 +59,14 @@ def create_paired_list(i):
         [['003','003'], ['004', '004']]
     """
 
-    if isinstance(i, str):
-        array = i.split(',')
-    elif isinstance(i, list):
-        # Make sure it is not already paired
-        if isinstance(i[0], list) or isinstance(i[0], tuple):
-            return i
-        else:
-            array = i
-    else:
-        return i
+    if isinstance(value, list):
+        value = ",".join(value)
+
+    array = re.split('\D+', value)
 
     # Make sure the elements in the list are even and pairable
     if len(array) % 2 == 0:
-        new_array = [list(array[i:i + 2])
-                     for i in range(0, len(array), 2)]
+        new_array = [list(array[i:i + 2]) for i in range(0, len(array), 2)]
         return new_array
     else:
         raise ValueError('The string should include pairs and be formated. '
@@ -143,7 +136,7 @@ def reformat_date(date, new_fmt='%Y-%m-%d'):
     Accepted date format: %m/%d/%Y
     """
     try:
-        if type(date) is datetime:
+        if isinstance(date, datetime):
             return date.strftime(new_fmt)
         else:
             fmt = '%m/%d/%Y'
@@ -155,7 +148,7 @@ def reformat_date(date, new_fmt='%Y-%m-%d'):
 def convert_to_integer_list(value):
     """ convert a comma separate string to a list where all values are integers """
 
-    if value:
+    if value and isinstance(value, str):
         new_list = re.findall('[0-9]', value)
         return new_list if new_list else None
     else:
