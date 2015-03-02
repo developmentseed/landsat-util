@@ -3,18 +3,19 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-from __future__ import print_function
 import argparse
 import textwrap
 import json
 
 from dateutil.parser import parse
+import pycurl
 
-from downloader import Downloader
+from downloader import Downloader, IncorrectSceneId
 from search import Search
 from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
 from image import Process
+from settings import BASE_DIR
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -61,6 +62,8 @@ search, download, and process Landsat imagery.
 
                 -h, --help          Show this help message and exit
 
+                -d, --dest          Destination path
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -72,7 +75,7 @@ search, download, and process Landsat imagery.
                                     Default: Natural colors (432)
                                     Example --bands 432
 
-                -p --pansharpen        Whether to also pansharpen the process image.
+                -p --pansharpen     Whether to also pansharpen the process image.
                                     Pansharpening takes a long time
 
                 -v, --verbose       Show verbose output
@@ -121,6 +124,7 @@ def args_options():
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
                                  'the band from S3. If the band does not exist, an error is returned')
+    parser_download.add_argument('-d', '--dest', help='Destination path')
 
     parser_process = subparsers.add_parser('process',
                                            help='Process Landsat imagery')
@@ -193,8 +197,12 @@ def main(args):
             elif result['status'] == 'error':
                 exit(result['message'], 1)
         elif args.subs == 'download':
-            d = Downloader()
-            d.download(args.scenes, convert_to_integer_list(args.bands))
+            d = Downloader(download_dir=args.dest)
+            try:
+                if d.download(args.scenes, convert_to_integer_list(args.bands)):
+                    exit('Download Completed', 0)
+            except IncorrectSceneId:
+                exit('The SceneID provided was incorrect', 1)
 
 
 def __main__():
@@ -208,7 +216,5 @@ def __main__():
 if __name__ == "__main__":
     try:
         __main__()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, pycurl.error):
         exit('Received Ctrl + C... Exiting! Bye.', 1)
-    # except:
-    #     exit('Unexpected Error: %s' % (sys.exc_info()[0]), 1)
