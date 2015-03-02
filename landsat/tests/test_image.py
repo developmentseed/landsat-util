@@ -28,6 +28,7 @@ class TestProcess(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+
         try:
             shutil.rmtree(cls.temp_folder)
             shutil.rmtree(join(cls.base_dir, 'samples', 'test'))
@@ -56,3 +57,4 @@ class TestProcess(unittest.TestCase):
         self.path = join(self.base_dir, 'samples', 'test')
         self.p.run(False)
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432.TIF')))
+
