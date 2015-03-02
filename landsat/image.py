@@ -56,8 +56,6 @@ class Process(VerbosityMixin):
             self.bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
 
         if self._check_if_zipped(path):
-            print join(self.src_path, get_file(path))
-            print join(self.src_path, self.scene)
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
 
     def run(self, pansharpen=True):
