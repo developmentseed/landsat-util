@@ -24,7 +24,7 @@ class TestDownloader(unittest.TestCase):
         cls.d = Downloader()
         cls.temp_folder = mkdtemp()
         cls.scene = 'LT81360082013127LGN01'
-        cls.scene_s3 = 'LC80030172015001LGN00'
+        cls.scene_s3 = 'LC80010092015051LGN00'
         cls.scene_size = 59204484
 
     @classmethod
@@ -58,8 +58,8 @@ class TestDownloader(unittest.TestCase):
         self.assertSize(url, os.path.join(self.temp_folder, self.scene + '.tar.bz'))
 
         # pass band along with sceneID
-        self.d.download([self.scene_s3], bands=[4])
-        filename = '%s_B4.TIF' % self.scene_s3
+        self.d.download([self.scene_s3], bands=[11])
+        filename = '%s_B11.TIF' % self.scene_s3
         sat = self.d.scene_interpreter(self.scene_s3)
         url = self.d.amazon_s3_url(sat, filename)
 
@@ -78,10 +78,10 @@ class TestDownloader(unittest.TestCase):
     def test_amazon_s3(self):
         scene = self.scene_s3
         sat = self.d.scene_interpreter(scene)
-        filename = '%s_B4.TIF' % scene
+        filename = '%s_B11.TIF' % scene
         url = self.d.amazon_s3_url(sat, filename)
 
-        self.d.amazon_s3(scene, 4, self.temp_folder)
+        self.d.amazon_s3(scene, 11, self.temp_folder)
 
         self.assertSize(url, os.path.join(self.temp_folder, filename))
 
@@ -109,10 +109,10 @@ class TestDownloader(unittest.TestCase):
 
     def test_amazon_s3_url(self):
         sat = self.d.scene_interpreter(self.scene)
-        filename = '%s_B4.TIF' % self.scene
+        filename = '%s_B11.TIF' % self.scene
 
         string = self.d.amazon_s3_url(sat, filename)
-        expect = 'https://landsat-pds.s3.amazonaws.com/L8/136/008/LT81360082013127LGN01/LT81360082013127LGN01_B4.TIF'
+        expect = 'https://landsat-pds.s3.amazonaws.com/L8/136/008/LT81360082013127LGN01/LT81360082013127LGN01_B11.TIF'
 
         self.assertEqual(expect, string)
 
