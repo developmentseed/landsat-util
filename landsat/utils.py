@@ -149,7 +149,11 @@ def convert_to_integer_list(value):
     """ convert a comma separate string to a list where all values are integers """
 
     if value and isinstance(value, str):
-        new_list = re.findall('[0-9]', value)
+        if ',' in value:
+            value = re.sub('[^0-9,]', '', value)
+            new_list = value.split(',')
+        else:
+            new_list = re.findall('[0-9]', value)
         return new_list if new_list else None
     else:
         return value
