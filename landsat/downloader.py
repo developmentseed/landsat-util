@@ -14,10 +14,14 @@ class RemoteFileDoesntExist(Exception):
     pass
 
 
+class IncorrectSceneId(Exception):
+    pass
+
+
 class Downloader(VerbosityMixin):
 
-    def __init__(self, verbose=False):
-        self.download_dir = settings.DOWNLOAD_DIR
+    def __init__(self, verbose=False, download_dir=None):
+        self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
         self.google = 'https://storage.googleapis.com/earthengine-public/landsat/'
         self.s3 = 'https://landsat-pds.s3.amazonaws.com/'
 
@@ -45,6 +49,8 @@ class Downloader(VerbosityMixin):
                         raise Exception('Expected bands list')
                 else:
                     self.google_storage(scene, self.download_dir)
+
+            return True
 
         else:
             raise Exception('Expected sceneIDs list')
@@ -135,7 +141,7 @@ class Downloader(VerbosityMixin):
 
             return anatomy
         else:
-            raise Exception('Received incorrect scene')
+            raise IncorrectSceneId('Received incorrect scene')
 
 
 if __name__ == '__main__':
