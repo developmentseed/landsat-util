@@ -158,11 +158,11 @@ class Process(VerbosityMixin):
                     if i == 2:
                         band = self._gamma_correction(band, 0.9)
 
-                    self.output("Writing band %s to file" % self.bands[i], normal=True, color='green', indent=1)
+                    
                     output.write_band(i+1, img_as_ubyte(band))
 
                     new_bands[i] = None
-
+                self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
 
     def _pansharpenning(self, bands):
