@@ -38,7 +38,6 @@ class Process(VerbosityMixin):
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
-        self.pixel = 30
 
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
@@ -67,10 +66,9 @@ class Process(VerbosityMixin):
             with rasterio.drivers():
                 bands = []
 
-                # Add bands 8 for pansharpenning
+                # Add band 8 for pansharpenning
                 if pansharpen:
                     self.bands.append(8)
-                    self.pixel = 15
 
                 bands_path = []
 
@@ -85,6 +83,9 @@ class Process(VerbosityMixin):
 
                 src = rasterio.open(bands_path[-1])
 
+                # Get pixel size from source
+                self.pixel = src.affine[0]
+
                 # Only collect src data that is needed and delete the rest
                 src_data = {
                     'transform': src.transform,
@@ -94,13 +95,13 @@ class Process(VerbosityMixin):
                 }
                 del src
 
-                crn = self._get_bounderies(src_data)
+                crn = self._get_boundaries(src_data)
 
-                dst_shape = (int((crn['lr']['x'][1][0] - crn['ul']['x'][1][0])/self.pixel),
-                             int((crn['lr']['y'][1][0] - crn['ul']['y'][1][0])/self.pixel))
+                dst_shape = src_data.shape
+                y_pixel = (max(crn['ul']['y'][1][0],crn['ur']['y'][1][0])- min(crn['lr']['y'][1][0],crn['ll']['y'][1][0]))/dst_shape[0]
+                x_pixel = (max(crn['lr']['x'][1][0],crn['ur']['x'][1][0]) - min(crn['ul']['x'][1][0],crn['ll']['x'][1][0]))/dst_shape[1]
 
-                dst_transform = (crn['ul']['x'][1][0], self.pixel, 0.0, crn['ul']['y'][1][0], 0.0, -self.pixel)
-
+                dst_transform = (min(crn['ul']['x'][1][0],crn['ll']['x'][1][0]), x_pixel, 0.0, max(crn['ul']['y'][1][0],crn['ur']['y'][1][0]), 0.0, -y_pixel)
                 # Delete crn since no longer needed
                 del crn
 
@@ -207,19 +208,35 @@ class Process(VerbosityMixin):
 
         return bands
 
-    def _get_bounderies(self, src):
+    def _get_boundaries(self, src):
 
-        self.output("Getting bounderies", normal=True, arrow=True)
+        self.output("Getting boundaries", normal=True, arrow=True)
         output = {'ul': {'x': [0, 0], 'y': [0, 0]},  # ul: upper left
+                  'ur': {'x': [0, 0], 'y': [0, 0]},  # ur: upper right
+                  'll': {'x': [0, 0], 'y': [0, 0]},  # ll: lower left
                   'lr': {'x': [0, 0], 'y': [0, 0]}}  # lr: lower right
 
         output['ul']['x'][0] = src['affine'][2]
         output['ul']['y'][0] = src['affine'][5]
+        output['ur']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
+        output['ur']['y'][0] = output['ul']['y'][0]
+        output['ll']['x'][0] = output['ul']['x'][0]
+        output['ll']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
+        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
+        output['lr']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
+
         output['ul']['x'][1], output['ul']['y'][1] = transform(src['crs'], self.projection,
                                                                [output['ul']['x'][0]],
                                                                [output['ul']['y'][0]])
-        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][0]
-        output['lr']['y'][0] = output['ul']['y'][0] + self.pixel * src['shape'][1]
+
+        output['ur']['x'][1], output['ur']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['ur']['x'][0]],
+                                                               [output['ur']['y'][0]])
+
+        output['ll']['x'][1], output['ll']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['ll']['x'][0]],
+                                                               [output['ll']['y'][0]])
+
         output['lr']['x'][1], output['lr']['y'][1] = transform(src['crs'], self.projection,
                                                                [output['lr']['x'][0]],
                                                                [output['lr']['y'][0]])
