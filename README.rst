@@ -1,4 +1,4 @@
-Landsat-util
+Landsat-util  [![Build Status](https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5)](https://travis-ci.org/developmentseed/landsat-util)
 ===============
 
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
