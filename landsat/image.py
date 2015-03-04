@@ -102,7 +102,7 @@ class Process(VerbosityMixin):
 
                 crn = self._get_boundaries(src_data)
 
-                dst_shape = src_data.shape
+                dst_shape = src_data['shape']
                 y_pixel = (max(crn['ul']['y'][1][0],crn['ur']['y'][1][0])- min(crn['lr']['y'][1][0],crn['ll']['y'][1][0]))/dst_shape[0]
                 x_pixel = (max(crn['lr']['x'][1][0],crn['ur']['x'][1][0]) - min(crn['ul']['x'][1][0],crn['ll']['x'][1][0]))/dst_shape[1]
 
