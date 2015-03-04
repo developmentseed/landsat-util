@@ -15,7 +15,7 @@ try:
     import landsat.landsat as landsat
 except ImportError:
     sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    import landsat
+    import landsat.landsat as landsat
 
 
 class TestLandsat(unittest.TestCase):

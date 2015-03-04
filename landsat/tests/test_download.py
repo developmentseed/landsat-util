@@ -12,9 +12,11 @@ from tempfile import mkdtemp
 
 try:
     from landsat.downloader import Downloader
+    from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
 except ImportError:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from downloader import Downloader
+    from landsat.downloader import Downloader
+    from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
 
 
 class TestDownloader(unittest.TestCase):
@@ -104,7 +106,7 @@ class TestDownloader(unittest.TestCase):
         sat = self.d.scene_interpreter(self.scene)
 
         string = self.d.google_storage_url(sat)
-        expect = 'https://storage.googleapis.com/earthengine-public/landsat/L8/136/008/LT81360082013127LGN01.tar.bz'
+        expect = os.path.join(GOOGLE_STORAGE, 'L8/136/008/LT81360082013127LGN01.tar.bz')
         self.assertEqual(expect, string)
 
     def test_amazon_s3_url(self):
@@ -112,18 +114,18 @@ class TestDownloader(unittest.TestCase):
         filename = '%s_B11.TIF' % self.scene
 
         string = self.d.amazon_s3_url(sat, filename)
-        expect = 'https://landsat-pds.s3.amazonaws.com/L8/136/008/LT81360082013127LGN01/LT81360082013127LGN01_B11.TIF'
+        expect = os.path.join(S3_LANDSAT, 'L8/136/008/LT81360082013127LGN01/LT81360082013127LGN01_B11.TIF')
 
         self.assertEqual(expect, string)
 
     def test_remote_file_exist(self):
         # Test a url that doesn't exist
-        self.assertTrue(self.d.remote_file_exists('https://landsat-pds.s3.amazonaws.com/L8/003/017/LC80030172015001L'
-                                                  'GN00/LC80030172015001LGN00_B6.TIF'))
+        self.assertTrue(self.d.remote_file_exists(os.path.join(S3_LANDSAT, 'L8/003/017/LC80030172015001L'
+                                                  'GN00/LC80030172015001LGN00_B6.TIF')))
 
         # Test a url that exist
-        self.assertFalse(self.d.remote_file_exists('https://landsat-pds.s3.amazonaws.com/L8/003/017/LC80030172015001L'
-                                                   'GN00/LC80030172015001LGN00_B34.TIF'))
+        self.assertFalse(self.d.remote_file_exists(os.path.join(S3_LANDSAT, 'L8/003/017/LC80030172015001L'
+                                                   'GN00/LC80030172015001LGN00_B34.TIF')))
 
     def test_scene_interpreter(self):
         # Test with correct input
