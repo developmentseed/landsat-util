@@ -161,7 +161,7 @@ def main(args):
 
             stored = p.run(args.pansharpen)
 
-            exit("The output is stored at %s." % stored)
+            exit("The output is stored at %s" % stored)
 
         elif args.subs == 'search':
 
