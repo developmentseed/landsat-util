@@ -12,6 +12,7 @@ MANIFEST
 .coverage
 *flymake.py
 .settings
+.vagrant
 metadata.csv
 txt.txt
 eva.py

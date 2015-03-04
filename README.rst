@@ -1,6 +1,9 @@
 Landsat-util
 ===============
 
+.. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
+    :target: https://travis-ci.org/developmentseed/landsat-util
+
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
 
 This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.

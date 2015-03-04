@@ -8,6 +8,7 @@ from os.path import join
 import tarfile
 import numpy
 import rasterio
+import glob
 from rasterio.warp import reproject, RESAMPLING, transform
 
 from skimage import img_as_ubyte, exposure
@@ -16,6 +17,10 @@ from skimage import transform as sktransform
 import settings
 from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
+
+
+class FileDoesNotExist(Exception):
+    pass
 
 
 class Process(VerbosityMixin):
@@ -50,12 +55,12 @@ class Process(VerbosityMixin):
         # Path to the unzipped folder
         self.scene_path = join(self.src_path, self.scene)
 
-        self.bands_path = []
-        for band in self.bands:
-            self.bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
-
         if self._check_if_zipped(path):
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
+
+        self.bands_path = []
+        for band in self.bands:
+            self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
     def run(self, pansharpen=True):
 
@@ -73,7 +78,7 @@ class Process(VerbosityMixin):
                 bands_path = []
 
                 for band in self.bands:
-                    bands_path.append(join(self.scene_path, '%s_B%s.TIF' % (self.scene, band)))
+                    bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
                 try:
                     for i, band in enumerate(self.bands):
@@ -252,6 +257,15 @@ class Process(VerbosityMixin):
         tar = tarfile.open(src)
         tar.extractall(path=dst)
         tar.close()
+
+    def _get_full_filename(self, band):
+
+        base_file = '%s_B%s.*' % (self.scene, band)
+
+        try:
+            return glob.glob(join(self.scene_path, base_file))[0].split('/')[-1]
+        except IndexError:
+            raise FileDoesNotExist('%s does not exist' % '%s_B%s.*' % (self.scene, band))
 
     def _check_if_zipped(self, path):
         """ Checks if the filename shows a tar/zip file """

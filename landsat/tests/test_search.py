@@ -11,7 +11,7 @@ try:
     from landsat.search import Search
 except ImportError:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from search import Search
+    from landsat.search import Search
 
 
 class TestSearchHelper(unittest.TestCase):

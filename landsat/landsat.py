@@ -14,7 +14,7 @@ from downloader import Downloader, IncorrectSceneId
 from search import Search
 from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
-from image import Process
+from image import Process, FileDoesNotExist
 from settings import BASE_DIR
 
 
@@ -156,6 +156,9 @@ def main(args):
                 p = Process(args.path, bands=bands, verbose=verbose)
             except IOError:
                 exit("Zip file corrupted", 1)
+            except FileDoesNotExist as e:
+                exit(e.message, 1)
+
             stored = p.run(args.pansharpen)
 
             exit("The output is stored at %s." % stored)
@@ -165,10 +168,9 @@ def main(args):
             try:
                 if args.start:
                     args.start = reformat_date(parse(args.start))
-
                 if args.end:
                     args.end = reformat_date(parse(args.end))
-            except TypeError:
+            except (TypeError, ValueError):
                 exit("You date format is incorrect. Please try again!", 1)
 
             s = Search()

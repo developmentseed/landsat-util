@@ -14,7 +14,7 @@ try:
     from landsat.image import Process
 except ImportError:
     sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    from image import Process
+    from landsat.image import Process
 
 
 class TestProcess(unittest.TestCase):

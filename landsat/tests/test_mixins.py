@@ -14,7 +14,7 @@ try:
 
 except ImportError:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from mixins import VerbosityMixin
+    from landsat.mixins import VerbosityMixin
 
 
 # Capture function is taken from
