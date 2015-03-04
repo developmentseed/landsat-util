@@ -1,4 +1,4 @@
 rasterio==0.18
 homura==0.1.0
 termcolor==1.1.0
-
+python-coveralls

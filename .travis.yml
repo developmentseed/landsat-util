@@ -1,4 +1,8 @@
 language: python
+
+branches:
+  only: /^v0.5.*$/
+
 python:
   - '2.7'
 
@@ -24,3 +28,6 @@ install:
 
 script:
   - nosetests
+
+after_success:
+  - coveralls
