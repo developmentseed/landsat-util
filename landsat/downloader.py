@@ -22,8 +22,8 @@ class Downloader(VerbosityMixin):
 
     def __init__(self, verbose=False, download_dir=None):
         self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
-        self.google = 'https://storage.googleapis.com/earthengine-public/landsat/'
-        self.s3 = 'https://landsat-pds.s3.amazonaws.com/'
+        self.google = settings.GOOGLE_STORAGE
+        self.s3 = settings.S3_LANDSAT
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
