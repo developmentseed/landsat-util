@@ -154,3 +154,5 @@ To Do List
 - Connect search to Google Address API
 - Include 16-bit image variant in output
 - Add support for color correct looping over multiple compressed inputs (currently just 1)
+
+Test
