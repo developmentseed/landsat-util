@@ -13,6 +13,10 @@ def readme():
     with open("README.rst") as f:
         return f.read()
 
+test_requirements = [
+  'nose==1.3.3'
+]
+
 setup(
     name="landsat",
     version='0.4.5',
@@ -37,4 +41,6 @@ setup(
       "scikit-image==0.10.1",
       "homura==0.1.0"
     ],
+    test_suite='nose.collector',
+    test_require=test_requirements
 )
