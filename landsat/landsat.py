@@ -15,7 +15,7 @@ from search import Search
 from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
 from image import Process, FileDoesNotExist
-from settings import BASE_DIR
+from __init__ import __version__
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -91,6 +91,8 @@ def args_options():
 
     subparsers = parser.add_subparsers(help='Landsat Utility',
                                        dest='subs')
+
+    parser.add_argument('--version', action='version', version='%(prog)s version ' + __version__)
 
     # Search Logic
     parser_search = subparsers.add_parser('search',
