@@ -8,6 +8,8 @@ try:
 except ImportError:
     from distutils.core import setup
 
+from landsat import __version__
+
 
 def readme():
     with open("README.rst") as f:
@@ -19,7 +21,7 @@ test_requirements = [
 
 setup(
     name="landsat",
-    version='0.4.5',
+    version=__version__,
     description="A utility to search, download and process Landsat 8" +
     " satellite imagery",
     long_description=readme(),
