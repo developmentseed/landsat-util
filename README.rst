@@ -31,14 +31,6 @@ Use pip to install landsat-util. If you are not using virtualenv, you might have
     $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran
     $: pip install landsat-util
 
-**On Windows 7**
-
-Make sure you have python and pip installed. Then just run:
-
-.. code-block:: console
-
-  $: pip install landsat-util
-
 **On Other systems**
 
 .. code-block:: console
