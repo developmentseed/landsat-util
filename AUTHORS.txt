@@ -1,0 +1,11 @@
+Authors
+=======
+
+Scisco https://github.com/scisco
+Marc Farra https://github.com/kamicut
+Drew Bollinger https://github.com/drewbo
+Alex Kappel https://twitter.com/alex_kappel
+Eric Miller https://github.com/millerEric
+Yuriy Czoli https://github.com/YKCzoli
+
+See also https://github.com/developmentseed/landsat-util/graphs/contributors.
