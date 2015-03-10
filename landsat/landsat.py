@@ -15,7 +15,7 @@ from search import Search
 from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
 from image import Process, FileDoesNotExist
-from settings import BASE_DIR
+from __init__ import __version__
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -92,6 +92,8 @@ def args_options():
     subparsers = parser.add_subparsers(help='Landsat Utility',
                                        dest='subs')
 
+    parser.add_argument('--version', action='version', version='%(prog)s version ' + __version__)
+
     # Search Logic
     parser_search = subparsers.add_parser('search',
                                           help='Search Landsat metdata')
@@ -133,7 +135,7 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
-    parser_process.add_argument('--bands', help='specify band combinations. Default is 432'
+    parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
