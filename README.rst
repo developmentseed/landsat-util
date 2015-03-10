@@ -15,33 +15,48 @@ You can also run your own API and connect it to this tool.
 Installation
 ============
 
-sudo apt-get update
-sudo apt-get install python-pip python-numpy python-scipy libgdal-dev
-pip install -r requirements.txt
-
 **On Mac**
 
 .. code-block:: console
 
   $: pip install landsat-util
 
-**On Ubuntu**
+**On Ubuntu 14.04**
 
-Use pip to install landsat-util:
+Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``.
 
 .. code-block:: console
 
     $: sudo apt-get update
-    $: sudo apt-get update
-    $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev
+    $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran
     $: pip install landsat-util
+
+**On Windows 7**
+
+Make sure you have python and pip installed. Then just run:
+
+.. code-block:: console
+
+  $: pip install landsat-util
 
 **On Other systems**
 
 .. code-block:: console
 
-    $: pip install landsat-util
+    $: python setup.py install
 
+
+**To Upgrade**
+
+.. code-block:: console
+
+    $: pip install -U landsat-util
+
+If you have installed previous version of landsat using brew, first run:
+
+.. code-block:: console
+
+    $: brew uninstall landsat-util
 
 Overview: What can landsat-util do?
 ============
