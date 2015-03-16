@@ -88,6 +88,12 @@ class TestLandsat(unittest.TestCase):
 
         self.system_exit(args, 1)
 
+    def test_download_process_continuous(self):
+        """Test download and process commands together"""
+
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.temp_folder, '-p']
+        self.system_exit(args, 0)
+
     def test_process_correct(self):
         """Test process command with correct input"""
         args = ['process', self.landsat_image]

@@ -6,6 +6,7 @@
 import argparse
 import textwrap
 import json
+from os.path import join
 
 from dateutil.parser import parse
 import pycurl
@@ -16,6 +17,7 @@ from utils import reformat_date, convert_to_integer_list, timer, exit
 from mixins import VerbosityMixin
 from image import Process, FileDoesNotExist
 from __init__ import __version__
+import settings
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -127,9 +129,12 @@ def args_options():
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
                                  'the band from S3. If the band does not exist, an error is returned')
     parser_download.add_argument('-d', '--dest', help='Destination path')
+    parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
+    parser_download.add_argument('--pansharpen', action='store_true',
+                                 help='Whether to also pansharpen the process '
+                                 'image. Pan sharpening takes a long time')
 
-    parser_process = subparsers.add_parser('process',
-                                           help='Process Landsat imagery')
+    parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
                                 help='Path to the compressed image file')
     parser_process.add_argument('--pansharpen', action='store_true',
@@ -153,17 +158,7 @@ def main(args):
     if args:
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            try:
-                bands = convert_to_integer_list(args.bands)
-                p = Process(args.path, bands=bands, verbose=verbose)
-            except IOError:
-                exit("Zip file corrupted", 1)
-            except FileDoesNotExist as e:
-                exit(e.message, 1)
-
-            stored = p.run(args.pansharpen)
-
-            exit("The output is stored at %s" % stored)
+            process_image(args.path, args.bands, verbose, args.pansharpen)
 
         elif args.subs == 'search':
 
@@ -204,9 +199,34 @@ def main(args):
             d = Downloader(download_dir=args.dest)
             try:
                 if d.download(args.scenes, convert_to_integer_list(args.bands)):
-                    exit('Download Completed', 0)
+                    if args.process:
+                        if args.dest:
+                            path = join(args.dest, args.scenes[0])
+                        else:
+                            path = join(settings.DOWNLOAD_DIR, args.scenes[0])
+
+                        if not args.bands:
+                            path = path + '.tar.bz'
+
+                        process_image(path, args.bands, False, args.pansharpen)
+                    else:
+                        exit('Download Completed', 0)
             except IncorrectSceneId:
                 exit('The SceneID provided was incorrect', 1)
+
+
+def process_image(path, bands=None, verbose=False, pansharpen=False):
+    try:
+        bands = convert_to_integer_list(bands)
+        p = Process(path, bands=bands, verbose=verbose)
+    except IOError:
+        exit("Zip file corrupted", 1)
+    except FileDoesNotExist as e:
+        exit(e.message, 1)
+
+    stored = p.run(pansharpen)
+
+    exit("The output is stored at %s" % stored)
 
 
 def __main__():
