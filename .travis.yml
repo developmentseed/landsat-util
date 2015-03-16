@@ -2,7 +2,8 @@ language: python
 
 branches:
   only:
-    - /^v0\.5.*$/
+    - deveop
+    - /^feature*$/
 
 python:
   - '2.7'
