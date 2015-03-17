@@ -262,6 +262,10 @@ def main(args):
 
                         stored = process_image(path, args.bands, False, args.pansharpen)
 
+                        if args.upload:
+                            u = Uploader(args.key, args.secret, args.region)
+                            u.run(args.bucket, get_file(stored), stored)
+
                         exit("The output is stored at %s" % stored)
                     else:
                         exit('Download Completed', 0)
