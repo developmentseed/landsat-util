@@ -62,7 +62,7 @@ class Uploader(VerbosityMixin):
                threads=25, replace=True, secure=True, connection=self.conn)
 
         print('\n')
-        self.output('Uploaded Completed', normal=True, arrow=True)
+        self.output('Upload Completed', normal=True, arrow=True)
 
 
 def data_collector(iterable, def_buf_size=5242880):
