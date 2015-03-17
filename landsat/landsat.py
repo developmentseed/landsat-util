@@ -66,6 +66,11 @@ search, download, and process Landsat imagery.
 
                 -d, --dest          Destination path
 
+                -p, --process       Process the image after download
+
+                --pansharpen        Whether to also pansharpen the processed image.
+                                    Pansharpening requires larger memory
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -77,8 +82,8 @@ search, download, and process Landsat imagery.
                                     Default: Natural colors (432)
                                     Example --bands 432
 
-                -p --pansharpen     Whether to also pansharpen the process image.
-                                    Pansharpening takes a long time
+                --pansharpen        Whether to also pansharpen the process image.
+                                    Pansharpening requires larger memory
 
                 -v, --verbose       Show verbose output
 
@@ -132,14 +137,14 @@ def args_options():
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
-                                 'image. Pan sharpening takes a long time')
+                                 'image. Pansharpening requires larger memory')
 
     parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
                                 help='Path to the compressed image file')
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
-                                'image. Pan sharpening takes a long time')
+                                'image. Pansharpening requires larger memory')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
