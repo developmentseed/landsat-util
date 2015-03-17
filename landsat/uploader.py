@@ -59,7 +59,7 @@ class Uploader(VerbosityMixin):
         self.output('Uploading to S3', normal=True, arrow=True)
         upload(bucket_name, self.key, self.secret,
                data_collector(f.readlines()), filename, cb,
-               threads=25, replace=True, secure=True, connection=self.conn)
+               threads=10, replace=True, secure=True, connection=self.conn)
 
         print('\n')
         self.output('Upload Completed', normal=True, arrow=True)
