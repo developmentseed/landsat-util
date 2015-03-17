@@ -13,7 +13,8 @@ import pycurl
 
 from downloader import Downloader, IncorrectSceneId
 from search import Search
-from utils import reformat_date, convert_to_integer_list, timer, exit
+from uploader import Uploader
+from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
 from mixins import VerbosityMixin
 from image import Process, FileDoesNotExist
 from __init__ import __version__
@@ -71,6 +72,18 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
+                -u --upload         Upload to S3 after the image processing completed
+
+                --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
+                                    Environment Variables)
+
+                --secret            Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY as
+                                    Environment Variables)
+
+                --bucket            Bucket name (required if uploading to s3)
+
+                --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -88,6 +101,18 @@ search, download, and process Landsat imagery.
                 -v, --verbose       Show verbose output
 
                 -h, --help          Show this help message and exit
+
+                -u --upload         Upload to S3 after the image processing completed
+
+                --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
+                                    Environment Variables)
+
+                --secret            Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY as
+                                    Environment Variables)
+
+                --bucket            Bucket name (required if uploading to s3)
+
+                --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
 """
 
 
@@ -138,6 +163,14 @@ def args_options():
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
                                  'image. Pansharpening requires larger memory')
+    parser_download.add_argument('-u', '--upload', action='store_true',
+                                 help='Upload to S3 after the image processing completed')
+    parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
+                                 'Environment Variables)')
+    parser_download.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
+                                 'as Environment Variables)')
+    parser_download.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
+    parser_download.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
 
     parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
@@ -149,6 +182,14 @@ def args_options():
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
+    parser_process.add_argument('-u', '--upload', action='store_true',
+                                help='Upload to S3 after the image processing completed')
+    parser_process.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
+                                'Environment Variables)')
+    parser_process.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
+                                'as Environment Variables)')
+    parser_process.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
+    parser_process.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
 
     return parser
 
@@ -163,7 +204,13 @@ def main(args):
     if args:
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            process_image(args.path, args.bands, verbose, args.pansharpen)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen)
+
+            if args.upload:
+                u = Uploader(args.key, args.secret, args.region)
+                u.run(args.bucket, get_file(stored), stored)
+
+            exit("The output is stored at %s" % stored)
 
         elif args.subs == 'search':
 
@@ -213,7 +260,9 @@ def main(args):
                         if not args.bands:
                             path = path + '.tar.bz'
 
-                        process_image(path, args.bands, False, args.pansharpen)
+                        stored = process_image(path, args.bands, False, args.pansharpen)
+
+                        exit("The output is stored at %s" % stored)
                     else:
                         exit('Download Completed', 0)
             except IncorrectSceneId:
@@ -229,9 +278,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False):
     except FileDoesNotExist as e:
         exit(e.message, 1)
 
-    stored = p.run(pansharpen)
-
-    exit("The output is stored at %s" % stored)
+    return p.run(pansharpen)
 
 
 def __main__():
