@@ -6,11 +6,12 @@ import warnings
 import sys
 from os.path import join
 import tarfile
+import glob
+import subprocess
+
 import numpy
 import rasterio
-import glob
 from rasterio.warp import reproject, RESAMPLING, transform
-
 from skimage import img_as_ubyte, exposure
 from skimage import transform as sktransform
 
@@ -158,7 +159,7 @@ class Process(VerbosityMixin):
                     if i == 2:
                         band = self._gamma_correction(band, 0.9)
 
-                    
+
                     output.write_band(i+1, img_as_ubyte(band))
 
                     new_bands[i] = None
@@ -254,9 +255,14 @@ class Process(VerbosityMixin):
     def _unzip(self, src, dst, scene):
         """ Unzip tar files """
         self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
-        tar = tarfile.open(src)
-        tar.extractall(path=dst)
-        tar.close()
+
+        try:
+            tar = tarfile.open(src, 'r')
+            tar.extractall(path=dst)
+            tar.close()
+        except tarfile.ReadError:
+            check_create_folder(dst)
+            subprocess.check_call(['tar', '-xf', src, '-C', dst])
 
     def _get_full_filename(self, band):
 
