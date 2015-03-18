@@ -6,6 +6,8 @@
 import sys
 import unittest
 import subprocess
+import errno
+import shutil
 from os.path import join, abspath, dirname
 import mock
 
@@ -21,6 +23,15 @@ class TestLandsat(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.parser = landsat.args_options()
+        cls.mock_path = 'path/to/folder'
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            shutil.rmtree('path')
+        except OSError as exc:
+            if exc.errno != errno.ENOENT:
+                raise
 
     def test_incorrect_date(self):
         """ Test search with incorrect date input """
@@ -66,9 +77,9 @@ class TestLandsat(unittest.TestCase):
         """Test download command with correct input"""
         mock_downloader.download.return_value = True
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', 'path/to/folder']
+        args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', self.mock_path]
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(download_dir='path/to/folder')
+        mock_downloader.assert_called_with(download_dir=self.mock_path)
         mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], ['11', ''])
         self.assertEquals(output, ['Download Completed', 0])
 
@@ -86,7 +97,7 @@ class TestLandsat(unittest.TestCase):
         mock_downloader.return_value = True
         mock_process.return_value = 'image.TIF'
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p']
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p']
         output = landsat.main(self.parser.parse_args(args))
         mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
         mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
@@ -101,7 +112,7 @@ class TestLandsat(unittest.TestCase):
         mock_process.return_value = 'image.TIF'
         mock_upload.run.return_value = True
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p',
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p',
                 '-u', '--key', 'somekey', '--secret', 'somesecret', '--bucket', 'mybucket', '--region', 'this']
         output = landsat.main(self.parser.parse_args(args))
         mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
@@ -117,7 +128,7 @@ class TestLandsat(unittest.TestCase):
         mock_downloader.return_value = True
         mock_process.return_value = 'image.TIF'
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p',
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p',
                 '-u', '--region', 'whatever']
         output = landsat.main(self.parser.parse_args(args))
         mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
