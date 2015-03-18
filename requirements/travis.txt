@@ -3,4 +3,5 @@ homura==0.1.0
 termcolor==1.1.0
 python-coveralls
 mock==1.0.1
+boto==2.36.0
 
