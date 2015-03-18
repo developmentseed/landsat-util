@@ -63,10 +63,10 @@ class Downloader(VerbosityMixin):
         url = self.google_storage_url(sat)
 
         if self.remote_file_exists(url):
-            self.fetch(url, path, filename)
+            return self.fetch(url, path, filename)
 
         else:
-            RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
+            raise RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
 
     def amazon_s3(self, scene, band, path):
         """ Amazon S3 downloader """
@@ -76,10 +76,10 @@ class Downloader(VerbosityMixin):
         url = self.amazon_s3_url(sat, filename)
 
         if self.remote_file_exists(url):
-            self.fetch(url, path, filename)
+            return self.fetch(url, path, filename)
 
         else:
-            RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
+            raise RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
     def fetch(self, url, path, filename):
 

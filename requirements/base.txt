@@ -7,3 +7,4 @@ six==1.9.0
 scikit-image==0.10.1
 homura==0.1.0
 scipy==0.15.1
+boto==2.36.0
