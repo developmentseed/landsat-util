@@ -12,8 +12,10 @@ import subprocess
 import numpy
 import rasterio
 from rasterio.warp import reproject, RESAMPLING, transform
-from skimage import img_as_ubyte, exposure
+
 from skimage import transform as sktransform
+from skimage.util import img_as_ubyte
+from skimage.exposure import rescale_intensity, adjust_gamma
 
 import settings
 from mixins import VerbosityMixin
@@ -104,10 +106,17 @@ class Process(VerbosityMixin):
                 crn = self._get_boundaries(src_data)
 
                 dst_shape = src_data['shape']
-                y_pixel = (max(crn['ul']['y'][1][0],crn['ur']['y'][1][0])- min(crn['lr']['y'][1][0],crn['ll']['y'][1][0]))/dst_shape[0]
-                x_pixel = (max(crn['lr']['x'][1][0],crn['ur']['x'][1][0]) - min(crn['ul']['x'][1][0],crn['ll']['x'][1][0]))/dst_shape[1]
+                y_pixel = (max(crn['ul']['y'][1][0], crn['ur']['y'][1][0]) -
+                           min(crn['lr']['y'][1][0], crn['ll']['y'][1][0])) / dst_shape[0]
+                x_pixel = (max(crn['lr']['x'][1][0], crn['ur']['x'][1][0]) -
+                           min(crn['ul']['x'][1][0], crn['ll']['x'][1][0])) / dst_shape[1]
 
-                dst_transform = (min(crn['ul']['x'][1][0],crn['ll']['x'][1][0]), x_pixel, 0.0, max(crn['ul']['y'][1][0],crn['ur']['y'][1][0]), 0.0, -y_pixel)
+                dst_transform = (min(crn['ul']['x'][1][0], crn['ll']['x'][1][0]),
+                                 x_pixel,
+                                 0.0,
+                                 max(crn['ul']['y'][1][0], crn['ur']['y'][1][0]),
+                                 0.0,
+                                 -y_pixel)
                 # Delete crn since no longer needed
                 del crn
 
@@ -159,7 +168,6 @@ class Process(VerbosityMixin):
                     if i == 2:
                         band = self._gamma_correction(band, 0.9)
 
-
                     output.write_band(i+1, img_as_ubyte(band))
 
                     new_bands[i] = None
@@ -188,14 +196,14 @@ class Process(VerbosityMixin):
         return bands
 
     def _gamma_correction(self, band, value):
-        return exposure.adjust_gamma(band, value)
+        return adjust_gamma(band, value)
 
     def _color_correction(self, band, band_id):
         band = band.astype(numpy.uint16)
 
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
         p2, p98 = self._percent_cut(band)
-        band = exposure.rescale_intensity(band, in_range=(p2, p98))
+        band = rescale_intensity(band, in_range=(p2, p98))
 
         return band
 
