@@ -289,7 +289,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False):
     except FileDoesNotExist as e:
         exit(e.message, 1)
 
-    return [p.run(pansharpen), 0]
+    return p.run(pansharpen)
 
 
 def __main__():
