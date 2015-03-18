@@ -43,12 +43,14 @@ class Downloader(VerbosityMixin):
                     if isinstance(bands, list):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
-                        for band in bands:
-                            self.amazon_s3(scene, band, path)
+                        try:
+                            for band in bands:
+                                self.amazon_s3(scene, band, path)
+                        except RemoteFileDoesntExist:
+                            self.google_storage(scene, self.download_dir)
                     else:
                         raise Exception('Expected bands list')
-                else:
-                    self.google_storage(scene, self.download_dir)
+                self.google_storage(scene, self.download_dir)
 
             return True
 
