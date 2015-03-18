@@ -1,5 +1,6 @@
 state = {}
 
+
 class MockBotoS3MultipartUpload():
     def __init__(self):
         self.data = state['mock_boto_s3_multipart_upload_data']
@@ -13,12 +14,14 @@ class MockBotoS3MultipartUpload():
     def cancel_upload(self):
         pass
 
+
 class MockBotoS3Bucket():
     def lookup(self, key):
         pass
 
     def initiate_multipart_upload(self, key):
         return MockBotoS3MultipartUpload()
+
 
 class S3Connection():
     def __init__(self, key, secret, is_secure=None, host=None):
