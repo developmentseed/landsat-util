@@ -4,12 +4,10 @@
 """Tests for landsat"""
 
 import sys
-import errno
-import shutil
 import unittest
 import subprocess
-from tempfile import mkdtemp
 from os.path import join, abspath, dirname
+import mock
 
 try:
     import landsat.landsat as landsat
@@ -22,95 +20,140 @@ class TestLandsat(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.temp_folder = mkdtemp()
-        cls.base_dir = abspath(dirname(__file__))
-        cls.landsat_image = join(cls.base_dir, 'samples', 'test.tar.bz2')
         cls.parser = landsat.args_options()
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            shutil.rmtree(cls.temp_folder)
-            shutil.rmtree(join(cls.base_dir, 'samples', 'test'))
-        except OSError as exc:
-            if exc.errno != errno.ENOENT:
-                raise
-
-    def system_exit(self, args, code):
-        try:
-            landsat.main(self.parser.parse_args(args))
-        except SystemExit as e:
-            self.assertEqual(e.code, code)
 
     def test_incorrect_date(self):
         """ Test search with incorrect date input """
 
         args = ['search', '--start', 'berlin', '--end', 'january 10 2014']
 
-        self.system_exit(args, 1)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['You date format is incorrect. Please try again!', 1])
 
     def test_too_many_results(self):
         """ Test when search return too many results """
 
         args = ['search', '--cloud', '100', '-p', '205,022,206,022,204,022']
 
-        self.system_exit(args, 1)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['Over 100 results. Please narrow your search', 1])
 
     def test_search_pr_correct(self):
         """Test Path Row search with correct input"""
         args = ['search', '--start', 'january 1 2013', '--end',
                 'january 10 2014', '-p', '008,008']
 
-        self.system_exit(args, 0)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['Search completed!'])
 
     def test_search_lat_lon(self):
         """Test Latitude Longitude search with correct input"""
         args = ['search', '--start', 'may 01 2013', '--end', 'may 08 2013',
                 '--lat', '38.9107203', '--lon', '-77.0290116']
 
-        self.system_exit(args, 0)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['Search completed!'])
 
     def test_search_pr_wrong_input(self):
         """Test Path Row search with incorrect input"""
         args = ['search', '-p', 'what?']
 
-        self.system_exit(args, 1)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['Check your request and try again', 1])
 
-    def test_download_correct(self):
+    @mock.patch('landsat.landsat.Downloader')
+    def test_download_correct(self, mock_downloader):
         """Test download command with correct input"""
-        args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', self.temp_folder]
+        mock_downloader.download.return_value = True
 
-        self.system_exit(args, 0)
+        args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', 'path/to/folder']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(download_dir='path/to/folder')
+        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], ['11', ''])
+        self.assertEquals(output, ['Download Completed', 0])
 
     def test_download_incorrect(self):
         """Test download command with incorrect input"""
         args = ['download', 'LT813600']
 
-        self.system_exit(args, 1)
+        self.assertEquals(landsat.main(self.parser.parse_args(args)),
+                          ['The SceneID provided was incorrect', 1])
 
-    def test_download_process_continuous(self):
+    @mock.patch('landsat.landsat.process_image')
+    @mock.patch('landsat.landsat.Downloader.download')
+    def test_download_process_continuous(self, mock_downloader, mock_process):
         """Test download and process commands together"""
+        mock_downloader.return_value = True
+        mock_process.return_value = 'image.TIF'
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.temp_folder, '-p']
-        self.system_exit(args, 0)
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
+        self.assertEquals(output, ["The output is stored at image.TIF"])
 
-    def test_process_correct(self):
+    @mock.patch('landsat.landsat.Uploader')
+    @mock.patch('landsat.landsat.process_image')
+    @mock.patch('landsat.landsat.Downloader.download')
+    def test_download_process_continuous_with_upload(self, mock_downloader, mock_process, mock_upload):
+        """Test download and process commands together"""
+        mock_downloader.return_value = True
+        mock_process.return_value = 'image.TIF'
+        mock_upload.run.return_value = True
+
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p',
+                '-u', '--key', 'somekey', '--secret', 'somesecret', '--bucket', 'mybucket', '--region', 'this']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
+        mock_upload.assert_called_with('somekey', 'somesecret', 'this')
+        mock_upload.return_value.run.assert_called_with('mybucket', 'image.TIF', 'image.TIF')
+        self.assertEquals(output, ["The output is stored at image.TIF"])
+
+    @mock.patch('landsat.landsat.process_image')
+    @mock.patch('landsat.landsat.Downloader.download')
+    def test_download_process_continuous_with_wrong_args(self, mock_downloader, mock_process):
+        """Test download and process commands together"""
+        mock_downloader.return_value = True
+        mock_process.return_value = 'image.TIF'
+
+        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', 'path/to/folder', '-p',
+                '-u', '--region', 'whatever']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
+        self.assertEquals(output, ['Could not authenticate with AWS', 1])
+
+    @mock.patch('landsat.landsat.process_image')
+    def test_process_correct(self, mock_process):
         """Test process command with correct input"""
-        args = ['process', self.landsat_image]
+        mock_process.return_value = 'image.TIF'
 
-        self.system_exit(args, 0)
+        args = ['process', 'path/to/folder/LC80010092015051LGN00']
+        output = landsat.main(self.parser.parse_args(args))
 
-    def test_process_correct_pansharpen(self):
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False)
+        self.assertEquals(output, ["The output is stored at image.TIF"])
+
+    @mock.patch('landsat.landsat.process_image')
+    def test_process_correct_pansharpen(self, mock_process):
         """Test process command with correct input and pansharpening"""
-        args = ['process', '--pansharpen', self.landsat_image]
+        mock_process.return_value = 'image.TIF'
 
-        self.system_exit(args, 0)
+        args = ['process', '--pansharpen', 'path/to/folder/LC80010092015051LGN00']
+        output = landsat.main(self.parser.parse_args(args))
+
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, True)
+        self.assertEquals(output, ["The output is stored at image.TIF"])
 
     def test_process_incorrect(self):
         """Test process command with incorrect input"""
         args = ['process', 'whatever']
 
-        self.system_exit(args, 1)
+        try:
+            landsat.main(self.parser.parse_args(args))
+        except SystemExit as e:
+            self.assertEqual(e.code, 1)
 
     def check_command_line(self):
         """ Check if the commandline performs correctly """
