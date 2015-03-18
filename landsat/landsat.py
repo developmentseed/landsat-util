@@ -7,9 +7,11 @@ import argparse
 import textwrap
 import json
 from os.path import join
+from urllib2 import URLError
 
 from dateutil.parser import parse
 import pycurl
+from boto.exception import NoAuthHandlerFound
 
 from downloader import Downloader, IncorrectSceneId
 from search import Search
@@ -210,7 +212,7 @@ def main(args):
                 u = Uploader(args.key, args.secret, args.region)
                 u.run(args.bucket, get_file(stored), stored)
 
-            exit("The output is stored at %s" % stored)
+            return ["The output is stored at %s" % stored]
 
         elif args.subs == 'search':
 
@@ -220,7 +222,7 @@ def main(args):
                 if args.end:
                     args.end = reformat_date(parse(args.end))
             except (TypeError, ValueError):
-                exit("You date format is incorrect. Please try again!", 1)
+                return ["You date format is incorrect. Please try again!", 1]
 
             s = Search()
 
@@ -228,7 +230,7 @@ def main(args):
                 lat = float(args.lat) if args.lat else None
                 lon = float(args.lon) if args.lon else None
             except ValueError:
-                exit("The latitude and longitude values must be valid numbers", 1)
+                return ["The latitude and longitude values must be valid numbers", 1]
 
             result = s.search(paths_rows=args.pathrow,
                               lat=lat,
@@ -241,12 +243,12 @@ def main(args):
             if result['status'] == 'SUCCESS':
                 v.output('%s items were found' % result['total'], normal=True, arrow=True)
                 if result['total'] > 100:
-                    exit('Over 100 results. Please narrow your search', 1)
+                    return ['Over 100 results. Please narrow your search', 1]
                 else:
                     v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    exit('Search completed!')
+                    return ['Search completed!']
             elif result['status'] == 'error':
-                exit(result['message'], 1)
+                return [result['message'], 1]
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             try:
@@ -263,14 +265,19 @@ def main(args):
                         stored = process_image(path, args.bands, False, args.pansharpen)
 
                         if args.upload:
-                            u = Uploader(args.key, args.secret, args.region)
+                            try:
+                                u = Uploader(args.key, args.secret, args.region)
+                            except NoAuthHandlerFound:
+                                return ["Could not authenticate with AWS", 1]
+                            except URLError:
+                                return ["Connection timeout. Probably the region parameter is incorrect", 1]
                             u.run(args.bucket, get_file(stored), stored)
 
-                        exit("The output is stored at %s" % stored)
+                        return ["The output is stored at %s" % stored]
                     else:
-                        exit('Download Completed', 0)
+                        return ['Download Completed', 0]
             except IncorrectSceneId:
-                exit('The SceneID provided was incorrect', 1)
+                return ['The SceneID provided was incorrect', 1]
 
 
 def process_image(path, bands=None, verbose=False, pansharpen=False):
@@ -282,7 +289,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False):
     except FileDoesNotExist as e:
         exit(e.message, 1)
 
-    return p.run(pansharpen)
+    return [p.run(pansharpen), 0]
 
 
 def __main__():
@@ -291,7 +298,7 @@ def __main__():
     parser = args_options()
     args = parser.parse_args()
     with timer():
-        main(args)
+        exit(*main(args))
 
 if __name__ == "__main__":
     try:
