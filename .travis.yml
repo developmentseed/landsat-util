@@ -1,10 +1,5 @@
 language: python
 
-branches:
-  only:
-    - deveop
-    - /^feature*$/
-
 python:
   - '2.7'
 
