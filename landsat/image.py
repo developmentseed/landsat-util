@@ -15,7 +15,7 @@ from rasterio.warp import reproject, RESAMPLING, transform
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
-from skimage.exposure import rescale_intensity, adjust_gamma
+from skimage.exposure import equalize_adapthist, adjust_gamma
 
 import settings
 from mixins import VerbosityMixin
@@ -202,8 +202,7 @@ class Process(VerbosityMixin):
         band = band.astype(numpy.uint16)
 
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p2, p98 = self._percent_cut(band)
-        band = rescale_intensity(band, in_range=(p2, p98))
+        band = equalize_adapthist(band, clip_limit=0.02)
 
         return band
 
