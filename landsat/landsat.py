@@ -132,7 +132,7 @@ def args_options():
                                            help='Process Landsat imagery')
     parser_process.add_argument('path',
                                 help='Path to the compressed image file')
-    parser_process.add_argument('--pansharpen', action='store_true',
+    parser_process.add_argument('-p', '--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pan sharpening takes a long time')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
