@@ -42,6 +42,9 @@ class TestLandsat(unittest.TestCase):
         except SystemExit as e:
             self.assertEqual(e.code, code)
 
+    def parse_args(self, args):
+        return self.parser.parse_args(args)
+
     def test_incorrect_date(self):
         """ Test search with incorrect date input """
 
@@ -110,6 +113,10 @@ class TestLandsat(unittest.TestCase):
         """ Check if the commandline performs correctly """
 
         self.assertEqual(subprocess.call(['python', join(self.base_dir, '../landsat.py'), '-h']), 0)
+
+    def test_pansharpen_p(self):
+        """ Check that process -p enables pansharpening """
+        self.assertEqual(self.parse_args(['process', '-p', 'does not exist']).pansharpen, True)
 
 
 if __name__ == '__main__':
