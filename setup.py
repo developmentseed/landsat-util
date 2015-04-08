@@ -38,7 +38,7 @@ setup(
       'python-dateutil==2.2',
       'numpy==1.9.1',
       'termcolor==1.1.0',
-      'rasterio==0.18',
+      'rasterio>=0.18',
       'six==1.9.0',
       'scipy==0.15.1',
       'scikit-image==0.10.1',
