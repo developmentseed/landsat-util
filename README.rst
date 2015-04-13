@@ -19,7 +19,9 @@ Installation
 
 .. code-block:: console
 
-  $: pip install landsat-util
+    $: pip install --update pip
+    $: pip install wheel
+    $: pip install landsat-util
 
 **On Ubuntu 14.04**
 
