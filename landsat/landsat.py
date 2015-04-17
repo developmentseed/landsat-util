@@ -139,7 +139,7 @@ def args_options():
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
-
+    parser_process.add_argument('-d', '--dest', help='Destination path')
     return parser
 
 
@@ -155,7 +155,7 @@ def main(args):
             verbose = True if args.verbose else False
             try:
                 bands = convert_to_integer_list(args.bands)
-                p = Process(args.path, bands=bands, verbose=verbose)
+                p = Process(args.path, bands=bands, verbose=verbose, dst_path=args.dest)
             except IOError:
                 exit("Zip file corrupted", 1)
             except FileDoesNotExist as e:
