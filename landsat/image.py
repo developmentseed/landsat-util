@@ -15,7 +15,7 @@ from rasterio.warp import reproject, RESAMPLING, transform
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
-from skimage.exposure import equalize_adapthist, adjust_gamma
+from skimage.exposure import rescale_intensity, adjust_gamma
 
 import settings
 from mixins import VerbosityMixin
@@ -68,6 +68,18 @@ class Process(VerbosityMixin):
     def run(self, pansharpen=True):
 
         self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+
+        # Read cloud coverage from mtl file
+        cloud_cover = 0
+        try:
+            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
+                lines = mtl.readlines()
+                for line in lines:
+                    if 'CLOUD_COVER' in line:
+                        cloud_cover = float(line.replace('CLOUD_COVER = ', ''))
+                        break
+        except IOError:
+            pass
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -159,7 +171,7 @@ class Process(VerbosityMixin):
 
                 for i, band in enumerate(new_bands):
                     # Color Correction
-                    band = self._color_correction(band, self.bands[i])
+                    band = self._color_correction(band, self.bands[i], 0.1, cloud_cover)
 
                     # Gamma Correction
                     if i == 0:
@@ -198,13 +210,17 @@ class Process(VerbosityMixin):
     def _gamma_correction(self, band, value):
         return adjust_gamma(band, value)
 
-    def _color_correction(self, band, band_id):
+    def _color_correction(self, band, band_id, low, cloud_cover):
         band = band.astype(numpy.uint16)
 
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        band = equalize_adapthist(band, clip_limit=0.02)
-
-        return band
+        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
+        temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
+        cloud_divide = 65000 - cloud_cover * 100
+        mask = numpy.logical_and(band < cloud_cut_low, band > 0)
+        temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
+        temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
+        return temp
 
     def _read_band(self, band_path):
         """ Reads a band with rasterio """
@@ -256,8 +272,8 @@ class Process(VerbosityMixin):
 
         return output
 
-    def _percent_cut(self, color):
-        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (2, 98))
+    def _percent_cut(self, color, low, high):
+        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
 
     def _unzip(self, src, dst, scene):
         """ Unzip tar files """
