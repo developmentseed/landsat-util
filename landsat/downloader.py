@@ -44,7 +44,10 @@ class Downloader(VerbosityMixin):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
                         try:
-                            for band in bands:
+                            # Always grab MTL.txt if bands are specified
+                            bands_plus = bands
+                            bands_plus.append('MTL')
+                            for band in bands_plus:
                                 self.amazon_s3(scene, band, path)
                         except RemoteFileDoesntExist:
                             self.google_storage(scene, self.download_dir)
@@ -74,7 +77,10 @@ class Downloader(VerbosityMixin):
         """ Amazon S3 downloader """
         sat = self.scene_interpreter(scene)
 
-        filename = '%s_B%s.TIF' % (scene, band)
+        if band != 'MTL':
+            filename = '%s_B%s.TIF' % (scene, band)
+        else:
+            filename = '%s_%s.txt' % (scene, band)
         url = self.amazon_s3_url(sat, filename)
 
         if self.remote_file_exists(url):
