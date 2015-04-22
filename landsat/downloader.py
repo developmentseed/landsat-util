@@ -39,7 +39,8 @@ class Downloader(VerbosityMixin):
 
         if isinstance(scenes, list):
             for scene in scenes:
-                if bands:
+                # If bands are provided the image is from 2015 or later use Amazon
+                if (bands and int(scene[12]) > 4):
                     if isinstance(bands, list):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
@@ -53,7 +54,8 @@ class Downloader(VerbosityMixin):
                             self.google_storage(scene, self.download_dir)
                     else:
                         raise Exception('Expected bands list')
-                self.google_storage(scene, self.download_dir)
+                else:
+                    self.google_storage(scene, self.download_dir)
 
             return True
 

@@ -53,20 +53,36 @@ class TestDownloader(unittest.TestCase):
         self.d.download([self.scene])
         self.assertTrue(self.d.download([self.scene]))
 
-        # # pass string instead of list
+        # Test if error is raised when passing scene as string instead of list
         self.assertRaises(Exception, self.d.download, self.scene)
 
-        # # pass multiple sceneIDs
+        # Test if download works when passing scenes as list
         self.d.download([self.scene, self.scene])
         self.assertTrue(self.d.download([self.scene]))
 
-        # # pass band along with sceneID
+        # Test when passing band list along with sceneID
         self.d.download([self.scene_s3], bands=[11])
 
         self.assertTrue(self.d.download([self.scene]))
 
-        # # pass band as string
+        # Test whether passing band as string raises an exception
         self.assertRaises(Exception, self.d.download, self.scene, 4)
+
+    @mock.patch('landsat.downloader.Downloader.amazon_s3')
+    @mock.patch('landsat.downloader.Downloader.google_storage')
+    def test_download_google_amazon(self, fake_google, fake_amazon):
+        """ Test whether google or amazon are correctly selected based on input """
+
+        fake_amazon.return_value = True
+        fake_google.return_value = False
+
+        # Test if google is used when an image from 2014 is passed even if bands are provided
+        self.d.download([self.scene], bands=[432])
+        fake_google.assert_called_with(self.scene, self.d.download_dir)
+
+        # Test if amazon is used when an image from 2015 is passed with bands
+        self.d.download([self.scene_s3], bands=[432])
+        fake_amazon.assert_called_with(self.scene_s3, 'MTL', self.d.download_dir + '/' + self.scene_s3)
 
     @mock.patch('landsat.downloader.fetch')
     def test_google_storage(self, mock_fetch):

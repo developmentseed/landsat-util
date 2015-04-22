@@ -259,7 +259,8 @@ def main(args):
                         else:
                             path = join(settings.DOWNLOAD_DIR, args.scenes[0])
 
-                        if not args.bands:
+                        # Keep using Google if the image is before 2015
+                        if (int(args.scenes[0][12]) < 5 or not args.bands):
                             path = path + '.tar.bz'
 
                         stored = process_image(path, args.bands, False, args.pansharpen)
