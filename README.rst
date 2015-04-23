@@ -24,12 +24,15 @@ Installation
 Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``.
 
   ``$: sudo apt-get update``
+
   ``$: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran``
+
   ``$: pip install landsat-util``
 
 **On Other systems**
 
   ``$: python setup.py numpy six``
+
   ``$: python setup.py install``
 
 
@@ -44,6 +47,7 @@ If you have installed previous version of landsat using brew, first run:
 **To Test**
 
   ``$: pip install -U requirements/dev.txt``
+
   ``$: nosetests``
 
 Overview: What can landsat-util do?
