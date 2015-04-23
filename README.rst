@@ -31,6 +31,8 @@ Use pip to install landsat-util. If you are not using virtualenv, you might have
 
 **On Other systems**
 
+Make sure Python setuptools is installed.
+
   ``$: python setup.py numpy six``
 
   ``$: python setup.py install``
@@ -49,6 +51,10 @@ If you have installed previous version of landsat using brew, first run:
   ``$: pip install -U requirements/dev.txt``
 
   ``$: nosetests``
+
+Or
+
+  ``$: python setup.py test``
 
 Overview: What can landsat-util do?
 ====================================
