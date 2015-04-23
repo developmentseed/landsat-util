@@ -10,12 +10,14 @@ import shutil
 import unittest
 from tempfile import mkdtemp
 
+import mock
+
 try:
-    from landsat.downloader import Downloader
+    from landsat.downloader import Downloader, RemoteFileDoesntExist, IncorrectSceneId
     from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
 except ImportError:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from landsat.downloader import Downloader
+    from landsat.downloader import Downloader, RemoteFileDoesntExist, IncorrectSceneId
     from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
 
 
@@ -43,57 +45,80 @@ class TestDownloader(unittest.TestCase):
 
         self.assertEqual(remote_size, download_size)
 
-    def test_download(self):
-        sat = self.d.scene_interpreter(self.scene)
-        url = self.d.google_storage_url(sat)
-        self.d.download_dir = self.temp_folder
+    @mock.patch('landsat.downloader.fetch')
+    def test_download(self, mock_fetch):
+        mock_fetch.return_value = True
 
         # download one list
         self.d.download([self.scene])
-        self.assertSize(url, os.path.join(self.temp_folder, self.scene + '.tar.bz'))
+        self.assertTrue(self.d.download([self.scene]))
 
-        # pass string instead of list
+        # Test if error is raised when passing scene as string instead of list
         self.assertRaises(Exception, self.d.download, self.scene)
 
-        # pass multiple sceneIDs
+        # Test if download works when passing scenes as list
         self.d.download([self.scene, self.scene])
-        self.assertSize(url, os.path.join(self.temp_folder, self.scene + '.tar.bz'))
+        self.assertTrue(self.d.download([self.scene]))
 
-        # pass band along with sceneID
+        # Test when passing band list along with sceneID
         self.d.download([self.scene_s3], bands=[11])
-        filename = '%s_B11.TIF' % self.scene_s3
-        sat = self.d.scene_interpreter(self.scene_s3)
-        url = self.d.amazon_s3_url(sat, filename)
 
-        self.assertSize(url, os.path.join(self.temp_folder, self.scene_s3, filename))
+        self.assertTrue(self.d.download([self.scene]))
 
-        # pass band as string
+        # Test whether passing band as string raises an exception
         self.assertRaises(Exception, self.d.download, self.scene, 4)
 
-    def test_google_storage(self):
-        sat = self.d.scene_interpreter(self.scene)
-        url = self.d.google_storage_url(sat)
-        self.d.google_storage(self.scene, self.temp_folder)
+    @mock.patch('landsat.downloader.Downloader.amazon_s3')
+    @mock.patch('landsat.downloader.Downloader.google_storage')
+    def test_download_google_amazon(self, fake_google, fake_amazon):
+        """ Test whether google or amazon are correctly selected based on input """
 
-        self.assertSize(url, os.path.join(self.temp_folder, self.scene + '.tar.bz'))
+        fake_amazon.return_value = True
+        fake_google.return_value = False
 
-    def test_amazon_s3(self):
+        # Test if google is used when an image from 2014 is passed even if bands are provided
+        self.d.download([self.scene], bands=[432])
+        fake_google.assert_called_with(self.scene, self.d.download_dir)
+
+        # Test if amazon is used when an image from 2015 is passed with bands
+        self.d.download([self.scene_s3], bands=[432])
+        fake_amazon.assert_called_with(self.scene_s3, 'MTL', self.d.download_dir + '/' + self.scene_s3)
+
+    @mock.patch('landsat.downloader.fetch')
+    def test_google_storage(self, mock_fetch):
+        mock_fetch.return_value = True
+
+        # If the file exist
+        self.assertTrue(self.d.google_storage(self.scene, self.temp_folder))
+
+        # If scene id is incorrect
+        self.assertRaises(IncorrectSceneId, self.d.google_storage, 'somerandomscene', self.temp_folder)
+
+        # If scene id doesn't exist
+        self.assertRaises(RemoteFileDoesntExist, self.d.google_storage, 'LG21360082013227LGN01',
+                          self.temp_folder)
+
+    @mock.patch('landsat.downloader.fetch')
+    def test_amazon_s3(self, mock_fetch):
+        mock_fetch.return_value = True
+
         scene = self.scene_s3
-        sat = self.d.scene_interpreter(scene)
-        filename = '%s_B11.TIF' % scene
-        url = self.d.amazon_s3_url(sat, filename)
+        self.assertTrue(self.d.amazon_s3(scene, 11, self.temp_folder))
 
-        self.d.amazon_s3(scene, 11, self.temp_folder)
+        # If scene id is incorrect
+        self.assertRaises(IncorrectSceneId, self.d.amazon_s3, 'somerandomscene', 11, self.temp_folder)
 
-        self.assertSize(url, os.path.join(self.temp_folder, filename))
+        # If scene id doesn't exist
+        self.assertRaises(RemoteFileDoesntExist, self.d.amazon_s3, 'LT81360082013127LGN01', 33, self.temp_folder)
 
-    def test_fetch(self):
+    @mock.patch('landsat.downloader.fetch')
+    def test_fetch(self, mock_fetch):
+        mock_fetch.return_value = True
+
         sat = self.d.scene_interpreter(self.scene)
         url = self.d.google_storage_url(sat)
 
-        # download
-        self.d.fetch(url, self.temp_folder, self.scene)
-        self.assertSize(url, os.path.join(self.temp_folder, self.scene + '.tar.bz'))
+        self.assertTrue(self.d.fetch(url, self.temp_folder, self.scene))
 
     def test_remote_file_size(self):
 
@@ -119,13 +144,21 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(expect, string)
 
     def test_remote_file_exist(self):
-        # Test a url that doesn't exist
+        # Test a S3 url that exists
         self.assertTrue(self.d.remote_file_exists(os.path.join(S3_LANDSAT, 'L8/003/017/LC80030172015001L'
                                                   'GN00/LC80030172015001LGN00_B6.TIF')))
 
-        # Test a url that exist
+        # Test a S3 url that doesn't exist
         self.assertFalse(self.d.remote_file_exists(os.path.join(S3_LANDSAT, 'L8/003/017/LC80030172015001L'
                                                    'GN00/LC80030172015001LGN00_B34.TIF')))
+
+        # Test a Google Storage url that doesn't exist
+        self.assertFalse(self.d.remote_file_exists(os.path.join(GOOGLE_STORAGE, 'L8/003/017/LC80030172015001L'
+                                                   'GN00/LC80030172015001LGN00_B6.TIF')))
+
+        # Test a Google Storage url that exists
+        self.assertTrue(self.d.remote_file_exists(os.path.join(GOOGLE_STORAGE,
+                                                  'L8/003/017/LC80030172015001LGN00.tar.bz')))
 
     def test_scene_interpreter(self):
         # Test with correct input

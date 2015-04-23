@@ -6,16 +6,21 @@
 import argparse
 import textwrap
 import json
+from os.path import join
+from urllib2 import URLError
 
 from dateutil.parser import parse
 import pycurl
+from boto.exception import NoAuthHandlerFound
 
 from downloader import Downloader, IncorrectSceneId
 from search import Search
-from utils import reformat_date, convert_to_integer_list, timer, exit
+from uploader import Uploader
+from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
 from mixins import VerbosityMixin
 from image import Process, FileDoesNotExist
 from __init__ import __version__
+import settings
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -64,6 +69,23 @@ search, download, and process Landsat imagery.
 
                 -d, --dest          Destination path
 
+                -p, --process       Process the image after download
+
+                --pansharpen        Whether to also pansharpen the processed image.
+                                    Pansharpening requires larger memory
+
+                -u --upload         Upload to S3 after the image processing completed
+
+                --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
+                                    Environment Variables)
+
+                --secret            Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY as
+                                    Environment Variables)
+
+                --bucket            Bucket name (required if uploading to s3)
+
+                --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -75,12 +97,24 @@ search, download, and process Landsat imagery.
                                     Default: Natural colors (432)
                                     Example --bands 432
 
-                -p --pansharpen     Whether to also pansharpen the process image.
-                                    Pansharpening takes a long time
+                --pansharpen        Whether to also pansharpen the process image.
+                                    Pansharpening requires larger memory
 
                 -v, --verbose       Show verbose output
 
                 -h, --help          Show this help message and exit
+
+                -u --upload         Upload to S3 after the image processing completed
+
+                --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
+                                    Environment Variables)
+
+                --secret            Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY as
+                                    Environment Variables)
+
+                --bucket            Bucket name (required if uploading to s3)
+
+                --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
 """
 
 
@@ -127,18 +161,37 @@ def args_options():
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
                                  'the band from S3. If the band does not exist, an error is returned')
     parser_download.add_argument('-d', '--dest', help='Destination path')
+    parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
+    parser_download.add_argument('--pansharpen', action='store_true',
+                                 help='Whether to also pansharpen the process '
+                                 'image. Pansharpening requires larger memory')
+    parser_download.add_argument('-u', '--upload', action='store_true',
+                                 help='Upload to S3 after the image processing completed')
+    parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
+                                 'Environment Variables)')
+    parser_download.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
+                                 'as Environment Variables)')
+    parser_download.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
+    parser_download.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
 
-    parser_process = subparsers.add_parser('process',
-                                           help='Process Landsat imagery')
+    parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
                                 help='Path to the compressed image file')
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
-                                'image. Pan sharpening takes a long time')
+                                'image. Pansharpening requires larger memory')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
+    parser_process.add_argument('-u', '--upload', action='store_true',
+                                help='Upload to S3 after the image processing completed')
+    parser_process.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
+                                'Environment Variables)')
+    parser_process.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
+                                'as Environment Variables)')
+    parser_process.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
+    parser_process.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
 
     return parser
 
@@ -153,17 +206,13 @@ def main(args):
     if args:
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            try:
-                bands = convert_to_integer_list(args.bands)
-                p = Process(args.path, bands=bands, verbose=verbose)
-            except IOError:
-                exit("Zip file corrupted", 1)
-            except FileDoesNotExist as e:
-                exit(e.message, 1)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen)
 
-            stored = p.run(args.pansharpen)
+            if args.upload:
+                u = Uploader(args.key, args.secret, args.region)
+                u.run(args.bucket, get_file(stored), stored)
 
-            exit("The output is stored at %s" % stored)
+            return ["The output is stored at %s" % stored]
 
         elif args.subs == 'search':
 
@@ -173,7 +222,7 @@ def main(args):
                 if args.end:
                     args.end = reformat_date(parse(args.end))
             except (TypeError, ValueError):
-                exit("You date format is incorrect. Please try again!", 1)
+                return ["You date format is incorrect. Please try again!", 1]
 
             s = Search()
 
@@ -181,7 +230,7 @@ def main(args):
                 lat = float(args.lat) if args.lat else None
                 lon = float(args.lon) if args.lon else None
             except ValueError:
-                exit("The latitude and longitude values must be valid numbers", 1)
+                return ["The latitude and longitude values must be valid numbers", 1]
 
             result = s.search(paths_rows=args.pathrow,
                               lat=lat,
@@ -194,19 +243,54 @@ def main(args):
             if result['status'] == 'SUCCESS':
                 v.output('%s items were found' % result['total'], normal=True, arrow=True)
                 if result['total'] > 100:
-                    exit('Over 100 results. Please narrow your search', 1)
+                    return ['Over 100 results. Please narrow your search', 1]
                 else:
                     v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    exit('Search completed!')
+                    return ['Search completed!']
             elif result['status'] == 'error':
-                exit(result['message'], 1)
+                return [result['message'], 1]
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             try:
                 if d.download(args.scenes, convert_to_integer_list(args.bands)):
-                    exit('Download Completed', 0)
+                    if args.process:
+                        if args.dest:
+                            path = join(args.dest, args.scenes[0])
+                        else:
+                            path = join(settings.DOWNLOAD_DIR, args.scenes[0])
+
+                        # Keep using Google if the image is before 2015
+                        if (int(args.scenes[0][12]) < 5 or not args.bands):
+                            path = path + '.tar.bz'
+
+                        stored = process_image(path, args.bands, False, args.pansharpen)
+
+                        if args.upload:
+                            try:
+                                u = Uploader(args.key, args.secret, args.region)
+                            except NoAuthHandlerFound:
+                                return ["Could not authenticate with AWS", 1]
+                            except URLError:
+                                return ["Connection timeout. Probably the region parameter is incorrect", 1]
+                            u.run(args.bucket, get_file(stored), stored)
+
+                        return ["The output is stored at %s" % stored]
+                    else:
+                        return ['Download Completed', 0]
             except IncorrectSceneId:
-                exit('The SceneID provided was incorrect', 1)
+                return ['The SceneID provided was incorrect', 1]
+
+
+def process_image(path, bands=None, verbose=False, pansharpen=False):
+    try:
+        bands = convert_to_integer_list(bands)
+        p = Process(path, bands=bands, verbose=verbose)
+    except IOError:
+        exit("Zip file corrupted", 1)
+    except FileDoesNotExist as e:
+        exit(e.message, 1)
+
+    return p.run(pansharpen)
 
 
 def __main__():
@@ -215,7 +299,7 @@ def __main__():
     parser = args_options()
     args = parser.parse_args()
     with timer():
-        main(args)
+        exit(*main(args))
 
 if __name__ == "__main__":
     try:

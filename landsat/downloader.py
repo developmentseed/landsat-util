@@ -39,12 +39,19 @@ class Downloader(VerbosityMixin):
 
         if isinstance(scenes, list):
             for scene in scenes:
-                if bands:
+                # If bands are provided the image is from 2015 or later use Amazon
+                if (bands and int(scene[12]) > 4):
                     if isinstance(bands, list):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
-                        for band in bands:
-                            self.amazon_s3(scene, band, path)
+                        try:
+                            # Always grab MTL.txt if bands are specified
+                            bands_plus = bands
+                            bands_plus.append('MTL')
+                            for band in bands_plus:
+                                self.amazon_s3(scene, band, path)
+                        except RemoteFileDoesntExist:
+                            self.google_storage(scene, self.download_dir)
                     else:
                         raise Exception('Expected bands list')
                 else:
@@ -63,23 +70,26 @@ class Downloader(VerbosityMixin):
         url = self.google_storage_url(sat)
 
         if self.remote_file_exists(url):
-            self.fetch(url, path, filename)
+            return self.fetch(url, path, filename)
 
         else:
-            RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
+            raise RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
 
     def amazon_s3(self, scene, band, path):
         """ Amazon S3 downloader """
         sat = self.scene_interpreter(scene)
 
-        filename = '%s_B%s.TIF' % (scene, band)
+        if band != 'MTL':
+            filename = '%s_B%s.TIF' % (scene, band)
+        else:
+            filename = '%s_%s.txt' % (scene, band)
         url = self.amazon_s3_url(sat, filename)
 
         if self.remote_file_exists(url):
-            self.fetch(url, path, filename)
+            return self.fetch(url, path, filename)
 
         else:
-            RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
+            raise RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
     def fetch(self, url, path, filename):
 

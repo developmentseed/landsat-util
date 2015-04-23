@@ -1,9 +1,5 @@
 language: python
 
-branches:
-  only:
-    - /^v0\.5.*$/
-
 python:
   - '2.7'
 
@@ -23,12 +19,10 @@ before_install:
 
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib scikit-image requests six nose dateutil
+  - conda install --yes -c https://conda.binstar.org/osgeo gdal
   - pip install --install-option="--no-cython-compile" cython
   - pip install -r requirements/travis.txt
 
 script:
   - nosetests
-
-after_success:
-  - coveralls

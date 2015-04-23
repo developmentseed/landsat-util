@@ -17,41 +17,38 @@ Installation
 
 **On Mac**
 
-.. code-block:: console
-
-  $: pip install landsat-util
+  ``$: pip install landsat-util``
 
 **On Ubuntu 14.04**
 
 Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``.
 
-.. code-block:: console
-
-    $: sudo apt-get update
-    $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran
-    $: pip install landsat-util
+  ``$: sudo apt-get update``
+  ``$: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran``
+  ``$: pip install landsat-util``
 
 **On Other systems**
 
-.. code-block:: console
-
-    $: python setup.py install
+  ``$: python setup.py numpy six``
+  ``$: python setup.py install``
 
 
 **To Upgrade**
 
-.. code-block:: console
-
-    $: pip install -U landsat-util
+  ``$: pip install -U landsat-util``
 
 If you have installed previous version of landsat using brew, first run:
 
-.. code-block:: console
+  ``$: brew uninstall landsat-util``
 
-    $: brew uninstall landsat-util
+**To Test**
+
+  ``$: pip install -U requirements/dev.txt``
+  ``$: nosetests``
 
 Overview: What can landsat-util do?
-============
+====================================
+
 Landsat-util has three main functions:
 
 - **Search** for landsat tiles based on several search parameters.
@@ -63,7 +60,7 @@ These three functions have to be performed separately.
 **Help**: Type ``landsat -h`` for detailed usage parameters.
 
 Step 1: Search
-============
+===============
 
 Search returns information about all landsat tiles that match your criteria.  This includes a link to an unprocessed preview of the tile.  The most important result is the tile's *sceneID*, which you will need to download the tile (see step 2 below).
 
@@ -89,7 +86,7 @@ Search by latitude and longitude:
 
 
 Step 2: Download
-============
+=================
 
 You can download tiles using their unique sceneID, which you get from landsat search.
 
@@ -110,7 +107,7 @@ Download multiple sceneIDs:
 ``$: landsat download LC80090452014008LGN00 LC80090452015008LGN00 LC80090452013008LGN00``
 
 Step 3: Image processing
-============
+=========================
 
 You can process your downloaded tiles with our custom image processing algorithms.  In addition, you can choose to pansharpen your images and specify which bands to process.
 
@@ -145,7 +142,7 @@ Important Notes
 - Landsat-util requires at least 2GB of Memory (RAM).
 
 Recently Added
-++++++++++
++++++++++++++++
 
 - Add longitude latitude search
 - Improve console output

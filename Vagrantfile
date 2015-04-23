@@ -25,7 +25,8 @@ Vagrant.configure(2) do |config|
     sudo rm -rf /dev/shm
     sudo ln -s /run/shm /dev/shm
 
-    conda install --yes numpy scikit-image requests gdal nose dateutil
+    conda install --yes -c https://conda.binstar.org/osgeo gdal
+    conda install --yes numpy scikit-image requests nose dateutil
 
     pip install --install-option="--no-cython-compile" cython
     pip install -r /vagrant/requirements/travis.txt
