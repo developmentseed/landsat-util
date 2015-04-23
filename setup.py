@@ -16,7 +16,8 @@ def readme():
         return f.read()
 
 test_requirements = [
-  'nose==1.3.3'
+  'nose>=1.3.6',
+  'mock>=1.0.1'
 ]
 
 setup(
