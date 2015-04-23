@@ -29,6 +29,7 @@ Use pip to install landsat-util. If you are not using virtualenv, you might have
 
 **On Other systems**
 
+  ``$: python setup.py numpy six``
   ``$: python setup.py install``
 
 
