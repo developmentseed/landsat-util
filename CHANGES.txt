@@ -1,0 +1,39 @@
+Changes
+=======
+
+0.6.1 (2015-04-23)
+------------------
+- Updated tests that run faster
+- New upload command for uploading final image to S3
+- New command for continuous upload, process and upload
+- Updated image processing that produces better color correction
+- Other bug fixes
+
+0.5.1 (2015-04-08)
+------------------
+- Updated Rasterio and Requests versions
+
+0.5.0 (2015-03-10)
+------------------
+- Fewer dependencies
+- Uses wheel on OSX
+- New image processing algorithm which is faster and require less storage
+- Updated API
+- Includes longitude latitude search
+- Improved console output
+- Accepts bands combinations for processing images
+- Includes a new faster downloader
+- More comprehensive tests (96% coverage)
+- Added to pypi pip install landsat-util
+- Brew formula removed
+
+0.2.0 (2014-08-28)
+------------------
+- New image processing
+- New command-line syntax
+- A lot of other new additions
+- Lots of bug fixes
+
+0.1.0 (2014-08-08)
+------------------
+- Pre-release version.
