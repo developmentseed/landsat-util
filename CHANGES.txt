@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.6.2 (2015-04-24)
+------------------
+- Updated readme
+- removed gamma correction from image process
+
 0.6.1 (2015-04-23)
 ------------------
 - Updated tests that run faster
