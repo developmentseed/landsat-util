@@ -15,7 +15,7 @@ from rasterio.warp import reproject, RESAMPLING, transform
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
-from skimage.exposure import rescale_intensity, adjust_gamma
+from skimage.exposure import rescale_intensity
 
 import settings
 from mixins import VerbosityMixin
@@ -173,13 +173,6 @@ class Process(VerbosityMixin):
                     # Color Correction
                     band = self._color_correction(band, self.bands[i], 0.1, cloud_cover)
 
-                    # Gamma Correction
-                    if i == 0:
-                        band = self._gamma_correction(band, 1.1)
-
-                    if i == 2:
-                        band = self._gamma_correction(band, 0.9)
-
                     output.write_band(i+1, img_as_ubyte(band))
 
                     new_bands[i] = None
@@ -206,9 +199,6 @@ class Process(VerbosityMixin):
         del pan
 
         return bands
-
-    def _gamma_correction(self, band, value):
-        return adjust_gamma(band, value)
 
     def _color_correction(self, band, band_id, low, cloud_cover):
         band = band.astype(numpy.uint16)

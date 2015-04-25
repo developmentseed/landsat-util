@@ -19,9 +19,11 @@ before_install:
 
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib scikit-image requests six nose dateutil
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib scikit-image six nose dateutil
   - conda install --yes -c https://conda.binstar.org/osgeo gdal
   - pip install --install-option="--no-cython-compile" cython
+  - pip uninstall requests --yes
+  - pip install requests==2.5.3
   - pip install -r requirements/travis.txt
 
 script:

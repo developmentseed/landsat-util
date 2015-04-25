@@ -4,6 +4,22 @@ Landsat-util
 .. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
     :target: https://travis-ci.org/developmentseed/landsat-util
 
+.. image:: https://pypip.in/version/landsat-util/badge.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: Latest Version
+
+.. image:: https://pypip.in/download/landsat-util/badge.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: Downloads
+
+.. image:: https://pypip.in/wheel/landsat-util/badge.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: Wheel Status
+
+.. image:: https://pypip.in/license/landsat-util/badge.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: License
+
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
 
 This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.
@@ -24,12 +40,17 @@ Installation
 Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``.
 
   ``$: sudo apt-get update``
+
   ``$: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran``
+
   ``$: pip install landsat-util``
 
 **On Other systems**
 
+Make sure Python setuptools is installed.
+
   ``$: python setup.py numpy six``
+
   ``$: python setup.py install``
 
 
@@ -44,7 +65,12 @@ If you have installed previous version of landsat using brew, first run:
 **To Test**
 
   ``$: pip install -U requirements/dev.txt``
+
   ``$: nosetests``
+
+Or
+
+  ``$: python setup.py test``
 
 Overview: What can landsat-util do?
 ====================================
