@@ -123,10 +123,10 @@ class Process(VerbosityMixin):
                 x_pixel = (max(crn['lr']['x'][1][0], crn['ur']['x'][1][0]) -
                            min(crn['ul']['x'][1][0], crn['ll']['x'][1][0])) / dst_shape[1]
 
-                dst_transform = (min(crn['ul']['x'][1][0], crn['ll']['x'][1][0]),
+                dst_transform = (min(crn['ul']['x'][1][0], crn['ll']['x'][1][0], crn['ur']['x'][1][0], crn['lr']['x'][1][0]),
                                  x_pixel,
                                  0.0,
-                                 max(crn['ul']['y'][1][0], crn['ur']['y'][1][0]),
+                                 max(crn['ul']['y'][1][0], crn['ur']['y'][1][0], crn['ll']['y'][1][0], crn['lr']['y'][1][0]),
                                  0.0,
                                  -y_pixel)
                 # Delete crn since no longer needed
