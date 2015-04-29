@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.6.3 (2015-04-29)
+------------------
+- adjust lower rescaling bound, closes #66 for now
+- better pixel math for #71
+- update destination transform calculation for reprojection in polar regions
+
 0.6.2 (2015-04-24)
 ------------------
 - Updated readme

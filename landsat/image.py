@@ -118,15 +118,17 @@ class Process(VerbosityMixin):
                 crn = self._get_boundaries(src_data)
 
                 dst_shape = src_data['shape']
-                y_pixel = (max(crn['ul']['y'][1][0], crn['ur']['y'][1][0]) -
-                           min(crn['lr']['y'][1][0], crn['ll']['y'][1][0])) / dst_shape[0]
-                x_pixel = (max(crn['lr']['x'][1][0], crn['ur']['x'][1][0]) -
-                           min(crn['ul']['x'][1][0], crn['ll']['x'][1][0])) / dst_shape[1]
+                dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
+                dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
+                y_pixel = abs(max(dst_corner_ys) -
+                           min(dst_corner_ys)) / dst_shape[0]
+                x_pixel = abs(max(dst_corner_xs) -
+                           min(dst_corner_xs)) / dst_shape[1]
 
-                dst_transform = (min(crn['ul']['x'][1][0], crn['ll']['x'][1][0]),
+                dst_transform = (min(dst_corner_xs),
                                  x_pixel,
                                  0.0,
-                                 max(crn['ul']['y'][1][0], crn['ur']['y'][1][0]),
+                                 max(dst_corner_ys),
                                  0.0,
                                  -y_pixel)
                 # Delete crn since no longer needed
@@ -171,7 +173,7 @@ class Process(VerbosityMixin):
 
                 for i, band in enumerate(new_bands):
                     # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0.1, cloud_cover)
+                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
 
                     output.write_band(i+1, img_as_ubyte(band))
 
