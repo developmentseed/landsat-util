@@ -171,7 +171,7 @@ class Process(VerbosityMixin):
 
                 for i, band in enumerate(new_bands):
                     # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0.1, cloud_cover)
+                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
 
                     output.write_band(i+1, img_as_ubyte(band))
 
