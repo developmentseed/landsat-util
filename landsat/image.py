@@ -8,6 +8,7 @@ from os.path import join
 import tarfile
 import glob
 import subprocess
+import math
 
 import numpy
 import rasterio
@@ -31,7 +32,7 @@ class Process(VerbosityMixin):
     Image procssing class
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, crop=False):
         """
         @params
         scene - the scene ID
@@ -39,13 +40,15 @@ class Process(VerbosityMixin):
         src_path - The path to the source image bundle
         dst_path - The destination path
         zipped - Set to true if the scene is in zip format and requires unzipping
-        verbose - Whether to sh ow verbose output
+        verbose - Whether to show verbose output
+        crop - The bounding box with which to crop the image. Must be a python list
         """
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
+        self.crop = [float(c) for c in crop]
 
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
@@ -155,12 +158,20 @@ class Process(VerbosityMixin):
                     new_bands = self._pansharpenning(new_bands)
                     del self.bands[3]
 
+                if self.crop:
+                    new_bands = self._crop(new_bands, dst_corner_ys, dst_corner_xs, dst_shape, dst_transform)
+                    dst_transform
+                    dst_shape
+
                 self.output("Final Steps", normal=True, arrow=True)
 
                 output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
 
                 if pansharpen:
                     output_file += '_pan'
+
+                if self.crop:
+                    output_file += '_crop'
 
                 output_file += '.TIF'
                 output_file = join(self.dst_path, output_file)
@@ -199,6 +210,33 @@ class Process(VerbosityMixin):
             bands[i] = band * pan
 
         del pan
+
+        return bands
+
+    def _crop(self, bands, dst_corner_ys, dst_corner_xs, dst_shape, dst_transform):
+        self.output("Cropping", normal=True, arrow=True)
+
+        # convert bounds given as lat/lng to our projection
+        w_bound, s_bound = transform({'init': 'epsg:4326'}, self.projection, [self.crop[0]], [self.crop[1]])
+        e_bound, n_bound,  = transform({'init': 'epsg:4326'}, self.projection, [self.crop[2]], [self.crop[3]])
+
+        n = w = 0
+        e = dst_shape[1]
+        s = dst_shape[0]
+
+        # convert bounds from the projection to array coordinates
+        if w_bound[0] > min(dst_corner_xs) and w_bound[0] < max(dst_corner_xs):
+            w = int(math.floor((w_bound[0] - dst_transform[0]) / dst_transform[1]))
+        if s_bound[0] > min(dst_corner_ys) and s_bound[0] < max(dst_corner_ys):
+            s = int(math.ceil((dst_transform[3] - s_bound[0]) / -dst_transform[5]))
+        if e_bound[0] > min(dst_corner_xs) and e_bound[0] < max(dst_corner_xs):
+            e = int(math.ceil((e_bound[0] - dst_transform[0]) / dst_transform[1]))
+        if n_bound[0] > min(dst_corner_ys) and n_bound[0] < max(dst_corner_ys):
+            n = int(math.floor((dst_transform[3] - n_bound[0]) / -dst_transform[5]))
+        print n,e,w,s
+
+        for i, band in enumerate(bands):
+            bands[i] = band[n:s,w:e]
 
         return bands
 
