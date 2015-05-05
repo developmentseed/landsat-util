@@ -48,7 +48,9 @@ class Process(VerbosityMixin):
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
-        self.crop = [float(c) for c in crop]
+        self.crop = None
+        if crop:
+            self.crop = [float(c) for c in crop]
 
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
@@ -233,7 +235,6 @@ class Process(VerbosityMixin):
             e = int(math.ceil((e_bound[0] - dst_transform[0]) / dst_transform[1]))
         if n_bound[0] > min(dst_corner_ys) and n_bound[0] < max(dst_corner_ys):
             n = int(math.floor((dst_transform[3] - n_bound[0]) / -dst_transform[5]))
-        print n,e,w,s
 
         for i, band in enumerate(bands):
             bands[i] = band[n:s,w:e]
