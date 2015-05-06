@@ -236,6 +236,12 @@ class Process(VerbosityMixin):
         if n_bound[0] > min(dst_corner_ys) and n_bound[0] < max(dst_corner_ys):
             n = int(math.floor((dst_transform[3] - n_bound[0]) / -dst_transform[5]))
 
+        # helpfully swap the bounds if they were given in the wrong order
+        if n < s:
+            n,s = s,n
+        if w < e:
+            w,e = e,w
+
         for i, band in enumerate(bands):
             bands[i] = band[n:s,w:e]
 
