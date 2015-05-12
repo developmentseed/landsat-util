@@ -97,6 +97,10 @@ search, download, and process Landsat imagery.
                                     Default: Natural colors (432)
                                     Example --bands 432
 
+                -c --crop           Crop the image to the given bounding box. Expects it as minimum
+                                    longitude, minimum latitude, maximum longitude, maximum latitude
+                                    Example --crop 75.2 21.2 75.6 21.8
+
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
 
@@ -192,6 +196,9 @@ def args_options():
                                 'as Environment Variables)')
     parser_process.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
     parser_process.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
+    parser_process.add_argument('-c', '--crop', nargs=4,
+                                help='Crop the image to the given bounding box. Expects it as minimum '
+                                'longitude, minimum latitude, maximum longitude, maximum latitude')
 
     return parser
 
@@ -206,7 +213,7 @@ def main(args):
     if args:
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.crop)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -281,10 +288,10 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False):
+def process_image(path, bands=None, verbose=False, pansharpen=False, crop=False):
     try:
         bands = convert_to_integer_list(bands)
-        p = Process(path, bands=bands, verbose=verbose)
+        p = Process(path, bands=bands, verbose=verbose, crop=crop)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:

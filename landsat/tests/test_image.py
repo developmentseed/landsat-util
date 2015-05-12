@@ -58,3 +58,8 @@ class TestProcess(unittest.TestCase):
         self.p.run(False)
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432.TIF')))
 
+        # test with crop
+        self.p.crop = ['-87.4','30.65','-87.4','30.75']
+        self.p.run()
+        print self.temp_folder
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432_crop.TIF')))
