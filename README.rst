@@ -94,19 +94,19 @@ Step 1: Search
 
 **Search** returns information about all of the available Landsat tiles that match your criteria, including a link to an unprocessed preview of the tile.  The preview allows you to quickly verify that your area of interest isn't obscured by clouds. The **sceneID** is typically the most important result; you'll need it to to download the tile (see step 2 below).
 
-**Search by latitude and longitude:**
+Search by latitude and longitude:
 
 ::
 
     $ landsat search --lat 38.9004204 --lon -77.0237117
 
-**Search by path and row:**
+Search by path and row:
 
 ::
 
     $ landsat search -p 009, 045
 
-**Advanced filters:**
+Advanced filters:
 
 Additionally, it's possible to filter your search using the following parameters:
 
@@ -125,19 +125,19 @@ Download tiles using their unique sceneID, which you can get using ``landsat sea
 
 By default, landsat-util will download a zip file that includes all of the available bands. Alternatively, you can download a subset of the available bands. In this case, landsat-util only downloads those bands if they are available online.
 
-**Download images by their custom sceneID, which you get from landsat search:**
+Download images by their custom sceneID, which you get from landsat search:
 
 ::
 
     $ landsat download LC80090452014008LGN00
 
-**Download only bands 4, 3 and 2 for a particular sceneID:**
+Download only bands 4, 3 and 2 for a particular sceneID:
 
 ::
 
     $ landsat download LC80090452014008LGN00 --bands 432
 
-**Download multiple sceneIDs:**
+Download multiple sceneIDs:
 
 ::
 
@@ -160,25 +160,25 @@ Landsat-util processes the downloaded tiles using our custom image processing al
 
 Image processing is a very heavy and resource consuming task. Each process takes about 5-10 mins. We recommend that you run the processes in smaller badges. Pansharpening, while increasing image resolution 2x, substantially increases processing time.
 
-**Process an archive:**
+Process an archive:
 
 ::
 
     $ landsat process path/to/LC80090452014008LGN00.tar.bz
 
-**Process an extracted archive:**
+Process an extracted archive:
 
 ::
 
     $ landsat process path/to/LC80090452014008LGN00
 
-**Process a color infrared image using bands 5, 4 and 3:**
+Process a color infrared image using bands 5, 4 and 3:
 
 ::
 
     $ landsat process path/to/LC80090452014008LGN00  --bands 543
 
-**Process and pansharpen an image:**
+Process and pansharpen an image:
 
 ::
 
