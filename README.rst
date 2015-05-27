@@ -41,7 +41,7 @@ Use pip to install landsat-util. If you are not using virtualenv, you might have
 
   ``$: sudo apt-get update``
 
-  ``$: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran``
+  ``$: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran libfreetype6-dev``
 
   ``$: pip install landsat-util``
 
