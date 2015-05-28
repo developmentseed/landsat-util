@@ -68,7 +68,7 @@ Example commands:
 
   ``$: docker run -it -v ~/landsat:/root/landsat developmentseed/landsat-util:latest landsat download LC80090452014008LGN00 --bands 432``
 
-This commands mounts ``landsat`` folder in your home folder to ``/root/landsat`` in docker. All downloaded and processed images are stored in ``~/landsat`` folder of your computer.
+This commands mounts ``landsat`` folder in your home directory to ``/root/landsat`` in docker. All downloaded and processed images are stored in ``~/landsat`` folder of your computer.
 
 If you are using Windows replace ``~/landsat`` with ``/c/Users/<path>``.
 
