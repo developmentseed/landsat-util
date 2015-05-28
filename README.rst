@@ -58,6 +58,7 @@ Make sure Python setuptools is installed.
 If you have docker installed, you can use landsat-util image on docker:
 
   ``$: docker pull developmentseed/landsat-util``
+
   ``$: docker run -it developmentseed/landsat-util:latest /bin/sh -c "landsat -h"``
 
 
