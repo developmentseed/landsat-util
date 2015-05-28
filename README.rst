@@ -7,13 +7,13 @@ Landsat-util
 .. image:: https://badge.fury.io/py/landsat-util.svg
     :target: http://badge.fury.io/py/landsat-util
 
-.. image:: https://img.shields.io/pypi/landsat-util/Django.svg
+.. image:: https://img.shields.io/pypi/dm/landsat-util.svg
     :target: https://pypi.python.org/pypi/landsat-util/
     :alt: Downloads
 
-.. image:: https://pypip.in/wheel/landsat-util/badge.svg
+.. image:: https://img.shields.io/pypi/l/landsat-util.svg
     :target: https://pypi.python.org/pypi/landsat-util/
-    :alt: Wheel Status
+    :alt: License
 
 
 Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
