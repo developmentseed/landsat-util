@@ -269,15 +269,17 @@ def main(args):
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             try:
-                if d.download(args.scenes, convert_to_integer_list(args.bands)):
-                    if args.process:
+                downloaded = d.download(args.scenes, convert_to_integer_list(args.bands))
+
+                if args.process:
+                    for scene, src in downloaded.iteritems():
                         if args.dest:
-                            path = join(args.dest, args.scenes[0])
+                            path = join(args.dest, scene)
                         else:
-                            path = join(settings.DOWNLOAD_DIR, args.scenes[0])
+                            path = join(settings.DOWNLOAD_DIR, scene)
 
                         # Keep using Google if the image is before 2015
-                        if (int(args.scenes[0][12]) < 5 or not args.bands):
+                        if src == 'google':
                             path = path + '.tar.bz'
 
                         stored = process_image(path, args.bands, False, args.pansharpen)
@@ -291,9 +293,11 @@ def main(args):
                                 return ["Connection timeout. Probably the region parameter is incorrect", 1]
                             u.run(args.bucket, get_file(stored), stored)
 
-                        return ["The output is stored at %s" % stored]
-                    else:
-                        return ['Download Completed', 0]
+                        v.output("The output is stored at %s" % stored, normal=True, arrow=True)
+
+                    return ['Image Processing Completed', 0]
+                else:
+                    return ['Download Completed', 0]
             except IncorrectSceneId:
                 return ['The SceneID provided was incorrect', 1]
 
