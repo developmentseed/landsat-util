@@ -61,7 +61,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Landsat-util'
+project = u'landsat-util'
 copyright = u'2015, Development Seed'
 author = u'Development Seed'
 
