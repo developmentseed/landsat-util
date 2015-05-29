@@ -112,6 +112,14 @@ class TestLandsat(unittest.TestCase):
         mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, True)
         self.assertEquals(output, ["Image Processing Completed", 0])
 
+        # Call with pansharpen
+        args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d',
+                self.mock_path, '-p', '--pansharpen']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], ['4', '3', '2', 8])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, True, False)
+        self.assertEquals(output, ["Image Processing Completed", 0])
+
     @mock.patch('landsat.landsat.Uploader')
     @mock.patch('landsat.landsat.process_image')
     @mock.patch('landsat.landsat.Downloader.download')

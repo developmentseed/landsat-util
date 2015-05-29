@@ -277,7 +277,11 @@ def main(args):
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             try:
-                downloaded = d.download(args.scenes, convert_to_integer_list(args.bands))
+                bands = convert_to_integer_list(args.bands)
+                if args.pansharpen:
+                    bands.append(8)
+
+                downloaded = d.download(args.scenes, bands)
 
                 if args.process:
                     force_unzip = True if args.force_unzip else False
