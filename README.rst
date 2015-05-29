@@ -23,6 +23,11 @@ Docs
 
 For full documentation visit: http://landsat-util.readthedocs.org/
 
+To run the documentation locally::
+
+    $ cd docs
+    $ make html
+
 Recently Added Features
 +++++++++++++++++++++++
 
