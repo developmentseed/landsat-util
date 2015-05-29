@@ -1,6 +1,18 @@
 Changes
 =======
 
+0.7.0 (2015-05-29)
+------------------
+- New documentation
+- Deployed to readthedocs
+- Automate deployment to pypi
+- Adds docker support
+- skip unzipping if images already unzipped
+- add force-unzip flag
+- fix a bug where multiple downloads was not followed by multiple process #81
+- fix a bug where if scenes was downloaded from google instead of aws, process failed #84
+- download band 8 when pansharpen fixes #73
+
 0.6.3 (2015-04-29)
 ------------------
 - adjust lower rescaling bound, closes #66 for now

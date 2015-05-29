@@ -4,7 +4,7 @@
 
 import warnings
 import sys
-from os.path import join
+from os.path import join, isdir
 import tarfile
 import glob
 import subprocess
@@ -23,24 +23,40 @@ from utils import get_file, timer, check_create_folder, exit
 
 
 class FileDoesNotExist(Exception):
+    """ Exception to be used when the file does not exist. """
     pass
 
 
 class Process(VerbosityMixin):
     """
     Image procssing class
+
+    To initiate the following parameters must be passed:
+
+    :param path:
+        Path of the image.
+    :type path:
+        String
+    :param bands:
+        The band sequence for the final image. Must be a python list. (optional)
+    :type bands:
+        List
+    :param dst_path:
+        Path to the folder where the image should be stored. (optional)
+    :type dst_path:
+        String
+    :param verbose:
+        Whether the output should be verbose. Default is False.
+    :type verbose:
+        boolean
+    :param force_unzip:
+        Whether to force unzip the tar file. Default is False
+    :type force_unzip:
+        boolean
+
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False):
-        """
-        @params
-        scene - the scene ID
-        bands - The band sequence for the final image. Must be a python list
-        src_path - The path to the source image bundle
-        dst_path - The destination path
-        zipped - Set to true if the scene is in zip format and requires unzipping
-        verbose - Whether to sh ow verbose output
-        """
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
@@ -59,13 +75,23 @@ class Process(VerbosityMixin):
         self.scene_path = join(self.src_path, self.scene)
 
         if self._check_if_zipped(path):
-            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
+            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
 
         self.bands_path = []
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
     def run(self, pansharpen=True):
+        """ Executes the image processing.
+
+        :param pansharpen:
+            Whether the process should also run pansharpenning. Default is True
+        :type pansharpen:
+            boolean
+
+        :returns:
+            (String) the path to the processed image
+        """
 
         self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
 
@@ -120,10 +146,8 @@ class Process(VerbosityMixin):
                 dst_shape = src_data['shape']
                 dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
                 dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
-                y_pixel = abs(max(dst_corner_ys) -
-                           min(dst_corner_ys)) / dst_shape[0]
-                x_pixel = abs(max(dst_corner_xs) -
-                           min(dst_corner_xs)) / dst_shape[1]
+                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
+                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
 
                 dst_transform = (min(dst_corner_xs),
                                  x_pixel,
@@ -267,14 +291,19 @@ class Process(VerbosityMixin):
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
 
-    def _unzip(self, src, dst, scene):
+    def _unzip(self, src, dst, scene, force_unzip=False):
         """ Unzip tar files """
         self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
 
         try:
-            tar = tarfile.open(src, 'r')
-            tar.extractall(path=dst)
-            tar.close()
+            # check if file is already unzipped, skip
+            if isdir(dst) and not force_unzip:
+                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                return
+            else:
+                tar = tarfile.open(src, 'r')
+                tar.extractall(path=dst)
+                tar.close()
         except tarfile.ReadError:
             check_create_folder(dst)
             subprocess.check_call(['tar', '-xf', src, '-C', dst])
