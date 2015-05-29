@@ -94,21 +94,22 @@ class TestLandsat(unittest.TestCase):
     @mock.patch('landsat.landsat.Downloader.download')
     def test_download_process_continuous(self, mock_downloader, mock_process):
         """Test download and process commands together"""
-        mock_downloader.return_value = True
+        mock_downloader.return_value = {'LC80010092015051LGN00': 'aws',
+                                        'LC80010092014051LGN00': 'aws'}
         mock_process.return_value = 'image.TIF'
 
-        args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p']
+        args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d', self.mock_path, '-p']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
-        self.assertEquals(output, ["The output is stored at image.TIF"])
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], ['4', '3', '2'])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False)
+        self.assertEquals(output, ["Image Processing Completed", 0])
 
     @mock.patch('landsat.landsat.Uploader')
     @mock.patch('landsat.landsat.process_image')
     @mock.patch('landsat.landsat.Downloader.download')
     def test_download_process_continuous_with_upload(self, mock_downloader, mock_process, mock_upload):
         """Test download and process commands together"""
-        mock_downloader.return_value = True
+        mock_downloader.return_value = {'LC80010092015051LGN00': 'aws'}
         mock_process.return_value = 'image.TIF'
         mock_upload.run.return_value = True
 
@@ -119,13 +120,13 @@ class TestLandsat(unittest.TestCase):
         mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False)
         mock_upload.assert_called_with('somekey', 'somesecret', 'this')
         mock_upload.return_value.run.assert_called_with('mybucket', 'image.TIF', 'image.TIF')
-        self.assertEquals(output, ["The output is stored at image.TIF"])
+        self.assertEquals(output, ["Image Processing Completed", 0])
 
     @mock.patch('landsat.landsat.process_image')
     @mock.patch('landsat.landsat.Downloader.download')
     def test_download_process_continuous_with_wrong_args(self, mock_downloader, mock_process):
         """Test download and process commands together"""
-        mock_downloader.return_value = True
+        mock_downloader.return_value = {'LC80010092015051LGN00': 'aws'}
         mock_process.return_value = 'image.TIF'
 
         args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p',
