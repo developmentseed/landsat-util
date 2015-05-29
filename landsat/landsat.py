@@ -86,6 +86,8 @@ search, download, and process Landsat imagery.
 
                 --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
 
+                --force-unzip       Force unzip tar file
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -115,6 +117,8 @@ search, download, and process Landsat imagery.
                 --bucket            Bucket name (required if uploading to s3)
 
                 --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
+
+                --force-unzip       Force unzip tar file
 """
 
 
@@ -179,6 +183,7 @@ def args_options():
                                  'as Environment Variables)')
     parser_download.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
     parser_download.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
+    parser_download.add_argument('--force-unzip', help='Force unzip tar file', action='store_true')
 
     parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
@@ -198,6 +203,7 @@ def args_options():
                                 'as Environment Variables)')
     parser_process.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
     parser_process.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
+    parser_process.add_argument('--force-unzip', help='Force unzip tar file', action='store_true')
 
     return parser
 
@@ -221,9 +227,11 @@ def main(args):
     v = VerbosityMixin()
 
     if args:
+
         if args.subs == 'process':
             verbose = True if args.verbose else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen)
+            force_unzip = True if args.force_unzip else False
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -272,6 +280,7 @@ def main(args):
                 downloaded = d.download(args.scenes, convert_to_integer_list(args.bands))
 
                 if args.process:
+                    force_unzip = True if args.force_unzip else False
                     for scene, src in downloaded.iteritems():
                         if args.dest:
                             path = join(args.dest, scene)
@@ -282,7 +291,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen)
+                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip)
 
                         if args.upload:
                             try:
@@ -302,7 +311,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False):
+def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None):
     """ Handles constructing and image process.
 
     :param path:
@@ -327,7 +336,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False):
     """
     try:
         bands = convert_to_integer_list(bands)
-        p = Process(path, bands=bands, verbose=verbose)
+        p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:
