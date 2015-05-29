@@ -4,7 +4,7 @@
 
 import warnings
 import sys
-from os.path import join
+from os.path import join, isdir
 import tarfile
 import glob
 import subprocess
@@ -49,10 +49,14 @@ class Process(VerbosityMixin):
         Whether the output should be verbose. Default is False.
     :type verbose:
         boolean
+    :param force_unzip:
+        Whether to force unzip the tar file. Default is False
+    :type force_unzip:
+        boolean
 
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
@@ -71,7 +75,7 @@ class Process(VerbosityMixin):
         self.scene_path = join(self.src_path, self.scene)
 
         if self._check_if_zipped(path):
-            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene)
+            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
 
         self.bands_path = []
         for band in self.bands:
@@ -287,14 +291,19 @@ class Process(VerbosityMixin):
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
 
-    def _unzip(self, src, dst, scene):
+    def _unzip(self, src, dst, scene, force_unzip=False):
         """ Unzip tar files """
         self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
 
         try:
-            tar = tarfile.open(src, 'r')
-            tar.extractall(path=dst)
-            tar.close()
+            # check if file is already unzipped, skip
+            if isdir(dst) and not force_unzip:
+                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                return
+            else:
+                tar = tarfile.open(src, 'r')
+                tar.extractall(path=dst)
+                tar.close()
         except tarfile.ReadError:
             check_create_folder(dst)
             subprocess.check_call(['tar', '-xf', src, '-C', dst])
