@@ -1,5 +1,5 @@
-Landsat- Util
-========================================
+landsat-util
+==============
 
 .. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
     :target: https://travis-ci.org/developmentseed/landsat-util
@@ -23,21 +23,16 @@ This API is accessible here: https://api.developmentseed.org/landsat
 
 You can also run your own API and connect it to this tool.
 
-Contents:
+**Table of Contents:**
 
 .. toctree::
    :maxdepth: 3
 
    installation
    overview
-   notes
    todo
+   api
+   notes
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 

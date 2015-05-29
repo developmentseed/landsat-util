@@ -1,78 +1,58 @@
-landsat
-=======
+Module Index
+============
 
-Submodules
-----------
-
-landsat.downloader module
--------------------------
+downloader.py
++++++++++++++++++++++++++
 
 .. automodule:: landsat.downloader
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.uploader module
--------------------------
+uploader.py
++++++++++++++++++++++++++
 
 .. automodule:: landsat.uploader
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.image module
---------------------
+image.py
++++++++++++++++++++++++++
 
 .. automodule:: landsat.image
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.landsat module
-----------------------
+landsat.py
++++++++++++++++++++++++++
 
 .. automodule:: landsat.landsat
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.mixins module
----------------------
+mixins.py
+++++++++++++++++++++++
 
 .. automodule:: landsat.mixins
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.search module
----------------------
+search.py
+++++++++++++++++++++++
 
 .. automodule:: landsat.search
     :members:
     :undoc-members:
     :show-inheritance:
 
-landsat.settings module
------------------------
-
-.. automodule:: landsat.settings
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-landsat.utils module
---------------------
+utils.py
++++++++++++++++++++++
 
 .. automodule:: landsat.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: landsat
     :members:
     :undoc-members:
     :show-inheritance:
