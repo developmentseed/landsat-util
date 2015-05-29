@@ -45,10 +45,12 @@ class Downloader(VerbosityMixin):
             List
 
         :returns:
-            Boolean
+            (List) includes downloaded scenes as key and source as value (aws or google)
         """
 
         if isinstance(scenes, list):
+            output = {}
+
             for scene in scenes:
                 # If bands are provided the image is from 2015 or later use Amazon
                 if (bands and int(scene[12]) > 4):
@@ -61,14 +63,18 @@ class Downloader(VerbosityMixin):
                             bands_plus.append('MTL')
                             for band in bands_plus:
                                 self.amazon_s3(scene, band, path)
+                                output[scene] = 'aws'
                         except RemoteFileDoesntExist:
                             self.google_storage(scene, self.download_dir)
+                            output[scene] = 'google'
+
                     else:
                         raise Exception('Expected bands list')
                 else:
                     self.google_storage(scene, self.download_dir)
+                    output[scene] = 'google'
 
-            return True
+            return output
 
         else:
             raise Exception('Expected sceneIDs list')
