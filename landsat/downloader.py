@@ -11,14 +11,17 @@ import settings
 
 
 class RemoteFileDoesntExist(Exception):
+    """ Exception to be used when the remote file does not exist """
     pass
 
 
 class IncorrectSceneId(Exception):
+    """ Exception to be used when scene id is incorrect """
     pass
 
 
 class Downloader(VerbosityMixin):
+    """ The downloader class """
 
     def __init__(self, verbose=False, download_dir=None):
         self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
@@ -32,9 +35,17 @@ class Downloader(VerbosityMixin):
         """
         Download scenese from Google Storage or Amazon S3 if bands are provided
 
-        @params
-        scenes - A list of sceneIDs
-        bands - A list of bands
+        :param scenes:
+            A list of scene IDs
+        :type scenes:
+            List
+        :param bands:
+            A list of bands. Default value is None.
+        :type scenes:
+            List
+
+        :returns:
+            Boolean
         """
 
         if isinstance(scenes, list):
@@ -63,7 +74,21 @@ class Downloader(VerbosityMixin):
             raise Exception('Expected sceneIDs list')
 
     def google_storage(self, scene, path):
-        """ Google Storage Downloader """
+        """
+        Google Storage Downloader.
+
+        :param scene:
+            The scene id
+        :type scene:
+            String
+        :param path:
+            The directory path to where the image should be stored
+        :type path:
+            String
+
+        :returns:
+            Boolean
+        """
         sat = self.scene_interpreter(scene)
 
         filename = scene + '.tar.bz'
@@ -76,7 +101,25 @@ class Downloader(VerbosityMixin):
             raise RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
 
     def amazon_s3(self, scene, band, path):
-        """ Amazon S3 downloader """
+        """
+        Amazon S3 downloader
+
+        :param scene:
+            The scene ID.
+        :type scene:
+            String
+        :param band:
+            The band number.
+        :type band:
+            String, Integer
+        :param path:
+            The directory path to where the image should be stored
+        :type path:
+            String
+
+        :returns:
+            Boolean
+        """
         sat = self.scene_interpreter(scene)
 
         if band != 'MTL':
@@ -92,6 +135,24 @@ class Downloader(VerbosityMixin):
             raise RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
     def fetch(self, url, path, filename):
+        """ Downloads the given url.
+
+        :param url:
+            The url to be downloaded.
+        :type url:
+            String
+        :param path:
+            The directory path to where the image should be stored
+        :type path:
+            String
+        :param filename:
+            The filename that has to be downloaded
+        :type filename:
+            String
+
+        :returns:
+            Boolean
+        """
 
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
@@ -108,22 +169,48 @@ class Downloader(VerbosityMixin):
 
     def google_storage_url(self, sat):
         """
-        Return a google storage url the contains the scene provided
-        @params
-        sat - expects an object created by scene_interpreter method
+        Returns a google storage url the contains the scene provided.
+
+        :param sat:
+            Expects an object created by scene_interpreter method
+        :type sat:
+            dict
+
+        :returns:
+            (String) The URL to a google storage file
         """
         filename = sat['scene'] + '.tar.bz'
         return join(self.google, sat['sat'], sat['path'], sat['row'], filename)
 
     def amazon_s3_url(self, sat, filename):
         """
-        Return an amazon s3 url the contains the scene and band provided
-        @params
-        sat - expects an object created by scene_interpreter method
+        Return an amazon s3 url the contains the scene and band provided.
+
+        :param sat:
+            Expects an object created by scene_interpreter method
+        :type sat:
+            dict
+        :param filename:
+            The filename that has to be downloaded from Amazon
+        :type filename:
+            String
+
+        :returns:
+            (String) The URL to a S3 file
         """
         return join(self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename)
 
     def remote_file_exists(self, url):
+        """ Checks whether the remote file exists.
+
+        :param url:
+            The url that has to be checked.
+        :type url:
+            String
+
+        :returns:
+            **True** if remote file exists and **False** if it doesn't exist.
+        """
         status = requests.head(url).status_code
 
         if status == 200:
@@ -132,12 +219,39 @@ class Downloader(VerbosityMixin):
             return False
 
     def get_remote_file_size(self, url):
-        """ Gets the filesize of a remote file """
+        """ Gets the filesize of a remote file.
+
+        :param url:
+            The url that has to be checked.
+        :type url:
+            String
+
+        :returns:
+            int
+        """
         headers = requests.head(url).headers
         return int(headers['content-length'])
 
     def scene_interpreter(self, scene):
-        """ Conver sceneID to rows, paths and dates """
+        """ Conver sceneID to rows, paths and dates.
+
+        :param scene:
+            The scene ID.
+        :type scene:
+            String
+
+        :returns:
+            dict
+
+        :Example output:
+
+        >>> anatomy = {
+                'path': None,
+                'row': None,
+                'sat': None,
+                'scene': scene
+            }
+        """
         anatomy = {
             'path': None,
             'row': None,

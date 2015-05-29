@@ -27,6 +27,25 @@ STREAM = sys.stderr
 
 class Uploader(VerbosityMixin):
 
+    """
+    The Uploader class.
+
+    To initiate the following parameters must be passed:
+
+    :param key:
+        AWS access key id (optional)
+    :type key:
+        String
+    :param secret:
+        AWS access secret key (optional)
+    :type secret:
+        String
+    :param host:
+        AWS host, e.g. s3.amazonaws.com (optional)
+    :type host:
+        String
+    """
+
     progress_template = \
         'File Size:%(size)4d MB | Uploaded:%(uploaded)4d MB' + ' ' * 8
 
@@ -37,6 +56,25 @@ class Uploader(VerbosityMixin):
         self.conn = S3Connection(key, secret, host=host)
 
     def run(self, bucket_name, filename, path):
+        """
+        Initiate the upload.
+
+        :param bucket_name:
+            Name of the S3 bucket
+        :type bucket_name:
+            String
+        :param filename:
+            The filname
+        :type filename:
+            String
+        :param path:
+            The path to the file that needs to be uploaded
+        :type path:
+            String
+
+        :returns:
+            void
+        """
 
         f = open(path, 'rb')
         self.source_size = os.stat(path).st_size
@@ -66,15 +104,16 @@ class Uploader(VerbosityMixin):
 
 
 def data_collector(iterable, def_buf_size=5242880):
-    ''' Buffers n bytes of data
+    """ Buffers n bytes of data.
 
-        Args:
-            iterable: could be a list, generator or string
-            def_buf_size: number of bytes to buffer, default is 5mb
+    :param iterable:
+        Could be a list, generator or string
+    :type iterable:
+        List, generator, String
 
-        Returns:
-            A generator object
-    '''
+    :returns:
+        A generator object
+    """
     buf = ''
     for data in iterable:
         buf += data
@@ -108,23 +147,54 @@ def upload(bucket, aws_access_key, aws_secret_key,
            iterable, key, progress_cb=None,
            threads=5, replace=False, secure=True,
            connection=None):
-    ''' Upload data to s3 using the s3 multipart upload API.
+    """ Upload data to s3 using the s3 multipart upload API.
 
-        Args:
-            bucket: name of s3 bucket
-            aws_access_key: aws access key
-            aws_secret_key: aws secret key
-            iterable: The data to upload. Each 'part' in the list
-            will be uploaded in parallel. Each part must be at
-            least 5242880 bytes (5mb).
-            key: the name of the key to create in the s3 bucket
-            progress_cb: will be called with (part_no, uploaded, total)
-            each time a progress update is available.
-            threads: the number of threads to use while uploading. (Default is 5)
-            replace: will replace the key in s3 if set to true. (Default is false)
-            secure: use ssl when talking to s3. (Default is true)
-            connection: used for testing
-    '''
+    :param bucket:
+        Name of the S3 bucket
+    :type bucket:
+        String
+    :param aws_access_key:
+        AWS access key id (optional)
+    :type aws_access_key:
+        String
+    :param aws_secret_key:
+        AWS access secret key (optional)
+    :type aws_secret_key:
+        String
+    :param iterable:
+        The data to upload. Each 'part' in the list. will be uploaded in parallel. Each part must be at
+        least 5242880 bytes (5mb).
+    :type iterable:
+        An iterable object
+    :param key:
+        The name of the key (filename) to create in the s3 bucket
+    :type key:
+        String
+    :param progress_cb:
+        Progress callback, will be called with (part_no, uploaded, total) each time a progress update
+        is available. (optional)
+    :type progress_cb:
+        function
+    :param threads:
+        the number of threads to use while uploading. (Default is 5)
+    :type threads:
+        int
+    :param replace:
+        will replace the key (filename) on S3 if set to true. (Default is false)
+    :type replace:
+        boolean
+    :param secure:
+        Use ssl when talking to s3. (Default is true)
+    :type secure:
+        boolean
+    :param connection:
+        Used for testing (optional)
+    :type connection:
+        S3 connection class
+
+    :returns:
+        void
+    """
 
     if not connection:
         from boto.s3.connection import S3Connection as connection

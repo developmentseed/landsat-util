@@ -10,6 +10,7 @@ from utils import three_digit, create_paired_list
 
 
 class Search(object):
+    """ The search class """
 
     def __init__(self):
         self.api_url = settings.API_URL
@@ -17,43 +18,64 @@ class Search(object):
     def search(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None, cloud_min=None,
                cloud_max=None, limit=1):
         """
-        The main method of Search class. It searches the DevSeed Landsat API
+        The main method of Search class. It searches Development Seed's Landsat API.
 
-        Returns python dictionary
+        :param paths_rows:
+            A string in this format: "003,003,004,004". Must be in pairs and separated by comma.
+        :type paths_rows:
+            String
+        :param lat:
+            The latitude
+        :type lat:
+            String, float, integer
+        :param lon:
+            The The longitude
+        :type lon:
+            String, float, integer
+        :param start_date:
+            Date string. format: YYYY-MM-DD
+        :type start_date:
+            String
+        :param end_date:
+            date string. format: YYYY-MM-DD
+        :type end_date:
+            String
+        :param cloud_min:
+            float specifying the minimum percentage. e.g. 4.3
+        :type cloud_min:
+            float
+        :param cloud_max:
+            float specifying the maximum percentage. e.g. 78.9
+        :type cloud_max:
+            float
+        :param limit:
+            integer specigying the maximum results return.
+        :type limit:
+            integer
 
-        Arguments:
-            paths_rows -- A string in this format: "003,003,004,004". Must be in pairs
-            lat -- The latitude
-            lon -- The longitude
-            start_date -- date string. format: YYYY-MM-DD
-            end_date -- date string. format: YYYY-MM-DD
-            cloud_min -- float specifying the minimum percentage. e.g. 4.3
-            cloud_max -- float specifying the maximum percentage. e.g. 78.9
-            limit -- integer specigying the maximum results return.
+        :returns:
+            dict
 
-        Example:
-
-            search('003,003', '2014-01-01', '2014-06-01')
-
-            will return:
-
-            {
-                'status': u'SUCCESS',
-                'total_returned': 1,
-                'total': 1,
-                'limit': 1
-                'results': [
-                    {
-                        'sat_type': u'L8',
-                        'sceneID': u'LC80030032014142LGN00',
-                        'date': u'2014-05-22',
-                        'path': u'003',
-                        'thumbnail': u'http://....../landsat_8/2014/003/003/LC80030032014142LGN00.jpg',
-                        'cloud': 33.36,
-                        'row': u'003
-                    }
-                ]
-            }
+        :example:
+            >>> search = Search()
+            >>> search('003,003', '2014-01-01', '2014-06-01')
+            >>> {
+                    'status': u'SUCCESS',
+                    'total_returned': 1,
+                    'total': 1,
+                    'limit': 1
+                    'results': [
+                        {
+                            'sat_type': u'L8',
+                            'sceneID': u'LC80030032014142LGN00',
+                            'date': u'2014-05-22',
+                            'path': u'003',
+                            'thumbnail': u'http://....../landsat_8/2014/003/003/LC80030032014142LGN00.jpg',
+                            'cloud': 33.36,
+                            'row': u'003
+                        }
+                    ]
+                }
         """
 
         search_string = self.query_builder(paths_rows, lat, lon, start_date, end_date, cloud_min, cloud_max)
@@ -89,7 +111,40 @@ class Search(object):
 
     def query_builder(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None,
                       cloud_min=None, cloud_max=None):
-        """ Builds the proper search syntax (query) for Landsat API """
+        """ Builds the proper search syntax (query) for Landsat API.
+
+        :param paths_rows:
+            A string in this format: "003,003,004,004". Must be in pairs and separated by comma.
+        :type paths_rows:
+            String
+        :param lat:
+            The latitude
+        :type lat:
+            String, float, integer
+        :param lon:
+            The The longitude
+        :type lon:
+            String, float, integer
+        :param start_date:
+            Date string. format: YYYY-MM-DD
+        :type start_date:
+            String
+        :param end_date:
+            date string. format: YYYY-MM-DD
+        :type end_date:
+            String
+        :param cloud_min:
+            float specifying the minimum percentage. e.g. 4.3
+        :type cloud_min:
+            float
+        :param cloud_max:
+            float specifying the maximum percentage. e.g. 78.9
+        :type cloud_max:
+            float
+
+        :returns:
+            String
+        """
 
         query = []
         or_string = ''
@@ -131,15 +186,37 @@ class Search(object):
 
     def row_path_builder(self, path='', row=''):
         """
-        Builds row and path query
-        Accepts row and path in XXX format, e.g. 003
+        Builds row and path query.
+
+        :param path:
+            Landsat path. Must be three digits
+        :type path:
+            String
+        :param row:
+            Landsat row. Must be three digits
+        :type row:
+            String
+
+        :returns:
+            String
         """
         return 'path:%s+AND+row:%s' % (path, row)
 
     def date_range_builder(self, start='2013-02-11', end=None):
         """
-        Builds date range query
-        Accepts start and end date in this format YYYY-MM-DD
+        Builds date range query.
+
+        :param start:
+            Date string. format: YYYY-MM-DD
+        :type start:
+            String
+        :param end:
+            date string. format: YYYY-MM-DD
+        :type end:
+            String
+
+        :returns:
+            String
         """
         if not end:
             end = time.strftime('%Y-%m-%d')
@@ -148,13 +225,37 @@ class Search(object):
 
     def cloud_cover_prct_range_builder(self, min=0, max=100):
         """
-        Builds cloud cover percentage range query
-        Accepts bottom and top range in float, e.g. 1.00
+        Builds cloud cover percentage range query.
+
+        :param min:
+            float specifying the minimum percentage. Default is 0
+        :type min:
+            float
+        :param max:
+            float specifying the maximum percentage. Default is 100
+        :type max:
+            float
+
+        :returns:
+            String
         """
         return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
 
     def lat_lon_builder(self, lat=0, lon=0):
-        """ Builds lat and lon query """
+        """ Builds lat and lon query.
+
+        :param lat:
+            The latitude. Default is 0
+        :type lat:
+            float
+        :param lon:
+            The The longitude. Default is 0
+        :type lon:
+            float
+
+        :returns:
+            String
+        """
         return ('upperLeftCornerLatitude:[%s+TO+1000]+AND+lowerRightCornerLatitude:[-1000+TO+%s]'
                 '+AND+lowerLeftCornerLongitude:[-1000+TO+%s]+AND+upperRightCornerLongitude:[%s+TO+1000]'
                 % (lat, lat, lon, lon))

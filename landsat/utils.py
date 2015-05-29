@@ -12,7 +12,13 @@ from mixins import VerbosityMixin
 
 
 class Capturing(list):
-    """ Captures a subprocess stdout """
+    """
+    Captures a subprocess stdout.
+
+    :Usage:
+        >>> with Capturing():
+        ...     subprocess(args)
+    """
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._stringio = StringIO()
@@ -25,11 +31,11 @@ class Capturing(list):
 
 class timer(object):
     """
-    A time class
+    A timer class.
 
-    Usage:
-        with timer():
-            your code
+    :Usage:
+        >>> with timer():
+        ...     your code
     """
     def __enter__(self):
         self.start = time.time()
@@ -40,6 +46,21 @@ class timer(object):
 
 
 def exit(message, code=0):
+    """ output a message to stdout and terminates the process.
+
+    :param message:
+        Message to be outputed.
+    :type message:
+        String
+    :param code:
+        The termination code. Default is 0
+    :type code:
+        int
+
+    :returns:
+        void
+    """
+
     v = VerbosityMixin()
     if code == 0:
         v.output(message, normal=True, arrow=True)
@@ -50,13 +71,20 @@ def exit(message, code=0):
 
 
 def create_paired_list(value):
-    """ Create a list of paired items from a string
+    """ Create a list of paired items from a string.
 
-    Arguments:
-        i - the format must be 003,003,004,004 (commas with no space)
+    :param value:
+        the format must be 003,003,004,004 (commas with no space)
+    :type value:
+        String
 
-    Returns:
+    :returns:
+        List
+
+    :example:
+        >>> create_paired_list('003,003,004,004')
         [['003','003'], ['004', '004']]
+
     """
 
     if isinstance(value, list):
@@ -75,8 +103,15 @@ def create_paired_list(value):
 
 
 def check_create_folder(folder_path):
-    """ Check whether a folder exists, if not the folder is created
-    Always return folder_path
+    """ Check whether a folder exists, if not the folder is created.
+
+    :param folder_path:
+        Path to the folder
+    :type folder_path:
+        String
+
+    :returns:
+        (String) the path to the folder
     """
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -85,20 +120,55 @@ def check_create_folder(folder_path):
 
 
 def get_file(path):
-    """ Separate the name of the file or folder from the path and return it
-    Example: /path/to/file ---> file
+    """ Separate the name of the file or folder from the path and return it.
+
+    :param path:
+        Path to the folder
+    :type path:
+        String
+
+    :returns:
+        (String) the filename
+
+    :example:
+        >>> get_file('/path/to/file.jpg')
+        'file.jpg'
     """
     return os.path.basename(path)
 
 
 def get_filename(path):
-    """ Return the filename without extension. e.g. index.html --> index """
+    """ Return the filename without extension.
+
+    :param path:
+        Path to the folder
+    :type path:
+        String
+
+    :returns:
+        (String) the filename without extension
+
+    :example:
+        >>> get_filename('/path/to/file.jpg')
+        'file'
+    """
     return os.path.splitext(get_file(path))[0]
 
 
 def three_digit(number):
     """ Add 0s to inputs that their length is less than 3.
-    For example: 1 --> 001 | 02 --> 020 | st --> 0st
+
+    :param number:
+        The number to convert
+    :type number:
+        int
+
+    :returns:
+        String
+
+    :example:
+        >>> three_digit(1)
+        '001'
     """
     number = str(number)
     if len(number) == 1:
@@ -110,8 +180,19 @@ def three_digit(number):
 
 
 def georgian_day(date):
-    """ Returns the number of days passed since the start of the year
-    Accepted format: %m/%d/%Y
+    """ Returns the number of days passed since the start of the year.
+
+    :param date:
+        The string date with this format %m/%d/%Y
+    :type date:
+        String
+
+    :returns:
+        int
+
+    :example:
+        >>> georgian_day('05/1/2015')
+        121
     """
     try:
         fmt = '%m/%d/%Y'
@@ -121,8 +202,19 @@ def georgian_day(date):
 
 
 def year(date):
-    """ Returns the year
-    Accepted format: %m/%d/%Y
+    """ Returns the year.
+
+    :param date:
+        The string date with this format %m/%d/%Y
+    :type date:
+        String
+
+    :returns:
+        int
+
+    :example:
+        >>> year('05/1/2015')
+        2015
     """
     try:
         fmt = '%m/%d/%Y'
@@ -132,8 +224,23 @@ def year(date):
 
 
 def reformat_date(date, new_fmt='%Y-%m-%d'):
-    """ Return reformated date. Example: 01/28/2014 & %d/%m/%Y -> 28/01/2014
-    Accepted date format: %m/%d/%Y
+    """ Returns reformated date.
+
+    :param date:
+        The string date with this format %m/%d/%Y
+    :type date:
+        String
+    :param new_fmt:
+        date format string. Default is '%Y-%m-%d'
+    :type date:
+        String
+
+    :returns:
+        int
+
+    :example:
+        >>> reformat_date('05/1/2015', '%d/%m/%Y')
+        '1/05/2015'
     """
     try:
         if isinstance(date, datetime):
@@ -146,7 +253,21 @@ def reformat_date(date, new_fmt='%Y-%m-%d'):
 
 
 def convert_to_integer_list(value):
-    """ convert a comma separate string to a list where all values are integers """
+    """ Converts a comma separate string to a list
+
+    :param value:
+        the format must be 003,003,004,004 (commas with no space)
+    :type value:
+        String
+
+    :returns:
+        List
+
+    :example:
+        >>> convert_to_integer_list('003,003,004,004')
+        ['003', '003', '004', '004']
+
+    """
 
     if value and isinstance(value, str):
         if ',' in value:
