@@ -10,9 +10,6 @@ from termcolor import colored
 class VerbosityMixin(object):
     """
     Verbosity Mixin that generates beautiful stdout outputs.
-
-    Main method:
-    output()
     """
 
     verbose = False
@@ -24,14 +21,33 @@ class VerbosityMixin(object):
 
         if class instance verbose is True, the value is printed
 
-        @param
-        - value: (string) the message to be printed
-        - nomral: (boolean) if set to true the message is always printed,
-                  otherwise it is only shown if verbosity is set
-        - color: (string) The color of the message, choices: 'red', 'green', 'blue'
-        - error: (boolean) if set to true the message appears in red
-        - arrow: (boolean) if set to true an arrow appears before the message
-        - indent: (integer) indents the message based on the number provided
+        :param value:
+            a string representing the message to be printed
+        :type value:
+            String
+        :param normal:
+            if set to true the message is always printed, otherwise it is only shown if verbosity is set
+        :type normal:
+            boolean
+        :param color:
+            The color of the message, choices: 'red', 'green', 'blue'
+        :type normal:
+            String
+        :param error:
+            if set to true the message appears in red
+        :type error:
+            Boolean
+        :param arrow:
+            if set to true an arrow appears before the message
+        :type arrow:
+            Boolean
+        :param indent:
+            indents the message based on the number provided
+        :type indent:
+            Boolean
+
+        :returns:
+            void
         """
 
         if error and value and (normal or self.verbose):
@@ -44,8 +60,16 @@ class VerbosityMixin(object):
 
     def subprocess(self, argv):
         """
-        Execute subprocess commands with proper ouput
+        Execute subprocess commands with proper ouput.
         This is no longer used in landsat-util
+
+        :param argv:
+            A list of subprocess arguments
+        :type argv:
+            List
+
+        :returns:
+            void
         """
 
         if self.verbose:
@@ -59,13 +83,22 @@ class VerbosityMixin(object):
         return
 
     def exit(self, message):
-        """ Print an exist message and exit """
+        """ outputs an exit message and exits
+
+        :param message:
+            The message to be outputed
+        :type message:
+            String
+
+        :returns:
+            void
+        """
 
         self.output(message, normal=True, color="green")
         sys.exit()
 
     def _print(self, msg, color=None, arrow=False, indent=None):
-        """ Print the msg with the color provided """
+        """ Print the msg with the color provided. """
         if color:
             msg = colored(msg, color)
 

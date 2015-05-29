@@ -23,24 +23,36 @@ from utils import get_file, timer, check_create_folder, exit
 
 
 class FileDoesNotExist(Exception):
+    """ Exception to be used when the file does not exist. """
     pass
 
 
 class Process(VerbosityMixin):
     """
     Image procssing class
+
+    To initiate the following parameters must be passed:
+
+    :param path:
+        Path of the image.
+    :type path:
+        String
+    :param bands:
+        The band sequence for the final image. Must be a python list. (optional)
+    :type bands:
+        List
+    :param dst_path:
+        Path to the folder where the image should be stored. (optional)
+    :type dst_path:
+        String
+    :param verbose:
+        Whether the output should be verbose. Default is False.
+    :type verbose:
+        boolean
+
     """
 
     def __init__(self, path, bands=None, dst_path=None, verbose=False):
-        """
-        @params
-        scene - the scene ID
-        bands - The band sequence for the final image. Must be a python list
-        src_path - The path to the source image bundle
-        dst_path - The destination path
-        zipped - Set to true if the scene is in zip format and requires unzipping
-        verbose - Whether to sh ow verbose output
-        """
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
@@ -66,6 +78,16 @@ class Process(VerbosityMixin):
             self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
     def run(self, pansharpen=True):
+        """ Executes the image processing.
+
+        :param pansharpen:
+            Whether the process should also run pansharpenning. Default is True
+        :type pansharpen:
+            boolean
+
+        :returns:
+            (String) the path to the processed image
+        """
 
         self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
 
@@ -120,10 +142,8 @@ class Process(VerbosityMixin):
                 dst_shape = src_data['shape']
                 dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
                 dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
-                y_pixel = abs(max(dst_corner_ys) -
-                           min(dst_corner_ys)) / dst_shape[0]
-                x_pixel = abs(max(dst_corner_xs) -
-                           min(dst_corner_xs)) / dst_shape[1]
+                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
+                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
 
                 dst_transform = (min(dst_corner_xs),
                                  x_pixel,

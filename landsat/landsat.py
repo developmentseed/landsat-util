@@ -119,6 +119,12 @@ search, download, and process Landsat imagery.
 
 
 def args_options():
+    """ Generates an arugment parser.
+
+    :returns:
+        Parser object
+    """
+
     parser = argparse.ArgumentParser(prog='landsat',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description=textwrap.dedent(DESCRIPTION))
@@ -198,7 +204,18 @@ def args_options():
 
 def main(args):
     """
-    Main function - launches the program
+    Main function - launches the program.
+
+    :param args:
+        The Parser arguments
+    :type args:
+        Parser object
+
+    :returns:
+        List
+
+    :example:
+        >>> ["The latitude and longitude values must be valid numbers", 1]
     """
 
     v = VerbosityMixin()
@@ -282,6 +299,28 @@ def main(args):
 
 
 def process_image(path, bands=None, verbose=False, pansharpen=False):
+    """ Handles constructing and image process.
+
+    :param path:
+        The path to the image that has to be processed
+    :type path:
+        String
+    :param bands:
+        List of bands that has to be processed. (optional)
+    :type bands:
+        List
+    :param verbose:
+        Sets the level of verbosity. Default is False.
+    :type verbose:
+        boolean
+    :param pansharpen:
+        Whether to pansharpen the image. Default is False.
+    :type pansharpen:
+        boolean
+
+    :returns:
+        (String) path to the processed image
+    """
     try:
         bands = convert_to_integer_list(bands)
         p = Process(path, bands=bands, verbose=verbose)
