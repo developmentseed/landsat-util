@@ -28,7 +28,9 @@ class TestDownloader(unittest.TestCase):
         cls.d = Downloader()
         cls.temp_folder = mkdtemp()
         cls.scene = 'LT81360082013127LGN01'
+        cls.scene_2 = 'LC82050312014229LGN00'
         cls.scene_s3 = 'LC80010092015051LGN00'
+        cls.scene_s3_2 = 'LC82050312015136LGN00'
         cls.scene_size = 59204484
 
     @classmethod
@@ -49,21 +51,19 @@ class TestDownloader(unittest.TestCase):
     def test_download(self, mock_fetch):
         mock_fetch.return_value = True
 
-        # download one list
+        # download one scene
         self.d.download([self.scene])
-        self.assertTrue(self.d.download([self.scene]))
+        self.assertEqual({self.scene: 'google'}, self.d.download([self.scene]))
+
+        # download multiple scenes
+        self.assertEqual({self.scene: 'google', self.scene_2: 'google'}, self.d.download([self.scene, self.scene_2]))
 
         # Test if error is raised when passing scene as string instead of list
         self.assertRaises(Exception, self.d.download, self.scene)
 
-        # Test if download works when passing scenes as list
-        self.d.download([self.scene, self.scene])
-        self.assertTrue(self.d.download([self.scene]))
-
         # Test when passing band list along with sceneID
-        self.d.download([self.scene_s3], bands=[11])
-
-        self.assertTrue(self.d.download([self.scene]))
+        self.assertEqual({self.scene_s3: 'aws', self.scene_s3_2: 'aws'},
+                         self.d.download([self.scene_s3, self.scene_s3_2], bands=[11]))
 
         # Test whether passing band as string raises an exception
         self.assertRaises(Exception, self.d.download, self.scene, 4)
