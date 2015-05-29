@@ -1,12 +1,5 @@
-landsat package
-===============
-
-Subpackages
------------
-
-.. toctree::
-
-    landsat.tests
+landsat
+=======
 
 Submodules
 ----------
@@ -15,6 +8,14 @@ landsat.downloader module
 -------------------------
 
 .. automodule:: landsat.downloader
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+landsat.uploader module
+-------------------------
+
+.. automodule:: landsat.uploader
     :members:
     :undoc-members:
     :show-inheritance:

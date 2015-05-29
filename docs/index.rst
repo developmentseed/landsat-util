@@ -1,22 +1,37 @@
-.. csv2es documentation master file, created by
-   sphinx-quickstart on Tue Jul  9 22:26:36 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Landsat- Util
+========================================
 
-Landsat-util
-======================================
+.. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
+    :target: https://travis-ci.org/developmentseed/landsat-util
+
+.. image:: https://badge.fury.io/py/landsat-util.svg
+    :target: http://badge.fury.io/py/landsat-util
+
+.. image:: https://img.shields.io/pypi/dm/landsat-util.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: Downloads
+
+.. image:: https://img.shields.io/pypi/l/landsat-util.svg
+    :target: https://pypi.python.org/pypi/landsat-util/
+    :alt: License
+
+Landsat-util is a command line utility that makes it easy to search, download, and process Landsat imagery.
+
+This tool uses Development Seed's `API for Landsat Metadata <https://github.com/developmentseed/landsat-api>`_.
+
+This API is accessible here: https://api.developmentseed.org/landsat
+
+You can also run your own API and connect it to this tool.
 
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   readme
    installation
-   usage
-   contributing
-   authors
-   history
+   overview
+   notes
+   todo
 
 Indices and tables
 ==================
@@ -24,3 +39,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
