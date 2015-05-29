@@ -6,6 +6,7 @@ Changes
 - New documentation
 - Deployed to readthedocs
 - Automate deployment to pypi
+- Adds docker support
 
 0.6.3 (2015-04-29)
 ------------------
