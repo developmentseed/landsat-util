@@ -80,3 +80,8 @@ Specify bands 3, 5 and 1::
 Process *and* pansharpen a downloaded image::
 
     $: landsat process path/to/LC80090452014008LGN00.tar.bz --pansharpen
+
+A note on returned products
+++++++++++++++++
+
+Scenes acquired after 2015 will be downloaded from `AWS Public Data Sets <http://aws.amazon.com/public-data-sets/landsat/>`_ while scenes acquired before 2015 will be downloaded from `Google Earth Engine <https://earthengine.google.org/>`_. AWS provides the bands separately and so landsat-util will also pass along the bands individually if requested. In the case of Google Earth Engine, only the full, compressed image bundle is available (including all bands and metadata) and will be downloaded no matter what bands are requested.
