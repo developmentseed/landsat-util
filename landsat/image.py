@@ -167,10 +167,9 @@ class Process(VerbosityMixin):
                     new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
                 self.output("Projecting", normal=True, arrow=True)
-                for i, band in enumerate(bands):
-                    self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
-                    reproject(band, new_bands[i], src_transform=src_data['transform'], src_crs=src_data['crs'],
-                              dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+                proj_data = src_data
+                proj_data["dst_transform"] = dst_transform
+                self.warp(proj_data, bands, new_bands)
 
                 # Bands are no longer needed
                 del bands
@@ -204,6 +203,13 @@ class Process(VerbosityMixin):
                     new_bands[i] = None
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
+
+    def warp(self, proj_data, bands, new_bands):
+        for i, band in enumerate(bands):
+            self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+            reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
+                            dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+
 
     def _pansharpenning(self, bands):
 
