@@ -26,8 +26,87 @@ class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
     pass
 
+class BaseProcess(VerbosityMixin):
+    def _get_boundaries(self, src):
 
-class Process(VerbosityMixin):
+        self.output("Getting boundaries", normal=True, arrow=True)
+        output = {'ul': {'x': [0, 0], 'y': [0, 0]},  # ul: upper left
+                  'ur': {'x': [0, 0], 'y': [0, 0]},  # ur: upper right
+                  'll': {'x': [0, 0], 'y': [0, 0]},  # ll: lower left
+                  'lr': {'x': [0, 0], 'y': [0, 0]}}  # lr: lower right
+
+        output['ul']['x'][0] = src['affine'][2]
+        output['ul']['y'][0] = src['affine'][5]
+        output['ur']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
+        output['ur']['y'][0] = output['ul']['y'][0]
+        output['ll']['x'][0] = output['ul']['x'][0]
+        output['ll']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
+        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
+        output['lr']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
+
+        output['ul']['x'][1], output['ul']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['ul']['x'][0]],
+                                                               [output['ul']['y'][0]])
+
+        output['ur']['x'][1], output['ur']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['ur']['x'][0]],
+                                                               [output['ur']['y'][0]])
+
+        output['ll']['x'][1], output['ll']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['ll']['x'][0]],
+                                                               [output['ll']['y'][0]])
+
+        output['lr']['x'][1], output['lr']['y'][1] = transform(src['crs'], self.projection,
+                                                               [output['lr']['x'][0]],
+                                                               [output['lr']['y'][0]])
+
+        return output
+    def _read_band(self, band_path):
+        """ Reads a band with rasterio """
+        return rasterio.open(band_path).read_band(1)
+
+    def _warp(self, proj_data, bands, new_bands):
+        for i, band in enumerate(bands):
+            self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+            reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
+                            dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+
+    def _unzip(self, src, dst, scene, force_unzip=False):
+        """ Unzip tar files """
+        self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
+
+        try:
+            # check if file is already unzipped, skip
+            if isdir(dst) and not force_unzip:
+                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                return
+            else:
+                tar = tarfile.open(src, 'r')
+                tar.extractall(path=dst)
+                tar.close()
+        except tarfile.ReadError:
+            check_create_folder(dst)
+            subprocess.check_call(['tar', '-xf', src, '-C', dst])
+
+    def _get_full_filename(self, band):
+
+        base_file = '%s_B%s.*' % (self.scene, band)
+
+        try:
+            return glob.glob(join(self.scene_path, base_file))[0].split('/')[-1]
+        except IndexError:
+            raise FileDoesNotExist('%s does not exist' % '%s_B%s.*' % (self.scene, band))
+
+    def _check_if_zipped(self, path):
+        """ Checks if the filename shows a tar/zip file """
+        filename = get_file(path).split('.')
+
+        if filename[-1] in ['bz', 'bz2']:
+            return True
+
+        return False
+
+class Process(BaseProcess):
     """
     Image procssing class
 
@@ -66,7 +145,7 @@ class Process(VerbosityMixin):
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
 
-        # Build destination folder if doesn't exits
+        # Build destination folder if doesn't exist
         self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
         self.dst_path = check_create_folder(join(self.dst_path, self.scene))
         self.verbose = verbose
@@ -169,7 +248,7 @@ class Process(VerbosityMixin):
                 self.output("Projecting", normal=True, arrow=True)
                 proj_data = src_data
                 proj_data["dst_transform"] = dst_transform
-                self.warp(proj_data, bands, new_bands)
+                self._warp(proj_data, bands, new_bands)
 
                 # Bands are no longer needed
                 del bands
@@ -204,11 +283,6 @@ class Process(VerbosityMixin):
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
 
-    def warp(self, proj_data, bands, new_bands):
-        for i, band in enumerate(bands):
-            self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
-            reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
-                            dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
 
     def _pansharpenning(self, bands):
@@ -244,9 +318,6 @@ class Process(VerbosityMixin):
         temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
         return temp
 
-    def _read_band(self, band_path):
-        """ Reads a band with rasterio """
-        return rasterio.open(band_path).read_band(1)
 
     def _rescale(self, bands):
         """ Rescale bands """
@@ -259,78 +330,10 @@ class Process(VerbosityMixin):
 
         return bands
 
-    def _get_boundaries(self, src):
-
-        self.output("Getting boundaries", normal=True, arrow=True)
-        output = {'ul': {'x': [0, 0], 'y': [0, 0]},  # ul: upper left
-                  'ur': {'x': [0, 0], 'y': [0, 0]},  # ur: upper right
-                  'll': {'x': [0, 0], 'y': [0, 0]},  # ll: lower left
-                  'lr': {'x': [0, 0], 'y': [0, 0]}}  # lr: lower right
-
-        output['ul']['x'][0] = src['affine'][2]
-        output['ul']['y'][0] = src['affine'][5]
-        output['ur']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
-        output['ur']['y'][0] = output['ul']['y'][0]
-        output['ll']['x'][0] = output['ul']['x'][0]
-        output['ll']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
-        output['lr']['x'][0] = output['ul']['x'][0] + self.pixel * src['shape'][1]
-        output['lr']['y'][0] = output['ul']['y'][0] - self.pixel * src['shape'][0]
-
-        output['ul']['x'][1], output['ul']['y'][1] = transform(src['crs'], self.projection,
-                                                               [output['ul']['x'][0]],
-                                                               [output['ul']['y'][0]])
-
-        output['ur']['x'][1], output['ur']['y'][1] = transform(src['crs'], self.projection,
-                                                               [output['ur']['x'][0]],
-                                                               [output['ur']['y'][0]])
-
-        output['ll']['x'][1], output['ll']['y'][1] = transform(src['crs'], self.projection,
-                                                               [output['ll']['x'][0]],
-                                                               [output['ll']['y'][0]])
-
-        output['lr']['x'][1], output['lr']['y'][1] = transform(src['crs'], self.projection,
-                                                               [output['lr']['x'][0]],
-                                                               [output['lr']['y'][0]])
-
-        return output
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
 
-    def _unzip(self, src, dst, scene, force_unzip=False):
-        """ Unzip tar files """
-        self.output("Unzipping %s - It might take some time" % scene, normal=True, arrow=True)
-
-        try:
-            # check if file is already unzipped, skip
-            if isdir(dst) and not force_unzip:
-                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
-                return
-            else:
-                tar = tarfile.open(src, 'r')
-                tar.extractall(path=dst)
-                tar.close()
-        except tarfile.ReadError:
-            check_create_folder(dst)
-            subprocess.check_call(['tar', '-xf', src, '-C', dst])
-
-    def _get_full_filename(self, band):
-
-        base_file = '%s_B%s.*' % (self.scene, band)
-
-        try:
-            return glob.glob(join(self.scene_path, base_file))[0].split('/')[-1]
-        except IndexError:
-            raise FileDoesNotExist('%s does not exist' % '%s_B%s.*' % (self.scene, band))
-
-    def _check_if_zipped(self, path):
-        """ Checks if the filename shows a tar/zip file """
-        filename = get_file(path).split('.')
-
-        if filename[-1] in ['bz', 'bz2']:
-            return True
-
-        return False
 
 
 if __name__ == '__main__':
@@ -338,4 +341,4 @@ if __name__ == '__main__':
     with timer():
         p = Process(sys.argv[1])
 
-        print p.run(sys.argv[2] == 't')
+        print p.run(pansharpen=False)
