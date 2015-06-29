@@ -29,29 +29,8 @@ class NDVI(BaseProcess):
         boolean
     """
 
-    def __init__(self, path, force_unzip=False, verbose=False, dst_path=None):
-        self.projection = {'init': 'epsg:3857'}
-        self.dst_crs = {'init': u'epsg:3857'}
-        self.scene = get_file(path).split('.')[0]
-        self.bands = [4, 5]
-
-        # Landsat source path
-        self.src_path = path.replace(get_file(path), '')
-
-        # Build destination folder if doesn't exist
-        self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
-        self.dst_path = check_create_folder(join(self.dst_path, self.scene))
-        self.verbose = verbose
-
-        # Path to the unzipped folder
-        self.scene_path = join(self.src_path, self.scene)
-
-        if self._check_if_zipped(path):
-            self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
-
-        self.bands_path = []
-        for band in self.bands:
-            self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
+    def __init__(self, path, bands=[4, 5], dst_path=None, verbose=False, force_unzip=False):
+        super(NDVI, self).__init__(path, bands, dst_path, verbose, force_unzip)
 
     def run(self):
         """
