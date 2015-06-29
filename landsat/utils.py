@@ -268,7 +268,7 @@ def convert_to_integer_list(value):
         ['003', '003', '004', '004']
 
     """
-    if isinstance(value, list):
+    if isinstance(value, list) or value is None:
         return value
     else:
         s = re.findall('(10|11|QA|[0-9])', value)
