@@ -11,10 +11,12 @@ import unittest
 from tempfile import mkdtemp
 
 try:
-    from landsat.image import Process
+    from landsat.image import Simple, PanSharpen
+    from landsat.ndvi import NDVI
 except ImportError:
     sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    from landsat.image import Process
+    from landsat.image import Simple, PanSharpen
+    from landsat.ndvi import NDVI
 
 
 class TestProcess(unittest.TestCase):
@@ -24,7 +26,6 @@ class TestProcess(unittest.TestCase):
         cls.base_dir = abspath(dirname(__file__))
         cls.temp_folder = mkdtemp()
         cls.landsat_image = join(cls.base_dir, 'samples/test.tar.bz2')
-        cls.p = Process(path=cls.landsat_image, dst_path=cls.temp_folder)
 
     @classmethod
     def tearDownClass(cls):
@@ -36,25 +37,37 @@ class TestProcess(unittest.TestCase):
             if exc.errno != errno.ENOENT:
                 raise
 
-    def test_run(self):
+    def test_simple_no_bands(self):
 
-        # test with no bands
-        self.p.run(False)
+        p = Simple(path=self.landsat_image, dst_path=self.temp_folder)
+        p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432.TIF')))
 
-        # test with bands
-        self.p.bands = [1, 2, 3]
-        self.p.run(False)
+    def test_simple_with_bands(self):
+
+        p = Simple(path=self.landsat_image, bands=[1, 2, 3], dst_path=self.temp_folder)
+        p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_123.TIF')))
 
-        # test with pansharpen
-        self.p.bands = [4, 3, 2]
-        self.p.run()
-        print self.temp_folder
-        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432_pan.TIF')))
+    def test_simple_with_zip_file(self):
+
+        p = Simple(path=self.landsat_image, dst_path=self.temp_folder)
 
         # test from an unzip file
         self.path = join(self.base_dir, 'samples', 'test')
-        self.p.run(False)
+        p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432.TIF')))
+
+    def test_pansharpen(self):
+        # test with pansharpen
+
+        p = PanSharpen(path=self.landsat_image, bands=[4, 3, 2], dst_path=self.temp_folder)
+        p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432_pan.TIF')))
+
+    def test_ndvi(self):
+
+        p = NDVI(path=self.landsat_image, dst_path=self.temp_folder)
+        print p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_NDVI.TIF')))
 
