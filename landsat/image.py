@@ -2,7 +2,6 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-import warnings
 import sys
 from os.path import join, isdir
 import tarfile
@@ -18,6 +17,7 @@ from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
 
 import settings
+from decorators import rasterio_decorator
 from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
 
@@ -161,9 +161,20 @@ class BaseProcess(VerbosityMixin):
 
         return False
 
+    def _read_cloud_cover(self):
+        try:
+            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
+                lines = mtl.readlines()
+                for line in lines:
+                    if 'CLOUD_COVER' in line:
+                        return float(line.replace('CLOUD_COVER = ', ''))
+        except IOError:
+            return 0
+
 
 class Process(BaseProcess):
 
+    @rasterio_decorator
     def run(self, pansharpen=True):
         """ Executes the image processing.
 
@@ -179,113 +190,100 @@ class Process(BaseProcess):
         self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
 
         # Read cloud coverage from mtl file
-        cloud_cover = 0
+        cloud_cover = self._read_cloud_cover()
+
+        bands = []
+        # Add band 8 for pansharpenning
+        if pansharpen:
+            self.bands.append(8)
+
+        bands_path = []
+
+        for band in self.bands:
+            bands_path.append(join(self.scene_path, self._get_full_filename(band)))
+
         try:
-            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
-                lines = mtl.readlines()
-                for line in lines:
-                    if 'CLOUD_COVER' in line:
-                        cloud_cover = float(line.replace('CLOUD_COVER = ', ''))
-                        break
-        except IOError:
-            pass
+            for i, band in enumerate(self.bands):
+                bands.append(self._read_band(bands_path[i]))
+        except IOError as e:
+            exit(e.message, 1)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            with rasterio.drivers():
-                bands = []
+        src = rasterio.open(bands_path[-1])
 
-                # Add band 8 for pansharpenning
-                if pansharpen:
-                    self.bands.append(8)
+        # Get pixel size from source
+        self.pixel = src.affine[0]
 
-                bands_path = []
+        # Only collect src data that is needed and delete the rest
+        src_data = {
+            'transform': src.transform,
+            'crs': src.crs,
+            'affine': src.affine,
+            'shape': src.shape
+        }
+        del src
 
-                for band in self.bands:
-                    bands_path.append(join(self.scene_path, self._get_full_filename(band)))
+        crn = self._get_boundaries(src_data)
 
-                try:
-                    for i, band in enumerate(self.bands):
-                        bands.append(self._read_band(bands_path[i]))
-                except IOError as e:
-                    exit(e.message, 1)
+        dst_shape = src_data['shape']
+        dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
+        dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
+        y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
+        x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
 
-                src = rasterio.open(bands_path[-1])
+        dst_transform = (min(dst_corner_xs),
+                         x_pixel,
+                         0.0,
+                         max(dst_corner_ys),
+                         0.0,
+                         -y_pixel)
+        # Delete crn since no longer needed
+        del crn
 
-                # Get pixel size from source
-                self.pixel = src.affine[0]
+        new_bands = []
+        for i in range(0, 3):
+            new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
-                # Only collect src data that is needed and delete the rest
-                src_data = {
-                    'transform': src.transform,
-                    'crs': src.crs,
-                    'affine': src.affine,
-                    'shape': src.shape
-                }
-                del src
+        if pansharpen:
+            bands[:3] = self._rescale(bands[:3])
+            new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
-                crn = self._get_boundaries(src_data)
+        self.output("Projecting", normal=True, arrow=True)
+        proj_data = src_data
+        proj_data["dst_transform"] = dst_transform
+        self._warp(proj_data, bands, new_bands)
 
-                dst_shape = src_data['shape']
-                dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
-                dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
-                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
-                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
+        # Bands are no longer needed
+        del bands
 
-                dst_transform = (min(dst_corner_xs),
-                                 x_pixel,
-                                 0.0,
-                                 max(dst_corner_ys),
-                                 0.0,
-                                 -y_pixel)
-                # Delete crn since no longer needed
-                del crn
+        if pansharpen:
+            new_bands = self._pansharpenning(new_bands)
+            del self.bands[3]
 
-                new_bands = []
-                for i in range(0, 3):
-                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
+        self.output("Final Steps", normal=True, arrow=True)
 
-                if pansharpen:
-                    bands[:3] = self._rescale(bands[:3])
-                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
+        output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
 
-                self.output("Projecting", normal=True, arrow=True)
-                proj_data = src_data
-                proj_data["dst_transform"] = dst_transform
-                self._warp(proj_data, bands, new_bands)
+        if pansharpen:
+            output_file += '_pan'
 
-                # Bands are no longer needed
-                del bands
+        output_file += '.TIF'
+        output_file = join(self.dst_path, output_file)
 
-                if pansharpen:
-                    new_bands = self._pansharpenning(new_bands)
-                    del self.bands[3]
+        output = rasterio.open(output_file, 'w', driver='GTiff',
+                               width=dst_shape[1], height=dst_shape[0],
+                               count=3, dtype=numpy.uint8,
+                               nodata=0, transform=dst_transform, photometric='RGB',
+                               crs=self.dst_crs)
 
-                self.output("Final Steps", normal=True, arrow=True)
+        for i, band in enumerate(new_bands):
+            # Color Correction
+            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
 
-                output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
+            output.write_band(i+1, img_as_ubyte(band))
 
-                if pansharpen:
-                    output_file += '_pan'
-
-                output_file += '.TIF'
-                output_file = join(self.dst_path, output_file)
-
-                output = rasterio.open(output_file, 'w', driver='GTiff',
-                                       width=dst_shape[1], height=dst_shape[0],
-                                       count=3, dtype=numpy.uint8,
-                                       nodata=0, transform=dst_transform, photometric='RGB',
-                                       crs=self.dst_crs)
-
-                for i, band in enumerate(new_bands):
-                    # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
-
-                    output.write_band(i+1, img_as_ubyte(band))
-
-                    new_bands[i] = None
-                self.output("Writing to file", normal=True, color='green', indent=1)
-                return output_file
+            new_bands[i] = None
+        self.output("Writing to file", normal=True, color='green', indent=1)
+        return output_file
 
     def _pansharpenning(self, bands):
 
