@@ -270,9 +270,13 @@ class Process(BaseProcess):
         output_file = join(self.dst_path, output_file)
 
         output = rasterio.open(output_file, 'w', driver='GTiff',
-                               width=dst_shape[1], height=dst_shape[0],
-                               count=3, dtype=numpy.uint8,
-                               nodata=0, transform=dst_transform, photometric='RGB',
+                               width=dst_shape[1],
+                               height=dst_shape[0],
+                               count=3,
+                               dtype=numpy.uint8,
+                               nodata=0,
+                               transform=dst_transform,
+                               photometric='RGB',
                                crs=self.dst_crs)
 
         for i, band in enumerate(new_bands):
