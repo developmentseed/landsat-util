@@ -218,7 +218,8 @@ class Process(BaseProcess):
             'transform': src.transform,
             'crs': src.crs,
             'affine': src.affine,
-            'shape': src.shape
+            'shape': src.shape,
+            'dst_transform': None
         }
         del src
 
@@ -230,12 +231,12 @@ class Process(BaseProcess):
         y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
         x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
 
-        dst_transform = (min(dst_corner_xs),
-                         x_pixel,
-                         0.0,
-                         max(dst_corner_ys),
-                         0.0,
-                         -y_pixel)
+        src_data['dst_transform'] = (min(dst_corner_xs),
+                                     x_pixel,
+                                     0.0,
+                                     max(dst_corner_ys),
+                                     0.0,
+                                     -y_pixel)
         # Delete crn since no longer needed
         del crn
 
@@ -248,9 +249,7 @@ class Process(BaseProcess):
             new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
 
         self.output("Projecting", normal=True, arrow=True)
-        proj_data = src_data
-        proj_data["dst_transform"] = dst_transform
-        self._warp(proj_data, bands, new_bands)
+        self._warp(src_data, bands, new_bands)
 
         # Bands are no longer needed
         del bands
@@ -275,7 +274,7 @@ class Process(BaseProcess):
                                count=3,
                                dtype=numpy.uint8,
                                nodata=0,
-                               transform=dst_transform,
+                               transform=src_data['dst_transform'],
                                photometric='RGB',
                                crs=self.dst_crs)
 
