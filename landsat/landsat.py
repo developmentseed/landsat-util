@@ -18,7 +18,8 @@ from search import Search
 from uploader import Uploader
 from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
 from mixins import VerbosityMixin
-from image import Process, FileDoesNotExist
+from image import Simple, PanSharpen, FileDoesNotExist
+from ndvi import NDVI
 from __init__ import __version__
 import settings
 
@@ -74,6 +75,8 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
+                --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
+
                 -u --upload         Upload to S3 after the image processing completed
 
                 --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
@@ -101,6 +104,8 @@ search, download, and process Landsat imagery.
 
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
+
+                --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
 
                 -v, --verbose       Show verbose output
 
@@ -175,6 +180,8 @@ def args_options():
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
                                  'image. Pansharpening requires larger memory')
+    parser_download.add_argument('--ndvi', action='store_true',
+                                 help='Whether to run the NDVI process. If used, bands parameter is disregarded')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -191,6 +198,8 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pansharpening requires larger memory')
+    parser_process.add_argument('--ndvi', action='store_true',
+                                help='Whether to run the NDVI process. If used, bands parameter is disregarded')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -231,7 +240,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -280,6 +289,8 @@ def main(args):
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
                     bands.append(8)
+                if args.ndvi:
+                    bands = [4, 5]
 
                 downloaded = d.download(args.scenes, bands)
 
@@ -295,7 +306,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip)
+                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip)
 
                         if args.upload:
                             try:
@@ -315,7 +326,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None):
+def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None):
     """ Handles constructing and image process.
 
     :param path:
@@ -340,13 +351,18 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
     """
     try:
         bands = convert_to_integer_list(bands)
-        p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+        if pansharpen:
+            p = PanSharpen(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+        elif ndvi:
+            p = NDVI(path, verbose=verbose, force_unzip=force_unzip)
+        else:
+            p = Simple(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:
         exit(e.message, 1)
 
-    return p.run(pansharpen)
+    return p.run()
 
 
 def __main__():

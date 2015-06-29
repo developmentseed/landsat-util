@@ -80,7 +80,7 @@ class TestLandsat(unittest.TestCase):
         args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', self.mock_path]
         output = landsat.main(self.parser.parse_args(args))
         mock_downloader.assert_called_with(download_dir=self.mock_path)
-        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], ['11', ''])
+        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [11])
         self.assertEquals(output, ['Download Completed', 0])
 
     def test_download_incorrect(self):
@@ -100,24 +100,32 @@ class TestLandsat(unittest.TestCase):
 
         args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d', self.mock_path, '-p']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], ['4', '3', '2'])
-        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, False)
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], [4, 3, 2])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, False, False)
         self.assertEquals(output, ["Image Processing Completed", 0])
 
         # Call with force unzip flag
         args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d',
                 self.mock_path, '-p', '--force-unzip']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], ['4', '3', '2'])
-        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, True)
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], [4, 3, 2])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, False, True)
         self.assertEquals(output, ["Image Processing Completed", 0])
 
         # Call with pansharpen
         args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d',
                 self.mock_path, '-p', '--pansharpen']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], ['4', '3', '2', 8])
-        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, True, False)
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], [4, 3, 2, 8])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, True, False, False)
+        self.assertEquals(output, ["Image Processing Completed", 0])
+
+        # Call with ndvi
+        args = ['download', 'LC80010092015051LGN00', 'LC80010092014051LGN00', '-b', '432', '-d',
+                self.mock_path, '-p', '--ndvi']
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00', 'LC80010092014051LGN00'], [4, 5])
+        mock_process.assert_called_with('path/to/folder/LC80010092014051LGN00', '432', False, False, True, False)
         self.assertEquals(output, ["Image Processing Completed", 0])
 
     @mock.patch('landsat.landsat.Uploader')
@@ -132,8 +140,8 @@ class TestLandsat(unittest.TestCase):
         args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p',
                 '-u', '--key', 'somekey', '--secret', 'somesecret', '--bucket', 'mybucket', '--region', 'this']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False, False)
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], [4, 3, 2])
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False, False, False)
         mock_upload.assert_called_with('somekey', 'somesecret', 'this')
         mock_upload.return_value.run.assert_called_with('mybucket', 'image.TIF', 'image.TIF')
         self.assertEquals(output, ["Image Processing Completed", 0])
@@ -148,8 +156,8 @@ class TestLandsat(unittest.TestCase):
         args = ['download', 'LC80010092015051LGN00', '-b', '432', '-d', self.mock_path, '-p',
                 '-u', '--region', 'whatever']
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(['LC80010092015051LGN00'], ['4', '3', '2'])
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False, False)
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], [4, 3, 2])
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False, False, False)
         self.assertEquals(output, ['Could not authenticate with AWS', 1])
 
     @mock.patch('landsat.landsat.process_image')
@@ -160,7 +168,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, False)
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, False, False)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     @mock.patch('landsat.landsat.process_image')
@@ -171,7 +179,18 @@ class TestLandsat(unittest.TestCase):
         args = ['process', '--pansharpen', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, True, False)
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, True, False, False)
+        self.assertEquals(output, ["The output is stored at image.TIF"])
+
+    @mock.patch('landsat.landsat.process_image')
+    def test_process_correct_ndvi(self, mock_process):
+        """Test process command with correct input and ndvi"""
+        mock_process.return_value = 'image.TIF'
+
+        args = ['process', '--ndvi', 'path/to/folder/LC80010092015051LGN00']
+        output = landsat.main(self.parser.parse_args(args))
+
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, True, False)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     def test_process_incorrect(self):
