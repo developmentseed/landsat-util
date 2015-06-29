@@ -268,13 +268,13 @@ def convert_to_integer_list(value):
         ['003', '003', '004', '004']
 
     """
-
-    if value and isinstance(value, str):
-        if ',' in value:
-            value = re.sub('[^0-9,]', '', value)
-            new_list = value.split(',')
-        else:
-            new_list = re.findall('[0-9]', value)
-        return new_list if new_list else None
-    else:
+    if isinstance(value, list):
         return value
+    else:
+        s = re.findall('(10|11|QA|[0-9])', value)
+        for k, v in enumerate(s):
+            try:
+                s[k] = int(v)
+            except ValueError:
+                pass
+        return s
