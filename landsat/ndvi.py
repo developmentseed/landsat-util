@@ -32,23 +32,15 @@ class NDVI(BaseProcess):
         # Bands are no longer needed
         del bands
 
-        output_band = numpy.true_divide((new_bands[1] - new_bands[0]), (new_bands[1] + new_bands[0]))
+        calc_band = numpy.true_divide((new_bands[1] - new_bands[0]), (new_bands[1] + new_bands[0]))
+
+        output_band = numpy.rint((calc_band + 1) * 255 / 2).astype(numpy.uint8)
 
         output_file = '%s_NDVI.TIF' % (self.scene)
         output_file = join(self.dst_path, output_file)
 
         ## from http://publiclab.org/notes/cfastie/08-26-2014/new-ndvi-colormap
-        # cmap = {0: (255, 255, 255, 255),
-        #         ##48: (52, 52, 52),
-        #         ##96: (255, 255, 255),
-        #         ##136	56	56	56
-        #         ##144	140	140	255
-        #         ##160	0	255	0
-        #         ##192	255	255	0
-        #         ##240	255	0	0
-        #         255: (255, 0, 239, 255)}
-
-        cmap = {0:	(255,255,255,255),
+        cmap = {0:	(255,255,255,0),
                 1:	(250,250,250,255),
                 2:	(246,246,246,255),
                 3:	(242,242,242,255),
@@ -305,8 +297,6 @@ class NDVI(BaseProcess):
                 254:	(255,0,223,255),
                 255:	(255,0,239,255)}
 
-
-
         with rasterio.open(output_file, 'w', driver='GTiff',
                                width=image_data['shape'][1],
                                height=image_data['shape'][0],
@@ -316,8 +306,7 @@ class NDVI(BaseProcess):
                                transform=image_data['dst_transform'],
                                crs=self.dst_crs) as output:
 
-            output.write_band(1, img_as_ubyte(output_band))
-            self.output("COLORMAP", normal=True, color='green', indent=1)
+            output.write_band(1, output_band)
             output.write_colormap(1, cmap)
             self.output("Writing to file", normal=True, color='green', indent=1)
         return output_file
