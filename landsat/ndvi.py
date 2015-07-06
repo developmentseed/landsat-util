@@ -1,4 +1,6 @@
 import rasterio
+from rasterio.features import sieve
+
 from os.path import join
 import numpy
 from skimage.util import img_as_ubyte
@@ -39,8 +41,12 @@ class NDVI(BaseProcess):
         output_file = '%s_NDVI.TIF' % (self.scene)
         output_file = join(self.dst_path, output_file)
 
+        ## colormaps will overwrite our transparency masks so we will manually
+        ## create three RGB bands
+        self.output("Creating manual colormap", normal=True)
+
         ## from http://publiclab.org/notes/cfastie/08-26-2014/new-ndvi-colormap
-        cmap = {0:	(255,255,255,0),
+        cmap = {0:	(0,0,0,255),
                 1:	(250,250,250,255),
                 2:	(246,246,246,255),
                 3:	(242,242,242,255),
@@ -297,16 +303,29 @@ class NDVI(BaseProcess):
                 254:	(255,0,223,255),
                 255:	(255,0,239,255)}
 
-        with rasterio.open(output_file, 'w', driver='GTiff',
-                               width=image_data['shape'][1],
-                               height=image_data['shape'][0],
-                               count=1,
-                               dtype=numpy.uint8,
-                               nodata=0,
-                               transform=image_data['dst_transform'],
-                               crs=self.dst_crs) as output:
+        def manual_colormap(n, i):
+            return cmap[n][i]
 
-            output.write_band(1, output_band)
-            output.write_colormap(1, cmap)
+        v_manual_colormap = numpy.vectorize(manual_colormap, otypes=[numpy.uint8])
+        rgb_bands = []
+        for i in range(3):
+            rgb_bands.append(v_manual_colormap(output_band, i))
+
+        with rasterio.drivers(GDAL_TIFF_INTERNAL_MASK=True):
+            with rasterio.open(output_file, 'w', driver='GTiff',
+                                   width=image_data['shape'][1],
+                                   height=image_data['shape'][0],
+                                   count=3,
+                                   dtype=numpy.uint8,
+                                   nodata=0,
+                                   photometric='RGB',
+                                   transform=image_data['dst_transform'],
+                                   crs=self.dst_crs) as output:
+
+                for i in range(3):
+                    output.write_band(i+1, rgb_bands[i])
+                # output.write_colormap(1, cmap)
+                # output.write_mask(no_data_mask)
+
             self.output("Writing to file", normal=True, color='green', indent=1)
         return output_file
