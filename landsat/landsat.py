@@ -354,13 +354,15 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
     try:
         bands = convert_to_integer_list(bands)
         if pansharpen:
-            p = PanSharpen(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+            p = PanSharpen(path, bands=bands, dst_path=settings.PROCESSED_IMAGE,
+                           verbose=verbose, force_unzip=force_unzip)
         elif ndvi1:
-            p = NDVI(path, verbose=verbose, force_unzip=force_unzip)
+            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip)
         elif ndvi:
-            p = NDVIWithManualColorMap(path, verbose=verbose, force_unzip=force_unzip)
+            p = NDVIWithManualColorMap(path, dst_path=settings.PROCESSED_IMAGE,
+                                       verbose=verbose, force_unzip=force_unzip)
         else:
-            p = Simple(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:
