@@ -2,6 +2,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+import os
 from os.path import join, isdir
 import tarfile
 import glob
@@ -15,10 +16,9 @@ from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
 
-import settings
-from decorators import rasterio_decorator
 from mixins import VerbosityMixin
 from utils import get_file, check_create_folder, exit
+from decorators import rasterio_decorator
 
 
 class FileDoesNotExist(Exception):
@@ -66,7 +66,7 @@ class BaseProcess(VerbosityMixin):
         self.src_path = path.replace(get_file(path), '')
 
         # Build destination folder if doesn't exist
-        self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
+        self.dst_path = dst_path if dst_path else os.getcwd()
         self.dst_path = check_create_folder(join(self.dst_path, self.scene))
         self.verbose = verbose
 
