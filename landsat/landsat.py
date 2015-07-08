@@ -174,7 +174,7 @@ def args_options():
                                  help="Provide Full sceneID, e.g. LC81660392014196LGN00")
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
-                                 'the band from S3. If the band does not exist, an error is returned')
+                                 'the band from S3. If the band does not exist, an error is returned', default='432')
     parser_download.add_argument('-d', '--dest', help='Destination path')
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
@@ -203,7 +203,7 @@ def args_options():
     parser_process.add_argument('--ndvi1', action='store_true',
                                 help='Whether to run the NDVI process. If used, bands parameter is disregarded')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
-                                'Example: --bands 321')
+                                'Example: --bands 321', default='432')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
     parser_process.add_argument('-u', '--upload', action='store_true',
