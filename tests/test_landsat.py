@@ -3,19 +3,14 @@
 
 """Tests for landsat"""
 
-import sys
 import unittest
 import subprocess
 import errno
 import shutil
-from os.path import join, abspath, dirname
+from os.path import join
 import mock
 
-try:
-    import landsat.landsat as landsat
-except ImportError:
-    sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    import landsat.landsat as landsat
+import landsat.landsat as landsat
 
 
 class TestLandsat(unittest.TestCase):
@@ -168,7 +163,8 @@ class TestLandsat(unittest.TestCase):
         args = ['process', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, False, False)
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None,
+                                        False, False, False, False, False)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     @mock.patch('landsat.landsat.process_image')
@@ -179,7 +175,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', '--pansharpen', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, True, False, False)
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, True, False, False, False)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     @mock.patch('landsat.landsat.process_image')
@@ -190,7 +186,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', '--ndvi', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, True, False)
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', None, False, False, True, False, False)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     def test_process_incorrect(self):

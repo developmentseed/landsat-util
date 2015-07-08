@@ -3,18 +3,13 @@
 
 """Tests for utils"""
 
-from os.path import join, abspath, dirname
-import sys
+from os.path import join
 import errno
 import shutil
 import unittest
 from tempfile import mkdtemp, mkstemp
 
-try:
-    from landsat import utils
-except ImportError:
-    sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    import utils
+from landsat import utils
 
 
 class TestUtils(unittest.TestCase):

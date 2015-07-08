@@ -4,19 +4,13 @@
 """Tests for image processing"""
 
 from os.path import join, abspath, dirname, exists
-import sys
 import errno
 import shutil
 import unittest
 from tempfile import mkdtemp
 
-try:
-    from landsat.image import Simple, PanSharpen
-    from landsat.ndvi import NDVI
-except ImportError:
-    sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    from landsat.image import Simple, PanSharpen
-    from landsat.ndvi import NDVI
+from landsat.image import Simple, PanSharpen
+from landsat.ndvi import NDVI
 
 
 class TestProcess(unittest.TestCase):
