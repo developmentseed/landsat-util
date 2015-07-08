@@ -3,18 +3,13 @@
 
 """Tests for utils"""
 
-from os.path import join, abspath, dirname
-import sys
+from os.path import join
 import errno
 import shutil
 import unittest
 from tempfile import mkdtemp, mkstemp
 
-try:
-    from landsat import utils
-except ImportError:
-    sys.path.append(abspath(join(dirname(__file__), '../landsat')))
-    import utils
+from landsat import utils
 
 
 class TestUtils(unittest.TestCase):
@@ -92,17 +87,23 @@ class TestUtils(unittest.TestCase):
     def test_convert_to_integer_list(self):
         # correct input
         r = utils.convert_to_integer_list('1,2,3')
-        self.assertEqual(['1', '2', '3'], r)
+        self.assertEqual([1, 2, 3], r)
 
         # try other cobinations
         r = utils.convert_to_integer_list('1, 2, 3')
-        self.assertEqual(['1', '2', '3'], r)
+        self.assertEqual([1, 2, 3], r)
 
         r = utils.convert_to_integer_list('1s,2df,3d/')
-        self.assertEqual(['1', '2', '3'], r)
+        self.assertEqual([1, 2, 3], r)
 
         r = utils.convert_to_integer_list([1, 3, 4])
         self.assertEqual([1, 3, 4], r)
+
+        r = utils.convert_to_integer_list('1,11,10')
+        self.assertEqual([1, 11, 10], r)
+
+        r = utils.convert_to_integer_list('1,11,10,QA')
+        self.assertEqual([1, 11, 10, 'QA'], r)
 
 
 if __name__ == '__main__':

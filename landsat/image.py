@@ -2,8 +2,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-import warnings
-import sys
+import os
 from os.path import join, isdir
 import tarfile
 import glob
@@ -17,9 +16,9 @@ from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
 
-import settings
 from mixins import VerbosityMixin
-from utils import get_file, timer, check_create_folder, exit
+from utils import get_file, check_create_folder, exit
+from decorators import rasterio_decorator
 
 
 class FileDoesNotExist(Exception):
@@ -27,7 +26,7 @@ class FileDoesNotExist(Exception):
     pass
 
 
-class Process(VerbosityMixin):
+class BaseProcess(VerbosityMixin):
     """
     Image procssing class
 
@@ -66,8 +65,8 @@ class Process(VerbosityMixin):
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
 
-        # Build destination folder if doesn't exits
-        self.dst_path = dst_path if dst_path else settings.PROCESSED_IMAGE
+        # Build destination folder if doesn't exist
+        self.dst_path = dst_path if dst_path else os.getcwd()
         self.dst_path = check_create_folder(join(self.dst_path, self.scene))
         self.verbose = verbose
 
@@ -81,179 +80,7 @@ class Process(VerbosityMixin):
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
-    def run(self, pansharpen=True):
-        """ Executes the image processing.
-
-        :param pansharpen:
-            Whether the process should also run pansharpenning. Default is True
-        :type pansharpen:
-            boolean
-
-        :returns:
-            (String) the path to the processed image
-        """
-
-        self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
-
-        # Read cloud coverage from mtl file
-        cloud_cover = 0
-        try:
-            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
-                lines = mtl.readlines()
-                for line in lines:
-                    if 'CLOUD_COVER' in line:
-                        cloud_cover = float(line.replace('CLOUD_COVER = ', ''))
-                        break
-        except IOError:
-            pass
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            with rasterio.drivers():
-                bands = []
-
-                # Add band 8 for pansharpenning
-                if pansharpen:
-                    self.bands.append(8)
-
-                bands_path = []
-
-                for band in self.bands:
-                    bands_path.append(join(self.scene_path, self._get_full_filename(band)))
-
-                try:
-                    for i, band in enumerate(self.bands):
-                        bands.append(self._read_band(bands_path[i]))
-                except IOError as e:
-                    exit(e.message, 1)
-
-                src = rasterio.open(bands_path[-1])
-
-                # Get pixel size from source
-                self.pixel = src.affine[0]
-
-                # Only collect src data that is needed and delete the rest
-                src_data = {
-                    'transform': src.transform,
-                    'crs': src.crs,
-                    'affine': src.affine,
-                    'shape': src.shape
-                }
-                del src
-
-                crn = self._get_boundaries(src_data)
-
-                dst_shape = src_data['shape']
-                dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
-                dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
-                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
-                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
-
-                dst_transform = (min(dst_corner_xs),
-                                 x_pixel,
-                                 0.0,
-                                 max(dst_corner_ys),
-                                 0.0,
-                                 -y_pixel)
-                # Delete crn since no longer needed
-                del crn
-
-                new_bands = []
-                for i in range(0, 3):
-                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
-
-                if pansharpen:
-                    bands[:3] = self._rescale(bands[:3])
-                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.uint16))
-
-                self.output("Projecting", normal=True, arrow=True)
-                for i, band in enumerate(bands):
-                    self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
-                    reproject(band, new_bands[i], src_transform=src_data['transform'], src_crs=src_data['crs'],
-                              dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
-
-                # Bands are no longer needed
-                del bands
-
-                if pansharpen:
-                    new_bands = self._pansharpenning(new_bands)
-                    del self.bands[3]
-
-                self.output("Final Steps", normal=True, arrow=True)
-
-                output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
-
-                if pansharpen:
-                    output_file += '_pan'
-
-                output_file += '.TIF'
-                output_file = join(self.dst_path, output_file)
-
-                output = rasterio.open(output_file, 'w', driver='GTiff',
-                                       width=dst_shape[1], height=dst_shape[0],
-                                       count=3, dtype=numpy.uint8,
-                                       nodata=0, transform=dst_transform, photometric='RGB',
-                                       crs=self.dst_crs)
-
-                for i, band in enumerate(new_bands):
-                    # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
-
-                    output.write_band(i+1, img_as_ubyte(band))
-
-                    new_bands[i] = None
-                self.output("Writing to file", normal=True, color='green', indent=1)
-                return output_file
-
-    def _pansharpenning(self, bands):
-
-        self.output("Pansharpening", normal=True, arrow=True)
-        # Pan sharpening
-        m = sum(bands[:3])
-        m = m + 0.1
-
-        self.output("calculating pan ratio", normal=True, color='green', indent=1)
-        pan = 1/m * bands[-1]
-
-        del m
-        del bands[3]
-        self.output("computing bands", normal=True, color='green', indent=1)
-
-        for i, band in enumerate(bands):
-            bands[i] = band * pan
-
-        del pan
-
-        return bands
-
-    def _color_correction(self, band, band_id, low, cloud_cover):
-        band = band.astype(numpy.uint16)
-
-        self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
-        temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
-        cloud_divide = 65000 - cloud_cover * 100
-        mask = numpy.logical_and(band < cloud_cut_low, band > 0)
-        temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
-        temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
-        return temp
-
-    def _read_band(self, band_path):
-        """ Reads a band with rasterio """
-        return rasterio.open(band_path).read_band(1)
-
-    def _rescale(self, bands):
-        """ Rescale bands """
-        self.output("Rescaling", normal=True, arrow=True)
-
-        for key, band in enumerate(bands):
-            self.output("band %s" % self.bands[key], normal=True, color='green', indent=1)
-            bands[key] = sktransform.rescale(band, 2)
-            bands[key] = (bands[key] * 65535).astype('uint16')
-
-        return bands
-
-    def _get_boundaries(self, src):
+    def _get_boundaries(self, src, shape):
 
         self.output("Getting boundaries", normal=True, arrow=True)
         output = {'ul': {'x': [0, 0], 'y': [0, 0]},  # ul: upper left
@@ -286,10 +113,31 @@ class Process(VerbosityMixin):
                                                                [output['lr']['x'][0]],
                                                                [output['lr']['y'][0]])
 
-        return output
+        dst_corner_ys = [output[k]['y'][1][0] for k in output.keys()]
+        dst_corner_xs = [output[k]['x'][1][0] for k in output.keys()]
+        y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / shape[0]
+        x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / shape[1]
 
-    def _percent_cut(self, color, low, high):
-        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
+        return (min(dst_corner_xs), x_pixel, 0.0, max(dst_corner_ys), 0.0, -y_pixel)
+
+    def _read_bands(self):
+        """ Reads a band with rasterio """
+        bands = []
+
+        try:
+            for i, band in enumerate(self.bands):
+                bands.append(rasterio.open(self.bands_path[i]).read_band(1))
+        except IOError as e:
+            exit(e.message, 1)
+
+        return bands
+
+    def _warp(self, proj_data, bands, new_bands):
+        self.output("Projecting", normal=True, arrow=True)
+        for i, band in enumerate(bands):
+            self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+            reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
+                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
 
     def _unzip(self, src, dst, scene, force_unzip=False):
         """ Unzip tar files """
@@ -326,10 +174,200 @@ class Process(VerbosityMixin):
 
         return False
 
+    def _read_cloud_cover(self):
+        try:
+            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
+                lines = mtl.readlines()
+                for line in lines:
+                    if 'CLOUD_COVER' in line:
+                        return float(line.replace('CLOUD_COVER = ', ''))
+        except IOError:
+            return 0
 
-if __name__ == '__main__':
+    def _get_image_data(self):
+        src = rasterio.open(self.bands_path[-1])
 
-    with timer():
-        p = Process(sys.argv[1])
+        # Get pixel size from source
+        self.pixel = src.affine[0]
 
-        print p.run(sys.argv[2] == 't')
+        # Only collect src data that is needed and delete the rest
+        image_data = {
+            'transform': src.transform,
+            'crs': src.crs,
+            'affine': src.affine,
+            'shape': src.shape,
+            'dst_transform': None
+        }
+
+        image_data['dst_transform'] = self._get_boundaries(image_data, image_data['shape'])
+
+        return image_data
+
+    def _generate_new_bands(self, shape):
+        new_bands = []
+        for i in range(0, 3):
+            new_bands.append(numpy.empty(shape, dtype=numpy.uint16))
+
+        return new_bands
+
+    @rasterio_decorator
+    def _write_to_file(self, new_bands, suffix=None, **kwargs):
+
+        # Read cloud coverage from mtl file
+        cloud_cover = self._read_cloud_cover()
+
+        self.output("Final Steps", normal=True, arrow=True)
+
+        output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
+
+        if suffix:
+            output_file += suffix
+
+        output_file += '.TIF'
+        output_file = join(self.dst_path, output_file)
+
+        output = rasterio.open(output_file, 'w', **kwargs)
+
+        for i, band in enumerate(new_bands):
+            # Color Correction
+            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
+
+            output.write_band(i+1, img_as_ubyte(band))
+
+            new_bands[i] = None
+        self.output("Writing to file", normal=True, color='green', indent=1)
+
+        return output_file
+
+    def _color_correction(self, band, band_id, low, cloud_cover):
+        band = band.astype(numpy.uint16)
+
+        self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
+        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
+        temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
+        cloud_divide = 65000 - cloud_cover * 100
+        mask = numpy.logical_and(band < cloud_cut_low, band > 0)
+        temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
+        temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
+        return temp
+
+    def _percent_cut(self, color, low, high):
+        return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
+
+
+class Simple(BaseProcess):
+
+    @rasterio_decorator
+    def run(self):
+        """ Executes the image processing.
+
+        :returns:
+            (String) the path to the processed image
+        """
+
+        self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+
+        bands = self._read_bands()
+        image_data = self._get_image_data()
+
+        new_bands = self._generate_new_bands(image_data['shape'])
+
+        self._warp(image_data, bands, new_bands)
+
+        # Bands are no longer needed
+        del bands
+
+        rasterio_options = {
+            'driver': 'GTiff',
+            'width': image_data['shape'][1],
+            'height': image_data['shape'][0],
+            'count': 3,
+            'dtype': numpy.uint8,
+            'nodata': 0,
+            'transform': image_data['dst_transform'],
+            'photometric': 'RGB',
+            'crs': self.dst_crs
+        }
+
+        return self._write_to_file(new_bands, **rasterio_options)
+
+
+class PanSharpen(BaseProcess):
+
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+        if bands:
+            bands.append(8)
+        else:
+            bands = [4, 3, 2, 8]
+        super(PanSharpen, self).__init__(path, bands, dst_path, verbose, force_unzip)
+
+    @rasterio_decorator
+    def run(self):
+        """ Executes the pansharpen image processing.
+        :returns:
+            (String) the path to the processed image
+        """
+
+        self.output("* PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+
+        bands = self._read_bands()
+        image_data = self._get_image_data()
+
+        new_bands = self._generate_new_bands(image_data['shape'])
+
+        bands[:3] = self._rescale(bands[:3])
+        new_bands.append(numpy.empty(image_data['shape'], dtype=numpy.uint16))
+
+        self._warp(image_data, bands, new_bands)
+
+        # Bands are no longer needed
+        del bands
+
+        new_bands = self._pansharpenning(new_bands)
+        del self.bands[3]
+
+        rasterio_options = {
+            'driver': 'GTiff',
+            'width': image_data['shape'][1],
+            'height': image_data['shape'][0],
+            'count': 3,
+            'dtype': numpy.uint8,
+            'nodata': 0,
+            'transform': image_data['dst_transform'],
+            'photometric': 'RGB',
+            'crs': self.dst_crs
+        }
+
+        return self._write_to_file(new_bands, '_pan', **rasterio_options)
+
+    def _pansharpenning(self, bands):
+
+        self.output("Pansharpening", normal=True, arrow=True)
+        # Pan sharpening
+        m = sum(bands[:3])
+        m = m + 0.1
+
+        self.output("calculating pan ratio", normal=True, color='green', indent=1)
+        pan = 1/m * bands[-1]
+
+        del m
+        del bands[3]
+        self.output("computing bands", normal=True, color='green', indent=1)
+
+        for i, band in enumerate(bands):
+            bands[i] = band * pan
+
+        del pan
+
+        return bands
+
+    def _rescale(self, bands):
+        """ Rescale bands """
+        self.output("Rescaling", normal=True, arrow=True)
+
+        for key, band in enumerate(bands):
+            self.output("band %s" % self.bands[key], normal=True, color='green', indent=1)
+            bands[key] = sktransform.rescale(band, 2)
+            bands[key] = (bands[key] * 65535).astype('uint16')
+
+        return bands

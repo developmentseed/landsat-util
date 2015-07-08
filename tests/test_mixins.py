@@ -3,18 +3,12 @@
 
 """Tests for mixins"""
 
-import os
 import sys
 import unittest
 from cStringIO import StringIO
 from contextlib import contextmanager
 
-try:
-    from landsat.mixins import VerbosityMixin
-
-except ImportError:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from landsat.mixins import VerbosityMixin
+from landsat.mixins import VerbosityMixin
 
 
 # Capture function is taken from

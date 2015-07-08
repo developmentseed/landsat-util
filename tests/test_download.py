@@ -4,7 +4,6 @@
 """Tests for downloader"""
 
 import os
-import sys
 import errno
 import shutil
 import unittest
@@ -12,13 +11,8 @@ from tempfile import mkdtemp
 
 import mock
 
-try:
-    from landsat.downloader import Downloader, RemoteFileDoesntExist, IncorrectSceneId
-    from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
-except ImportError:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from landsat.downloader import Downloader, RemoteFileDoesntExist, IncorrectSceneId
-    from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
+from landsat.downloader import Downloader, RemoteFileDoesntExist, IncorrectSceneId
+from landsat.settings import GOOGLE_STORAGE, S3_LANDSAT
 
 
 class TestDownloader(unittest.TestCase):
