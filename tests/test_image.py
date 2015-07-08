@@ -10,7 +10,7 @@ import unittest
 from tempfile import mkdtemp
 
 from landsat.image import Simple, PanSharpen
-from landsat.ndvi import NDVI
+from landsat.ndvi import NDVI, NDVIWithManualColorMap
 
 
 class TestProcess(unittest.TestCase):
@@ -65,3 +65,8 @@ class TestProcess(unittest.TestCase):
         print p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_NDVI.TIF')))
 
+    def test_ndvi_with_manual_colormap(self):
+
+        p = NDVIWithManualColorMap(path=self.landsat_image, dst_path=self.temp_folder)
+        print p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_NDVI.TIF')))
