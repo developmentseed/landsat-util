@@ -19,7 +19,7 @@ from uploader import Uploader
 from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
 from mixins import VerbosityMixin
 from image import Simple, PanSharpen, FileDoesNotExist
-from ndvi import NDVI
+from ndvi import NDVIWithManualColorMap, NDVI
 from __init__ import __version__
 import settings
 
@@ -200,6 +200,8 @@ def args_options():
                                 'image. Pansharpening requires larger memory')
     parser_process.add_argument('--ndvi', action='store_true',
                                 help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_process.add_argument('--ndvi1', action='store_true',
+                                help='Whether to run the NDVI process. If used, bands parameter is disregarded')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -240,7 +242,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip, args.ndvi1)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -326,7 +328,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None):
+def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None, ndvi1=False):
     """ Handles constructing and image process.
 
     :param path:
@@ -353,8 +355,10 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
         bands = convert_to_integer_list(bands)
         if pansharpen:
             p = PanSharpen(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
-        elif ndvi:
+        elif ndvi1:
             p = NDVI(path, verbose=verbose, force_unzip=force_unzip)
+        elif ndvi:
+            p = NDVIWithManualColorMap(path, verbose=verbose, force_unzip=force_unzip)
         else:
             p = Simple(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
