@@ -307,7 +307,8 @@ class PanSharpen(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("* PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output("* PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)),
+                    normal=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -322,8 +323,10 @@ class PanSharpen(BaseProcess):
         # Bands are no longer needed
         del bands
 
-        new_bands = self._pansharpenning(new_bands)
+        pan = self._pansize(new_bands)
+        # new_bands = self._pansharpenning(new_bands)
         del self.bands[3]
+        del new_bands[3]
 
         rasterio_options = {
             'driver': 'GTiff',
@@ -337,28 +340,42 @@ class PanSharpen(BaseProcess):
             'crs': self.dst_crs
         }
 
-        return self._write_to_file(new_bands, '_pan', **rasterio_options)
+        return self._write_to_file(new_bands, pan, **rasterio_options)
 
-    def _pansharpenning(self, bands):
+    @rasterio_decorator
+    def _write_to_file(self, new_bands, pan, **kwargs):
 
-        self.output("Pansharpening", normal=True, arrow=True)
-        # Pan sharpening
+        # Read cloud coverage from mtl file
+        cloud_cover = self._read_cloud_cover()
+
+        self.output("Final Steps", normal=True, arrow=True)
+
+        output_file = '%s_bands_%s_pan.TIF' % (self.scene, "".join(map(str, self.bands)))
+
+        output_file = join(self.dst_path, output_file)
+
+        output = rasterio.open(output_file, 'w', **kwargs)
+
+        for i, band in enumerate(new_bands):
+            # Color Correction
+            band = band * pan
+            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
+
+            output.write_band(i+1, img_as_ubyte(band))
+
+            new_bands[i] = None
+        self.output("Writing to file", normal=True, color='green', indent=1)
+
+        return output_file
+
+    def _pansize(self, bands):
+
+        self.output('Calculating Pan Ratio', normal=True, arrow=True)
+
         m = sum(bands[:3])
-        m = m + 0.1
+        pan = numpy.nan_to_num(numpy.true_divide(1, m)) * bands[-1]
 
-        self.output("calculating pan ratio", normal=True, color='green', indent=1)
-        pan = 1/m * bands[-1]
-
-        del m
-        del bands[3]
-        self.output("computing bands", normal=True, color='green', indent=1)
-
-        for i, band in enumerate(bands):
-            bands[i] = band * pan
-
-        del pan
-
-        return bands
+        return pan
 
     def _rescale(self, bands):
         """ Rescale bands """
