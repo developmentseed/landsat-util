@@ -319,9 +319,7 @@ def main(args):
                                 return ["Connection timeout. Probably the region parameter is incorrect", 1]
                             u.run(args.bucket, get_file(stored), stored)
 
-                        v.output("The output is stored at %s" % stored, normal=True, arrow=True)
-
-                    return ['Image Processing Completed', 0]
+                    return ['The output is stored at %s' % stored, 0]
                 else:
                     return ['Download Completed', 0]
             except IncorrectSceneId:
