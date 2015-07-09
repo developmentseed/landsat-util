@@ -240,7 +240,6 @@ class BaseProcess(VerbosityMixin):
         return output_file
 
     def _color_correction(self, band, band_id, low, cloud_cover):
-        band = band.astype(numpy.uint16)
 
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
         p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
