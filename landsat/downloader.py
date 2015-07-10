@@ -53,15 +53,21 @@ class Downloader(VerbosityMixin):
 
             for scene in scenes:
                 # If bands are provided the image is from 2015 or later use Amazon
+                self.scene_interpreter(scene)
+
                 if (bands and int(scene[12]) > 4):
                     if isinstance(bands, list):
                         # Create a folder to download the specific bands into
                         path = check_create_folder(join(self.download_dir, scene))
                         try:
                             # Always grab MTL.txt if bands are specified
-                            bands_plus = bands
-                            bands_plus.append('MTL')
-                            for band in bands_plus:
+                            if 'BQA' not in bands:
+                                bands.append('QA')
+
+                            if 'MTL' not in bands:
+                                bands.append('MTL')
+
+                            for band in bands:
                                 self.amazon_s3(scene, band, path)
                                 output[scene] = 'aws'
                         except RemoteFileDoesntExist:
