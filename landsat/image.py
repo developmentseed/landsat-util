@@ -137,7 +137,8 @@ class BaseProcess(VerbosityMixin):
         for i, band in enumerate(bands):
             self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
             reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
-                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest,
+                      num_threads=2)
 
     def _unzip(self, src, dst, scene, force_unzip=False):
         """ Unzip tar files """
@@ -146,7 +147,7 @@ class BaseProcess(VerbosityMixin):
         try:
             # check if file is already unzipped, skip
             if isdir(dst) and not force_unzip:
-                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                self.output('%s is already unzipped.' % scene, normal=True, color='green', indent=1)
                 return
             else:
                 tar = tarfile.open(src, 'r')
@@ -213,8 +214,8 @@ class BaseProcess(VerbosityMixin):
     @rasterio_decorator
     def _write_to_file(self, new_bands, suffix=None, **kwargs):
 
-        # Read cloud coverage from mtl file
-        cloud_cover = self._read_cloud_cover()
+        # Read coverage from QBA
+        coverage = self._calculate_cloud_ice_perc()
 
         self.output("Final Steps", normal=True, arrow=True)
 
@@ -230,7 +231,7 @@ class BaseProcess(VerbosityMixin):
 
         for i, band in enumerate(new_bands):
             # Color Correction
-            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
+            band = self._color_correction(band, self.bands[i], 0, coverage)
 
             output.write_band(i+1, img_as_ubyte(band))
 
@@ -239,12 +240,12 @@ class BaseProcess(VerbosityMixin):
 
         return output_file
 
-    def _color_correction(self, band, band_id, low, cloud_cover):
+    def _color_correction(self, band, band_id, low, coverage):
 
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
+        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
         temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
-        cloud_divide = 65000 - cloud_cover * 100
+        cloud_divide = 65000 - coverage * 100
         mask = numpy.logical_and(band < cloud_cut_low, band > 0)
         temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
         temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
@@ -252,6 +253,27 @@ class BaseProcess(VerbosityMixin):
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
+
+    def _calculate_cloud_ice_perc(self):
+        self.output('Calculating cloud and snow coverage from QA band', normal=True, arrow=True)
+
+        a = rasterio.open(self.scene_path + '/' + self.scene + '_BQA.TIF').read_band(1)
+
+        count = 0
+        snow = [56320, 39936, 31744, 28590, 26656, 23552]
+        cloud = [61440, 59424, 57344, 53248, 28672, 36896, 36864, 24576]
+
+        for item in cloud:
+            count += numpy.extract(a == item, a).size
+
+        for item in snow:
+            count += numpy.extract(a == item, a).size * 2
+
+        perc = numpy.true_divide(count, a.size) * 100
+
+        self.output('cloud/snow coverage: %s' % round(perc, 2), indent=1, normal=True, color='green')
+
+        return perc
 
 
 class Simple(BaseProcess):
@@ -264,7 +286,7 @@ class Simple(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output('Image processing started for bands %s' % '-'.join(map(str, self.bands)), normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -298,6 +320,8 @@ class PanSharpen(BaseProcess):
             bands.append(8)
         else:
             bands = [4, 3, 2, 8]
+
+        self.band8 = bands.index(8)
         super(PanSharpen, self).__init__(path, bands, dst_path, verbose, force_unzip)
 
     @rasterio_decorator
@@ -307,8 +331,8 @@ class PanSharpen(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("* PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)),
-                    normal=True)
+        self.output('PanSharpened Image processing started for bands %s' % '-'.join(map(str, self.bands)),
+                    normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -323,10 +347,10 @@ class PanSharpen(BaseProcess):
         # Bands are no longer needed
         del bands
 
+        # Calculate pan band
         pan = self._pansize(new_bands)
-        # new_bands = self._pansharpenning(new_bands)
-        del self.bands[3]
-        del new_bands[3]
+        del self.bands[self.band8]
+        del new_bands[self.band8]
 
         rasterio_options = {
             'driver': 'GTiff',
@@ -345,8 +369,8 @@ class PanSharpen(BaseProcess):
     @rasterio_decorator
     def _write_to_file(self, new_bands, pan, **kwargs):
 
-        # Read cloud coverage from mtl file
-        cloud_cover = self._read_cloud_cover()
+        # Read coverage from QBA
+        coverage = self._calculate_cloud_ice_perc()
 
         self.output("Final Steps", normal=True, arrow=True)
 
@@ -358,8 +382,8 @@ class PanSharpen(BaseProcess):
 
         for i, band in enumerate(new_bands):
             # Color Correction
-            band = band * pan
-            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
+            band = numpy.multiply(band, pan)
+            band = self._color_correction(band, self.bands[i], 0, coverage)
 
             output.write_band(i+1, img_as_ubyte(band))
 
@@ -372,8 +396,9 @@ class PanSharpen(BaseProcess):
 
         self.output('Calculating Pan Ratio', normal=True, arrow=True)
 
-        m = sum(bands[:3])
-        pan = numpy.nan_to_num(numpy.true_divide(1, m)) * bands[-1]
+        m = numpy.add(bands[0], bands[1])
+        m = numpy.add(m, bands[2])
+        pan = numpy.multiply(numpy.nan_to_num(numpy.true_divide(1, m)), bands[self.band8])
 
         return pan
 
@@ -387,3 +412,9 @@ class PanSharpen(BaseProcess):
             bands[key] = (bands[key] * 65535).astype('uint16')
 
         return bands
+
+if __name__ == '__main__':
+
+    p = PanSharpen('/Users/ajdevseed/Desktop/LC81950282014159LGN00')
+
+    p.run()
