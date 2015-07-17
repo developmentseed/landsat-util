@@ -81,7 +81,7 @@ class Process(VerbosityMixin):
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
-    def run(self, pansharpen=True):
+    def run_rgb(self, pansharpen=True):
         """ Executes the image processing.
 
         :param pansharpen:
@@ -202,6 +202,162 @@ class Process(VerbosityMixin):
                     output.write_band(i+1, img_as_ubyte(band))
 
                     new_bands[i] = None
+                self.output("Writing to file", normal=True, color='green', indent=1)
+                return output_file
+
+    def run_ndvi(self, pansharpen=True, mode='grey'):
+        """ Executes the image processing.
+
+        :param pansharpen:
+            Whether the process should also run pansharpenning. Default is True
+        :type pansharpen:
+            boolean
+
+        :returns:
+            (String) the path to the processed image
+        """
+
+        self.output("* Image processing started for NDVI", normal=True)
+
+        # Read radiance conversion factors from mtl file
+        try:
+            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
+                lines = mtl.readlines()
+                for line in lines:
+                    if 'REFLECTANCE_ADD_BAND_3' in line:
+                        add_B3 = float(line.replace('REFLECTANCE_ADD_BAND_3 = ', ''))
+                    elif 'REFLECTANCE_MULT_BAND_3' in line:
+                        mult_B3 = float(line.replace('REFLECTANCE_MULT_BAND_3 = ', ''))
+                    elif 'REFLECTANCE_ADD_BAND_4' in line:
+                        add_B4 = float(line.replace('REFLECTANCE_ADD_BAND_4 = ', ''))
+                    elif 'REFLECTANCE_MULT_BAND_4' in line:
+                        mult_B4 = float(line.replace('REFLECTANCE_MULT_BAND_4 = ', ''))
+        except IOError:
+            pass
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with rasterio.drivers():
+                bands = []
+
+                # Add band 8 for pansharpenning
+                if pansharpen:
+                    self.bands.append(8)
+
+                bands_path = []
+
+                for band in self.bands:
+                    bands_path.append(join(self.scene_path, self._get_full_filename(band)))
+
+                try:
+                    for i, band in enumerate(self.bands):
+                        bands.append(self._read_band(bands_path[i]))
+                except IOError as e:
+                    exit(e.message, 1)
+
+                src = rasterio.open(bands_path[-1])
+
+                # Get pixel size from source
+                self.pixel = src.affine[0]
+
+                # Only collect src data that is needed and delete the rest
+                src_data = {
+                    'transform': src.transform,
+                    'crs': src.crs,
+                    'affine': src.affine,
+                    'shape': src.shape
+                }
+                del src
+
+                crn = self._get_boundaries(src_data)
+
+                dst_shape = src_data['shape']
+                dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
+                dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
+                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
+                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
+
+                dst_transform = (min(dst_corner_xs),
+                                 x_pixel,
+                                 0.0,
+                                 max(dst_corner_ys),
+                                 0.0,
+                                 -y_pixel)
+                # Delete crn since no longer needed
+                del crn
+
+                new_bands = []
+                for i in range(0, 3):
+                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.float32))
+
+                if pansharpen:
+                    bands[:3] = self._rescale(bands[:3])
+                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.float32))
+
+                self.output("Projecting", normal=True, arrow=True)
+                for i, band in enumerate(bands):
+                    self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+                    reproject(band, new_bands[i], src_transform=src_data['transform'], src_crs=src_data['crs'],
+                              dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+
+                # Bands are no longer needed
+                del bands
+
+                if pansharpen:
+                    new_bands = self._pansharpenning(new_bands)
+                    del self.bands[3]
+
+                self.output("Final Steps", normal=True, arrow=True)
+
+            
+                output_file = '%s_NDVI' % (self.scene)
+
+                if pansharpen:
+                    output_file += '_pan'
+                mask=(new_bands[1]+new_bands[0])==0
+                
+                    
+                new_bands[0]=new_bands[0]*mult_B3+add_B3
+                new_bands[1]=new_bands[1]*mult_B4+add_B4
+                ndvi=numpy.true_divide((new_bands[1]-new_bands[0]),(new_bands[1]+new_bands[0]))
+                ndvi[mask]=-1
+                    
+                if mode=='grey':
+                    ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
+                    output_file += '.TIF'
+                    output_file = join(self.dst_path, output_file)
+                    
+                    output = rasterio.open(output_file, 'w', driver='GTiff',
+                                           width=dst_shape[1], height=dst_shape[0],
+                                           count=1, dtype=numpy.uint8,
+                                           nodata=0, transform=dst_transform,
+                                           crs=self.dst_crs)
+                                         
+                    output.write_band(1, ndvi)
+                    
+                elif mode=='color':
+#                    import matplotlib
+#                    matplotlib.use('Agg')
+#                    import matplotlib.pyplot as plt
+#                    plt.imshow(ndvi)
+#                    image = plt.gcf()
+#                    image.set_size_inches(8, 8)
+#                    plt.savefig('myfig',dpi=1000)
+#                    output_file += '.PNG'
+#                    output_file = join(self.dst_path, output_file)
+#                    
+#                    rgb=self._index2rgb(index_matrix=ndvi)
+#    
+#                    output = rasterio.open(output_file, 'w', driver='GTiff',
+#                                           width=dst_shape[1], height=dst_shape[0],
+#                                           count=3, dtype=numpy.uint8,
+#                                           nodata=0, transform=dst_transform, photometric='RGB',
+#                                           crs=self.dst_crs)
+#                                           
+#                    for i in range(0, 3):
+#                        output.write_band(i+1, rgb[i])
+                    
+                     
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
 

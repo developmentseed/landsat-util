@@ -175,7 +175,7 @@ def args_options():
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
                                  'image. Pansharpening requires larger memory')
-    parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
+    parser_download.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
                                  'or a .PNG with a colormap (color)')
     parser_download.add_argument('-u', '--upload', action='store_true',
@@ -194,6 +194,9 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pansharpening requires larger memory')
+    parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
+                                 help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
+                                 'or a .PNG with a colormap (color)')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -234,7 +237,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip, args.ndvi)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -298,7 +301,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip)
+                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip, args.ndvi)
 
                         if args.upload:
                             try:
@@ -318,7 +321,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None):
+def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None, ndvi=False):
     """ Handles constructing and image process.
 
     :param path:
