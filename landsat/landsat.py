@@ -145,9 +145,9 @@ def args_options():
                                           help='Search Landsat metdata')
 
     # Global search options
-    parser_search.add_argument('-l', '--limit', default=10, type=int,
+    parser_search.add_argument('-l', '--limit', default=0, type=int,
                                help='Search return results limit\n'
-                               'default is 100')
+                               'default is 10')
     parser_search.add_argument('-s', '--start',
                                help='Start Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
@@ -258,8 +258,9 @@ def main(args):
                 if args.end:
                     args.end = reformat_date(parse(args.end))
                 if args.latest>0:
+                    args.limit=100
                     end = datetime.now()
-                    start = end-relativedelta(days=+args.latest*16-1)
+                    start = end-relativedelta(days=+365)
                     args.end = end.strftime("%Y-%m-%d")
                     args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
@@ -271,34 +272,31 @@ def main(args):
                 lat = float(args.lat) if args.lat else None
                 lon = float(args.lon) if args.lon else None
             except ValueError:
-                return ["The latitude and longitude values must be valid numbers", 1]
-            
-            sign=0 #keeps information if start date should be in- or decreased
-            while True:
-                result = s.search(paths_rows=args.pathrow,
+                return ["The latitude and longitude values must be valid numbers", 1]           
+
+            result = s.search(paths_rows=args.pathrow,
                               lat=lat,
                               lon=lon,
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
                               cloud_max=args.cloud)
+                              
+            if args.latest>0:   
+                datelist=[]
+                for i in range(0,result['total_returned']):
+                    datelist.append((result['results'][i]['date'],result['results'][i]))
+    
+                datelist.sort(key=lambda tup: tup[0], reverse=True)  
+                datelist = datelist[:args.latest]
                 
-                if result['status'] == 'SUCCESS':
-                    diff=args.latest-result['total']
-                else:
-                    diff=1 #When no image was found, decrease start date
-                    
-                # if option "latest" not called OR #desiredimages==#foundimages OR sign of diff alternates
-                # The least was the case with tile 110,025, where one image was found twice in the database...
-                    #...around March 2015
-                if args.latest==-1 or diff==0 or diff*sign<0:
-                    break
-                else:
-                    # adapt starting date and redo the search
-                    sign=cmp(diff,0)
-                    start = start-relativedelta(days=+sign*16)
-                    args.start = start.strftime("%Y-%m-%d")
-                                    
+            result['results']=[]
+            for i in range(0,len(datelist)):
+                result['results'].append(datelist[i][1])
+            result['total_returned']=len(datelist)
+            result['total']=len(datelist)
+                
+         
             if result['status'] == 'SUCCESS':
                 v.output('%s items were found' % result['total'], normal=True, arrow=True)
                 if result['total'] > 100:
