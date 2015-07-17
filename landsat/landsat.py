@@ -175,6 +175,9 @@ def args_options():
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
                                  'image. Pansharpening requires larger memory')
+    parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
+                                 help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
+                                 'or a .PNG with a colormap (color)')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -340,13 +343,20 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
     """
     try:
         bands = convert_to_integer_list(bands)
-        p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+
+        if isinstance(ndvi, str):
+            p = Process(path, bands=[4,5], verbose=verbose, force_unzip=force_unzip)
+        else:
+            p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:
         exit(e.message, 1)
-
-    return p.run(pansharpen)
+    if isinstance(ndvi, str):
+        out=[p.run_ndvi(pansharpen,mode=ndvi)]
+    else:
+        out=[p.run_rgb(pansharpen)]
+    return out
 
 
 def __main__():
