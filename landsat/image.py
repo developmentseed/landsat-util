@@ -336,6 +336,7 @@ class Process(VerbosityMixin):
                     output.write_band(1, ndvi)
                     
                 elif mode=='color':
+                    print('dummie')
 #                    import matplotlib
 #                    matplotlib.use('Agg')
 #                    import matplotlib.pyplot as plt

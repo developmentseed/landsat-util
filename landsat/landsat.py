@@ -9,6 +9,8 @@ import json
 from os.path import join
 from urllib2 import URLError
 
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
@@ -152,9 +154,12 @@ def args_options():
     parser_search.add_argument('-e', '--end',
                                help='End Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
-    parser_search.add_argument('-c', '--cloud', type=float, default=20.0,
+    parser_search.add_argument('--latest',default=-1,type=int,
+                               help='search the latest landsat image. When number is given, the result will be the image'
+                               'with least cloudcover of the n latest images.')
+    parser_search.add_argument('-c', '--cloud', type=float, default=100.0,
                                help='Maximum cloud percentage '
-                               'default is 20 perct')
+                               'default is 100 perct')
     parser_search.add_argument('-p', '--pathrow',
                                help='Paths and Rows in order separated by comma. Use quotes ("001").'
                                'Example: path,row,path,row 001,001,190,204')
@@ -252,8 +257,13 @@ def main(args):
                     args.start = reformat_date(parse(args.start))
                 if args.end:
                     args.end = reformat_date(parse(args.end))
+                if args.latest>0:
+                    end = datetime.now()
+                    start = end-relativedelta(days=+args.latest*16-1)
+                    args.end = end.strftime("%Y-%m-%d")
+                    args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
-                return ["You date format is incorrect. Please try again!", 1]
+                return ["Your date format is incorrect. Please try again!", 1]
 
             s = Search()
 
@@ -262,15 +272,33 @@ def main(args):
                 lon = float(args.lon) if args.lon else None
             except ValueError:
                 return ["The latitude and longitude values must be valid numbers", 1]
-
-            result = s.search(paths_rows=args.pathrow,
+            
+            sign=0 #keeps information if start date should be in- or decreased
+            while True:
+                result = s.search(paths_rows=args.pathrow,
                               lat=lat,
                               lon=lon,
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
                               cloud_max=args.cloud)
-
+                
+                if result['status'] == 'SUCCESS':
+                    diff=args.latest-result['total']
+                else:
+                    diff=1 #When no image was found, decrease start date
+                    
+                # if option "latest" not called OR #desiredimages==#foundimages OR sign of diff alternates
+                # The least was the case with tile 110,025, where one image was found twice in the database...
+                    #...around March 2015
+                if args.latest==-1 or diff==0 or diff*sign<0:
+                    break
+                else:
+                    # adapt starting date and redo the search
+                    sign=cmp(diff,0)
+                    start = start-relativedelta(days=+sign*16)
+                    args.start = start.strftime("%Y-%m-%d")
+                                    
             if result['status'] == 'SUCCESS':
                 v.output('%s items were found' % result['total'], normal=True, arrow=True)
                 if result['total'] > 100:
