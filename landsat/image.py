@@ -21,6 +21,9 @@ import settings
 from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
 
+#for color
+import matplotlib.pyplot as pyplot
+
 
 class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
@@ -205,13 +208,8 @@ class Process(VerbosityMixin):
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
 
-    def run_ndvi(self, pansharpen=True, mode='grey'):
+    def run_ndvi(self, mode='grey'):
         """ Executes the image processing.
-
-        :param pansharpen:
-            Whether the process should also run pansharpenning. Default is True
-        :type pansharpen:
-            boolean
 
         :returns:
             (String) the path to the processed image
@@ -219,6 +217,19 @@ class Process(VerbosityMixin):
 
         self.output("* Image processing started for NDVI", normal=True)
 
+        colorrange=numpy.array(range(0,255))
+        colorbar=self._index2rgb(index_matrix=colorrange)
+        rgbArray = numpy.zeros((1,255,3), 'uint8')
+        rgbArray[..., 0] = colorbar[0]
+        rgbArray[..., 1] = colorbar[1]
+        rgbArray[..., 2] = colorbar[2]
+        rgbArray=rgbArray.repeat(30,0)
+        cbfig=pyplot.figure(figsize=(10,2),dpi=3000)
+        image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
+        pyplot.xticks(numpy.arange(-1,1.1,0.2))
+        pyplot.yticks([])
+        pyplot.savefig("colorbar.png")
+        
         # Read radiance conversion factors from mtl file
         try:
             with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
@@ -239,10 +250,6 @@ class Process(VerbosityMixin):
             warnings.simplefilter("ignore")
             with rasterio.drivers():
                 bands = []
-
-                # Add band 8 for pansharpenning
-                if pansharpen:
-                    self.bands.append(8)
 
                 bands_path = []
 
@@ -290,10 +297,6 @@ class Process(VerbosityMixin):
                 for i in range(0, 3):
                     new_bands.append(numpy.empty(dst_shape, dtype=numpy.float32))
 
-                if pansharpen:
-                    bands[:3] = self._rescale(bands[:3])
-                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.float32))
-
                 self.output("Projecting", normal=True, arrow=True)
                 for i, band in enumerate(bands):
                     self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
@@ -303,30 +306,21 @@ class Process(VerbosityMixin):
                 # Bands are no longer needed
                 del bands
 
-                if pansharpen:
-                    new_bands = self._pansharpenning(new_bands)
-                    del self.bands[3]
-
                 self.output("Final Steps", normal=True, arrow=True)
-
             
                 output_file = '%s_NDVI' % (self.scene)
 
-                if pansharpen:
-                    output_file += '_pan'
                 mask=(new_bands[1]+new_bands[0])==0
-                
-                    
                 new_bands[0]=new_bands[0]*mult_B3+add_B3
                 new_bands[1]=new_bands[1]*mult_B4+add_B4
                 ndvi=numpy.true_divide((new_bands[1]-new_bands[0]),(new_bands[1]+new_bands[0]))
                 ndvi[mask]=-1
-                    
+                ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
+                      
+                
                 if mode=='grey':
-                    ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
-                    output_file += '.TIF'
-                    output_file = join(self.dst_path, output_file)
-                    
+                    output_file += '_grey.TIF'
+                    output_file = join(self.dst_path, output_file) 
                     output = rasterio.open(output_file, 'w', driver='GTiff',
                                            width=dst_shape[1], height=dst_shape[0],
                                            count=1, dtype=numpy.uint8,
@@ -336,28 +330,27 @@ class Process(VerbosityMixin):
                     output.write_band(1, ndvi)
                     
                 elif mode=='color':
-                    print('dummie')
-#                    import matplotlib
-#                    matplotlib.use('Agg')
-#                    import matplotlib.pyplot as plt
-#                    plt.imshow(ndvi)
-#                    image = plt.gcf()
-#                    image.set_size_inches(8, 8)
-#                    plt.savefig('myfig',dpi=1000)
-#                    output_file += '.PNG'
-#                    output_file = join(self.dst_path, output_file)
-#                    
-#                    rgb=self._index2rgb(index_matrix=ndvi)
-#    
-#                    output = rasterio.open(output_file, 'w', driver='GTiff',
-#                                           width=dst_shape[1], height=dst_shape[0],
-#                                           count=3, dtype=numpy.uint8,
-#                                           nodata=0, transform=dst_transform, photometric='RGB',
-#                                           crs=self.dst_crs)
-#                                           
-#                    for i in range(0, 3):
-#                        output.write_band(i+1, rgb[i])
-                    
+                    output_file += '_color.TIF'
+                    output_file = join(self.dst_path, output_file) 
+                    rgb=self._index2rgb(index_matrix=ndvi)
+    
+                    output = rasterio.open(output_file, 'w', driver='GTiff',
+                                           width=dst_shape[1], height=dst_shape[0],
+                                           count=3, dtype=numpy.uint8,
+                                           nodata=0, transform=dst_transform, photometric='RGB',
+                                           crs=self.dst_crs)
+                                           
+                    for i in range(0, 3):
+                        output.write_band(i+1, rgb[i])
+                        
+                    #colorbar
+#                    a = np.array([[-1,1]])
+#                    pylab.figure(figsize=(9, 1.5))
+#                    img = pylab.imshow(a, cmap="Blues")
+#                    pylab.gca().set_visible(False)
+#                    cax = pylab.axes([0.1, 0.2, 0.8, 0.6])
+#                    pylab.colorbar(cax=cax, orientation='horizontal')
+#                    pylab.savefig("colorbar.pdf")
                      
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
@@ -373,7 +366,7 @@ class Process(VerbosityMixin):
         pan = 1/m * bands[-1]
 
         del m
-        del bands[3]
+        del bands[-1]
         self.output("computing bands", normal=True, color='green', indent=1)
 
         for i, band in enumerate(bands):
@@ -398,6 +391,49 @@ class Process(VerbosityMixin):
     def _read_band(self, band_path):
         """ Reads a band with rasterio """
         return rasterio.open(band_path).read_band(1)
+        
+        
+    def _index2rgb(self, index_matrix):
+        """ converts a 8bit matrix to rgb values according to the colormap """
+         
+        self._read_cmap()
+        translate_colormap = numpy.vectorize(self._get_color, otypes=[numpy.uint8])
+        rgb_bands = []
+        for i in range(3):
+            rgb_bands.append(translate_colormap(index_matrix, i))
+       
+        return rgb_bands
+        
+    def _get_color(self, n,v=-1):
+        if v==-1:
+            return self.colormap[n]
+        else:
+            return self.colormap[n][v]
+            
+    def _read_cmap(self):
+        try:
+            i=0
+            colormap={0 : (0, 0, 0, 255)}
+            with open(settings.COLORMAP) as cmap:
+                lines = cmap.readlines()
+                for line in lines:
+                    if i ==  0 and 'mode = ' in line:
+                        i=1
+                        maxval = float(line.replace('mode = ', ''))
+                    elif i > 0:
+                        str = line.split(' ')
+                        colormap.update({i : (int(round(float(str[1])*255/maxval)),
+                                      int(round(float(str[2])*255/maxval)),
+                                      int(round(float(str[3])*255/maxval)),
+                                      255
+                                      )})
+                        i += 1
+        except IOError:
+            pass
+    
+        colormap = {k: v[:4] for k, v in colormap.iteritems()}
+        self.colormap=colormap
+    
 
     def _rescale(self, bands):
         """ Rescale bands """

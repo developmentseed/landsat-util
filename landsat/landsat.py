@@ -383,7 +383,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
     except FileDoesNotExist as e:
         exit(e.message, 1)
     if isinstance(ndvi, str):
-        out=[p.run_ndvi(pansharpen,mode=ndvi)]
+        out=[p.run_ndvi(mode=ndvi)]
     else:
         out=[p.run_rgb(pansharpen)]
     return out
