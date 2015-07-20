@@ -145,7 +145,7 @@ def args_options():
                                           help='Search Landsat metdata')
 
     # Global search options
-    parser_search.add_argument('-l', '--limit', default=0, type=int,
+    parser_search.add_argument('-l', '--limit', default=10, type=int,
                                help='Search return results limit\n'
                                'default is 10')
     parser_search.add_argument('-s', '--start',
@@ -258,7 +258,7 @@ def main(args):
                 if args.end:
                     args.end = reformat_date(parse(args.end))
                 if args.latest>0:
-                    args.limit=100
+                    args.limit=25
                     end = datetime.now()
                     start = end-relativedelta(days=+365)
                     args.end = end.strftime("%Y-%m-%d")
@@ -281,29 +281,30 @@ def main(args):
                               start_date=args.start,
                               end_date=args.end,
                               cloud_max=args.cloud)
-                              
-            if args.latest>0:   
-                datelist=[]
-                for i in range(0,result['total_returned']):
-                    datelist.append((result['results'][i]['date'],result['results'][i]))
-    
-                datelist.sort(key=lambda tup: tup[0], reverse=True)  
-                datelist = datelist[:args.latest]
-                
-            result['results']=[]
-            for i in range(0,len(datelist)):
-                result['results'].append(datelist[i][1])
-            result['total_returned']=len(datelist)
-            result['total']=len(datelist)
-                
          
             if result['status'] == 'SUCCESS':
-                v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                if args.latest>0:   
+                    datelist=[]
+                    for i in range(0,result['total_returned']):
+                        datelist.append((result['results'][i]['date'],result['results'][i]))
+    
+                    datelist.sort(key=lambda tup: tup[0], reverse=True)  
+                    datelist = datelist[:args.latest]
+                
+                    result['results']=[]
+                    for i in range(0,len(datelist)):
+                        result['results'].append(datelist[i][1])
+                        result['total_returned']=len(datelist)
+
+                else:
+                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                    
                 if result['total'] > 100:
                     return ['Over 100 results. Please narrow your search', 1]
                 else:
                     v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    return ['Search completed!']
+                return ['Search completed!']
+                
             elif result['status'] == 'error':
                 return [result['message'], 1]
         elif args.subs == 'download':
