@@ -179,7 +179,7 @@ def args_options():
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
-                                 'image. Pansharpening requires larger memory')
+                                 'image. Pansharpening requires larger memory')            
     parser_download.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
                                  'or a .PNG with a colormap (color)')
@@ -309,6 +309,8 @@ def main(args):
                 return [result['message'], 1]
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
+            if isinstance(args.ndvi, str):
+                args.bands=[4,5]
             try:
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
@@ -375,7 +377,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
         bands = convert_to_integer_list(bands)
 
         if isinstance(ndvi, str):
-            p = Process(path, bands=[4,5], verbose=verbose, force_unzip=force_unzip)
+            p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
         else:
             p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:

@@ -22,7 +22,7 @@ from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
 
 #for color
-import matplotlib.pyplot as pyplot
+import matplotlib.pylab as pyplot
 
 
 class FileDoesNotExist(Exception):
@@ -217,19 +217,6 @@ class Process(VerbosityMixin):
 
         self.output("* Image processing started for NDVI", normal=True)
 
-        colorrange=numpy.array(range(0,255))
-        colorbar=self._index2rgb(index_matrix=colorrange)
-        rgbArray = numpy.zeros((1,255,3), 'uint8')
-        rgbArray[..., 0] = colorbar[0]
-        rgbArray[..., 1] = colorbar[1]
-        rgbArray[..., 2] = colorbar[2]
-        rgbArray=rgbArray.repeat(30,0)
-        cbfig=pyplot.figure(figsize=(10,2),dpi=3000)
-        image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
-        pyplot.xticks(numpy.arange(-1,1.1,0.2))
-        pyplot.yticks([])
-        pyplot.savefig("colorbar.png")
-        
         # Read radiance conversion factors from mtl file
         try:
             with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
@@ -306,8 +293,8 @@ class Process(VerbosityMixin):
                 # Bands are no longer needed
                 del bands
 
-                self.output("Final Steps", normal=True, arrow=True)
             
+                self.output("Calculating NDVI", normal=True, arrow=True)
                 output_file = '%s_NDVI' % (self.scene)
 
                 mask=(new_bands[1]+new_bands[0])==0
@@ -318,6 +305,7 @@ class Process(VerbosityMixin):
                 ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
                       
                 
+                self.output("Final Steps", normal=True, arrow=True)
                 if mode=='grey':
                     output_file += '_grey.TIF'
                     output_file = join(self.dst_path, output_file) 
@@ -343,15 +331,24 @@ class Process(VerbosityMixin):
                     for i in range(0, 3):
                         output.write_band(i+1, rgb[i])
                         
-                    #colorbar
-#                    a = np.array([[-1,1]])
-#                    pylab.figure(figsize=(9, 1.5))
-#                    img = pylab.imshow(a, cmap="Blues")
-#                    pylab.gca().set_visible(False)
-#                    cax = pylab.axes([0.1, 0.2, 0.8, 0.6])
-#                    pylab.colorbar(cax=cax, orientation='horizontal')
-#                    pylab.savefig("colorbar.pdf")
-                     
+                #colorbar
+                output_file2 = '%s_colorbar.png' % (self.scene)
+                
+                colorrange=numpy.array(range(0,256))
+                colorbar=self._index2rgb(index_matrix=colorrange)
+                rgbArray = numpy.zeros((1,256,3), 'uint8')
+                rgbArray[..., 0] = colorbar[0]
+                rgbArray[..., 1] = colorbar[1]
+                rgbArray[..., 2] = colorbar[2]
+                rgbArray=rgbArray.repeat(30,0)
+                
+                cbfig=pyplot.figure(figsize=(10,1.5))
+                image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
+                pyplot.xticks(numpy.arange(-1,1.1,0.2))
+                pyplot.xlabel('NDVI')
+                pyplot.yticks([])
+                pyplot.savefig(output_file2,dpi=300, bbox_inches='tight', transparent=True)
+        
                 self.output("Writing to file", normal=True, color='green', indent=1)
                 return output_file
 
@@ -413,7 +410,7 @@ class Process(VerbosityMixin):
     def _read_cmap(self):
         try:
             i=0
-            colormap={0 : (0, 0, 0, 255)}
+            colormap={0 : (0, 0, 0)}
             with open(settings.COLORMAP) as cmap:
                 lines = cmap.readlines()
                 for line in lines:
@@ -421,11 +418,12 @@ class Process(VerbosityMixin):
                         i=1
                         maxval = float(line.replace('mode = ', ''))
                     elif i > 0:
-                        str = line.split(' ')
-                        colormap.update({i : (int(round(float(str[1])*255/maxval)),
+                        str = line.split()
+                        if str==[]:
+                            break
+                        colormap.update({i : (int(round(float(str[0])*255/maxval)),
+                                      int(round(float(str[1])*255/maxval)),
                                       int(round(float(str[2])*255/maxval)),
-                                      int(round(float(str[3])*255/maxval)),
-                                      255
                                       )})
                         i += 1
         except IOError:
