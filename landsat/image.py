@@ -200,12 +200,13 @@ class Process(VerbosityMixin):
 
                 for i, band in enumerate(new_bands):
                     # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
-
-                    output.write_band(i+1, img_as_ubyte(band))
-
-                    new_bands[i] = None
+                    new_bands[i] = self._color_correction(band, self.bands[i], 0, cloud_cover)
+                    
                 self.output("Writing to file", normal=True, color='green', indent=1)
+                for i, band in enumerate(new_bands):
+                    output.write_band(i+1, img_as_ubyte(band))
+                    new_bands[i] = None
+                    
                 return output_file
 
     def run_ndvi(self, mode='grey'):
@@ -314,42 +315,45 @@ class Process(VerbosityMixin):
                                            count=1, dtype=numpy.uint8,
                                            nodata=0, transform=dst_transform,
                                            crs=self.dst_crs)
-                                         
+                    self.output("Writing to file", normal=True, color='green', indent=1)                     
                     output.write_band(1, ndvi)
                     
                 elif mode=='color':
+                    self.output("Converting to RGB", normal=True, color='green', indent=1)                       
                     output_file += '_color.TIF'
                     output_file = join(self.dst_path, output_file) 
                     rgb=self._index2rgb(index_matrix=ndvi)
+                    del ndvi
     
                     output = rasterio.open(output_file, 'w', driver='GTiff',
                                            width=dst_shape[1], height=dst_shape[0],
                                            count=3, dtype=numpy.uint8,
                                            nodata=0, transform=dst_transform, photometric='RGB',
                                            crs=self.dst_crs)
-                                           
+                    
+                    self.output("Writing to file", normal=True, color='green', indent=1)                       
                     for i in range(0, 3):
                         output.write_band(i+1, rgb[i])
                         
                 #colorbar
-                output_file2 = '%s_colorbar.png' % (self.scene)
-                
-                colorrange=numpy.array(range(0,256))
-                colorbar=self._index2rgb(index_matrix=colorrange)
-                rgbArray = numpy.zeros((1,256,3), 'uint8')
-                rgbArray[..., 0] = colorbar[0]
-                rgbArray[..., 1] = colorbar[1]
-                rgbArray[..., 2] = colorbar[2]
-                rgbArray=rgbArray.repeat(30,0)
-                
-                cbfig=pyplot.figure(figsize=(10,1.5))
-                image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
-                pyplot.xticks(numpy.arange(-1,1.1,0.2))
-                pyplot.xlabel('NDVI')
-                pyplot.yticks([])
-                pyplot.savefig(output_file2,dpi=300, bbox_inches='tight', transparent=True)
-        
-                self.output("Writing to file", normal=True, color='green', indent=1)
+                    self.output("Creating colorbar", normal=True, color='green', indent=1)
+                    output_file2 = '%s_colorbar.png' % (self.scene)
+                    output_file2 = join(self.dst_path, output_file2) 
+                    colorrange=numpy.array(range(0,256))
+                    colorbar=self._index2rgb(index_matrix=colorrange)
+                    rgbArray = numpy.zeros((1,256,3), 'uint8')
+                    rgbArray[..., 0] = colorbar[0]
+                    rgbArray[..., 1] = colorbar[1]
+                    rgbArray[..., 2] = colorbar[2]
+                    rgbArray=rgbArray.repeat(30,0)
+                    
+                    cbfig=pyplot.figure(figsize=(10,1.5))
+                    image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
+                    pyplot.xticks(numpy.arange(-1,1.1,0.2))
+                    pyplot.xlabel('NDVI')
+                    pyplot.yticks([])
+                    pyplot.savefig(output_file2,dpi=300, bbox_inches='tight', transparent=True)
+            
                 return output_file
 
     def _pansharpenning(self, bands):

@@ -310,7 +310,7 @@ def main(args):
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             if isinstance(args.ndvi, str):
-                args.bands=[4,5]
+                args.bands='45'
             try:
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
