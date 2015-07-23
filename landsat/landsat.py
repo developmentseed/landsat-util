@@ -382,7 +382,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
         bands = convert_to_integer_list(bands)
 
         if isinstance(ndvi, str):
-            p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+            p = Process(path, bands=[4,5], verbose=verbose, force_unzip=force_unzip)
         else:
             p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
