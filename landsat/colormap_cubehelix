@@ -14,7 +14,7 @@
 #----------------------------------------------
 # Dave Green: dag@mrao.cam.ac.uk
 #----------------------------------------------
-#
+# The value "mode" is the maximum value of the color intensity, e.g. 1 or 255
 mode = 1
 0	0	0
 0.009	0.002	0.001

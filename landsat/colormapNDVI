@@ -1,7 +1,7 @@
 # Tue Jul 14 2015 14:40:26 GMT+0200
 # ---------------------------------------------
 # Intuitive Colormap for NDVI mapping. Not suited for grayscale print or colorblind people though...
-#
+# The value "mode" is the maximum value of the color intensity, e.g. 1 or 255
 mode = 1
 0	0	0
 0.006299213	0.006299213	0.006299213

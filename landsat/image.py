@@ -22,7 +22,7 @@ from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
 
 #for color
-import matplotlib.pylab as pyplot
+import matplotlib.pyplot as pyplot
 
 
 class FileDoesNotExist(Exception):
@@ -210,8 +210,12 @@ class Process(VerbosityMixin):
                 return output_file
 
     def run_ndvi(self, mode='grey'):
-        """ Executes the image processing.
+        """ Executes the NDVI processing.
 
+        :param mode:
+            Whether to create greyscale GTiff or colorized GTiff
+        :type mode
+            string, either 'grey' or 'color'
         :returns:
             (String) the path to the processed image
         """
@@ -298,7 +302,7 @@ class Process(VerbosityMixin):
                 self.output("Calculating NDVI", normal=True, arrow=True)
                 output_file = '%s_NDVI' % (self.scene)
 
-                mask=(new_bands[1]+new_bands[0])==0
+                mask=(new_bands[1]+new_bands[0])==0 #masking of the area outside the image tile
                 new_bands[0]=new_bands[0]*mult_B3+add_B3
                 new_bands[1]=new_bands[1]*mult_B4+add_B4
                 ndvi=numpy.true_divide((new_bands[1]-new_bands[0]),(new_bands[1]+new_bands[0]))
@@ -335,7 +339,7 @@ class Process(VerbosityMixin):
                     for i in range(0, 3):
                         output.write_band(i+1, rgb[i])
                         
-                #colorbar
+                    #colorbar
                     self.output("Creating colorbar", normal=True, color='green', indent=1)
                     output_file2 = '%s_colorbar.png' % (self.scene)
                     output_file2 = join(self.dst_path, output_file2) 
@@ -395,7 +399,7 @@ class Process(VerbosityMixin):
         
         
     def _index2rgb(self, index_matrix):
-        """ converts a 8bit matrix to rgb values according to the colormap """
+        """ converts a 8bit matrix to rgb values according to a colormap """
          
         self._read_cmap()
         translate_colormap = numpy.vectorize(self._get_color, otypes=[numpy.uint8])
@@ -406,12 +410,14 @@ class Process(VerbosityMixin):
         return rgb_bands
         
     def _get_color(self, n,v=-1):
+        """ returns either RGB for a value [0 ... 255] or only the intensity for R(v=0),G(v=1),B(v=2) """
         if v==-1:
             return self.colormap[n]
         else:
             return self.colormap[n][v]
             
     def _read_cmap(self):
+        """ reads the colormap from a text file given in settings.py. See colormap_cubehelix.txt. File must contain 256 RGB values """
         try:
             i=0
             colormap={0 : (0, 0, 0)}
@@ -423,7 +429,7 @@ class Process(VerbosityMixin):
                         maxval = float(line.replace('mode = ', ''))
                     elif i > 0:
                         str = line.split()
-                        if str==[]:
+                        if str==[]: # when there are empty lines at the end of the file
                             break
                         colormap.update({i : (int(round(float(str[0])*255/maxval)),
                                       int(round(float(str[1])*255/maxval)),
