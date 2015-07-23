@@ -8,3 +8,4 @@ scikit-image>=0.11.3
 homura>=0.1.1
 scipy>=0.15.1
 boto>=2.38.0
+aria2>=1.18.1
