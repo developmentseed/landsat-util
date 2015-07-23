@@ -49,6 +49,8 @@ search, download, and process Landsat imagery.
 
                 -e END, --end END   End Date - Most formats are accepted e.g.
                                     Jun 12 2014 OR 06/12/2014
+                                    
+                --latest N          Returns the N latest images within the last 365 days.
 
                 -c CLOUD, --cloud CLOUD
                                     Maximum cloud percentage. Default: 20 perct
@@ -75,6 +77,8 @@ search, download, and process Landsat imagery.
 
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
+                                    
+                --ndvi [grey,color] Calculates NDVI. Produces either grayscale GTiff or RGB GTiff with seperate colorbar
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -103,6 +107,8 @@ search, download, and process Landsat imagery.
 
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
+                                    
+                --ndvi [grey,color] Calculates NDVI. Produces either grayscale GTiff or RGB GTiff with seperate colorbar.
 
                 -v, --verbose       Show verbose output
 
@@ -155,8 +161,7 @@ def args_options():
                                help='End Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
     parser_search.add_argument('--latest',default=-1,type=int,
-                               help='search the latest landsat image. When number is given, the result will be the image'
-                               'with least cloudcover of the n latest images.')
+                               help='returns the N latest images within the last 365 days')
     parser_search.add_argument('-c', '--cloud', type=float, default=100.0,
                                help='Maximum cloud percentage '
                                'default is 100 perct')
@@ -182,7 +187,7 @@ def args_options():
                                  'image. Pansharpening requires larger memory')            
     parser_download.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
-                                 'or a .PNG with a colormap (color)')
+                                 'or RGB with a seperate colorbar (color)')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -201,7 +206,7 @@ def args_options():
                                 'image. Pansharpening requires larger memory')
     parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
-                                 'or a .PNG with a colormap (color)')
+                                 'or RGB with a seperate colorbar (color)')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
