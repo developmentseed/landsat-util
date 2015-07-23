@@ -289,7 +289,6 @@ def main(args):
             elif result['status'] == 'error':
                 return [result['message'], 1]
         elif args.subs == 'download':
-            print (args)
             use_aria2 = True if args.use_aria2 else False
             d = Downloader(download_dir=args.dest, use_aria2=use_aria2)
             try:
