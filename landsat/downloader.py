@@ -8,6 +8,7 @@ import requests
 from utils import check_create_folder
 from mixins import VerbosityMixin
 import settings
+import subprocess
 
 
 class RemoteFileDoesntExist(Exception):
@@ -31,7 +32,7 @@ class Downloader(VerbosityMixin):
         # Make sure download directory exist
         check_create_folder(self.download_dir)
 
-    def download(self, scenes, bands=None):
+    def download(self, scenes, bands=None, use_aria=False):
         """
         Download scenese from Google Storage or Amazon S3 if bands are provided
 
@@ -43,6 +44,10 @@ class Downloader(VerbosityMixin):
             A list of bands. Default value is None.
         :type scenes:
             List
+        :param use_aria:
+            Should use aria2c for parallel downloads. Default value is False.
+        :type use_aria:
+            Boolean
 
         :returns:
             (List) includes downloaded scenes as key and source as value (aws or google)
@@ -62,16 +67,16 @@ class Downloader(VerbosityMixin):
                             bands_plus = bands
                             bands_plus.append('MTL')
                             for band in bands_plus:
-                                self.amazon_s3(scene, band, path)
+                                self.amazon_s3(scene, band, path, use_aria)
                                 output[scene] = 'aws'
                         except RemoteFileDoesntExist:
-                            self.google_storage(scene, self.download_dir)
+                            self.google_storage(scene, self.download_dir, use_aria)
                             output[scene] = 'google'
 
                     else:
                         raise Exception('Expected bands list')
                 else:
-                    self.google_storage(scene, self.download_dir)
+                    self.google_storage(scene, self.download_dir, use_aria)
                     output[scene] = 'google'
 
             return output
@@ -79,7 +84,7 @@ class Downloader(VerbosityMixin):
         else:
             raise Exception('Expected sceneIDs list')
 
-    def google_storage(self, scene, path):
+    def google_storage(self, scene, path, use_aria):
         """
         Google Storage Downloader.
 
@@ -91,6 +96,10 @@ class Downloader(VerbosityMixin):
             The directory path to where the image should be stored
         :type path:
             String
+        :param use_aria:
+            Use aria2c for parallel downloading
+        :type use_aria:
+            Boolean
 
         :returns:
             Boolean
@@ -101,12 +110,12 @@ class Downloader(VerbosityMixin):
         url = self.google_storage_url(sat)
 
         if self.remote_file_exists(url):
-            return self.fetch(url, path, filename)
+            return self.fetch(url, path, filename, use_aria)
 
         else:
             raise RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
 
-    def amazon_s3(self, scene, band, path):
+    def amazon_s3(self, scene, band, path, use_aria):
         """
         Amazon S3 downloader
 
@@ -122,6 +131,10 @@ class Downloader(VerbosityMixin):
             The directory path to where the image should be stored
         :type path:
             String
+        :param use_aria:
+            Use aria2c for parallel downloading
+        :type use_aria:
+            Boolean
 
         :returns:
             Boolean
@@ -135,12 +148,12 @@ class Downloader(VerbosityMixin):
         url = self.amazon_s3_url(sat, filename)
 
         if self.remote_file_exists(url):
-            return self.fetch(url, path, filename)
+            return self.fetch(url, path, filename, use_aria)
 
         else:
             raise RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
-    def fetch(self, url, path, filename):
+    def fetch(self, url, path, filename, use_aria):
         """ Downloads the given url.
 
         :param url:
@@ -155,6 +168,10 @@ class Downloader(VerbosityMixin):
             The filename that has to be downloaded
         :type filename:
             String
+        :param use_aria:
+            Use aria2c for parallel downloading
+        :type use_aria:
+            Boolean
 
         :returns:
             Boolean
@@ -167,8 +184,10 @@ class Downloader(VerbosityMixin):
             if size == self.get_remote_file_size(url):
                 self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
                 return False
-
-        fetch(url, path)
+        if use_aria:
+            subprocess.Popen(["aria2c", "--dir="+path, "--file-allocation=none", "-x", "5", "-s", "20", url]).wait()
+        else:
+            fetch(url, path)
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
         return True

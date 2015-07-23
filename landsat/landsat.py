@@ -91,6 +91,8 @@ search, download, and process Landsat imagery.
 
                 --force-unzip       Force unzip tar file
 
+		--use-aria2c        Use aria2c for parallel downloading
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -191,6 +193,7 @@ def args_options():
     parser_download.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
     parser_download.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
     parser_download.add_argument('--force-unzip', help='Force unzip tar file', action='store_true')
+    parser_download.add_argument('--use-aria2c', help='Use aria2c for parallel downloading')
 
     parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
@@ -294,7 +297,7 @@ def main(args):
                 if args.ndvi:
                     bands = [4, 5]
 
-                downloaded = d.download(args.scenes, bands)
+                downloaded = d.download(args.scenes, bands, args.use_aria2c)
 
                 if args.process:
                     force_unzip = True if args.force_unzip else False
