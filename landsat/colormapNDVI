@@ -1,20 +1,6 @@
 # Tue Jul 14 2015 14:40:26 GMT+0200
 # ---------------------------------------------
-# R/G/B cubehelix colour scheme
-#
-# see http://www.mrao.cam.ac.uk/~dag/CUBEHELIX/
-#----------------------------------------------
-# see Green (2011), BASI, 39, 289.
-#
-# start............: 3.0
-# rotations........: -2
-# hue..............: 1.6
-# gamma............: 0.8
-# number of levels.: 254
-#----------------------------------------------
-# Dave Green: dag@mrao.cam.ac.uk
-#----------------------------------------------
-# faction and R/G/B values
+# Intuitive Colormap for NDVI mapping. Not suited for grayscale print or colorblind people though...
 #
 mode = 1
 0	0	0
