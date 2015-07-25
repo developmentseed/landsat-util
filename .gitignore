@@ -21,4 +21,5 @@ eva.py
 test.sh
 _build
 htmlcov
+venv/
 

@@ -21,6 +21,9 @@ import settings
 from mixins import VerbosityMixin
 from utils import get_file, timer, check_create_folder, exit
 
+#for color
+import matplotlib.pyplot as pyplot
+
 
 class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
@@ -81,7 +84,7 @@ class Process(VerbosityMixin):
         for band in self.bands:
             self.bands_path.append(join(self.scene_path, self._get_full_filename(band)))
 
-    def run(self, pansharpen=True):
+    def run_rgb(self, pansharpen=True):
         """ Executes the image processing.
 
         :param pansharpen:
@@ -197,12 +200,177 @@ class Process(VerbosityMixin):
 
                 for i, band in enumerate(new_bands):
                     # Color Correction
-                    band = self._color_correction(band, self.bands[i], 0, cloud_cover)
-
-                    output.write_band(i+1, img_as_ubyte(band))
-
-                    new_bands[i] = None
+                    new_bands[i] = self._color_correction(band, self.bands[i], 0, cloud_cover)
+                    
                 self.output("Writing to file", normal=True, color='green', indent=1)
+                for i, band in enumerate(new_bands):
+                    output.write_band(i+1, img_as_ubyte(band))
+                    new_bands[i] = None
+                    
+                return output_file
+
+
+    def run_ndvi(self, mode='grey', cmask=False):
+        """
+        :param mode:
+            Whether to create greyscale GTiff or colorized GTiff
+        :type mode
+            string, either 'grey' or 'color'
+        :returns:
+            (String) the path to the processed image
+        """
+
+        self.output("* Image processing started for NDVI", normal=True)
+
+        # Read radiance conversion factors from mtl file
+        try:
+            with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
+                lines = mtl.readlines()
+                for line in lines:
+                    if 'REFLECTANCE_ADD_BAND_3' in line:
+                        add_B3 = float(line.replace('REFLECTANCE_ADD_BAND_3 = ', ''))
+                    elif 'REFLECTANCE_MULT_BAND_3' in line:
+                        mult_B3 = float(line.replace('REFLECTANCE_MULT_BAND_3 = ', ''))
+                    elif 'REFLECTANCE_ADD_BAND_4' in line:
+                        add_B4 = float(line.replace('REFLECTANCE_ADD_BAND_4 = ', ''))
+                    elif 'REFLECTANCE_MULT_BAND_4' in line:
+                        mult_B4 = float(line.replace('REFLECTANCE_MULT_BAND_4 = ', ''))
+        except IOError:
+            pass
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with rasterio.drivers():
+                bands = []
+
+                bands_path = []
+                
+                if cmask:
+                    self.bands.append('QA')
+                    
+                for band in self.bands:
+                    bands_path.append(join(self.scene_path, self._get_full_filename(band)))
+                
+                
+                try:
+                    for i, band in enumerate(self.bands):
+                        bands.append(self._read_band(bands_path[i]))
+                except IOError as e:
+                    exit(e.message, 1)
+
+                src = rasterio.open(bands_path[-1])
+
+                # Get pixel size from source
+                self.pixel = src.affine[0]
+
+                # Only collect src data that is needed and delete the rest
+                src_data = {
+                    'transform': src.transform,
+                    'crs': src.crs,
+                    'affine': src.affine,
+                    'shape': src.shape
+                }
+                del src
+
+                crn = self._get_boundaries(src_data)
+
+                dst_shape = src_data['shape']
+                dst_corner_ys = [crn[k]['y'][1][0] for k in crn.keys()]
+                dst_corner_xs = [crn[k]['x'][1][0] for k in crn.keys()]
+                y_pixel = abs(max(dst_corner_ys) - min(dst_corner_ys)) / dst_shape[0]
+                x_pixel = abs(max(dst_corner_xs) - min(dst_corner_xs)) / dst_shape[1]
+
+                dst_transform = (min(dst_corner_xs),
+                                 x_pixel,
+                                 0.0,
+                                 max(dst_corner_ys),
+                                 0.0,
+                                 -y_pixel)
+                # Delete crn since no longer needed
+                del crn
+
+                new_bands = []
+                for i in range(0, 3):
+                    new_bands.append(numpy.empty(dst_shape, dtype=numpy.float32))
+
+                self.output("Projecting", normal=True, arrow=True)
+                for i, band in enumerate(bands):
+                    self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
+                    reproject(band, new_bands[i], src_transform=src_data['transform'], src_crs=src_data['crs'],
+                              dst_transform=dst_transform, dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+
+                # Bands are no longer needed
+                del bands
+                
+            
+                self.output("Calculating NDVI", normal=True, arrow=True)
+                output_file = '%s_NDVI' % (self.scene)
+
+                tilemask = numpy.empty_like(new_bands[-1], dtype=numpy.bool)
+                tilemask[(new_bands[1]+new_bands[0]==0)] = True
+
+                new_bands[0]=new_bands[0]*mult_B3+add_B3
+                new_bands[1]=new_bands[1]*mult_B4+add_B4
+                ndvi=numpy.true_divide((new_bands[1]-new_bands[0]),(new_bands[1]+new_bands[0]))
+                ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
+                ndvi[tilemask]=0
+                
+                if cmask:
+                     # clouds are indicated when Bit 15&16 = 11 or 10
+                     ndvi[(new_bands[-1].astype(numpy.uint16) & 49152)>=32768]=0
+                     # cirrus are indicated when Bit 13&14 = 11 or 10
+                     ndvi[(new_bands[-1].astype(numpy.uint16) & 12288)>=8192]=0
+
+                
+                self.output("Final Steps", normal=True, arrow=True)
+                
+                if mode=='grey':
+                    output_file += '_grey.TIF'
+                    output_file = join(self.dst_path, output_file) 
+                    output = rasterio.open(output_file, 'w', driver='GTiff',
+                                           width=dst_shape[1], height=dst_shape[0],
+                                           count=1, dtype=numpy.uint8,
+                                           nodata=0, transform=dst_transform,
+                                           crs=self.dst_crs)
+                    self.output("Writing to file", normal=True, color='green', indent=1)                     
+                    output.write_band(1, ndvi)
+                    
+                elif mode=='color':
+                    self.output("Converting to RGB", normal=True, color='green', indent=1)                       
+                    output_file += '_color.TIF'
+                    output_file = join(self.dst_path, output_file) 
+                    rgb=self._index2rgb(index_matrix=ndvi)
+                    del ndvi
+    
+                    output = rasterio.open(output_file, 'w', driver='GTiff',
+                                           width=dst_shape[1], height=dst_shape[0],
+                                           count=3, dtype=numpy.uint8,
+                                           nodata=0, transform=dst_transform, photometric='RGB',
+                                           crs=self.dst_crs)
+                    
+                    self.output("Writing to file", normal=True, color='green', indent=1)                       
+                    for i in range(0, 3):
+                        output.write_band(i+1, rgb[i])
+                        
+                    #colorbar
+                    self.output("Creating colorbar", normal=True, color='green', indent=1)
+                    output_file2 = '%s_colorbar.png' % (self.scene)
+                    output_file2 = join(self.dst_path, output_file2) 
+                    colorrange=numpy.array(range(0,256))
+                    colorbar=self._index2rgb(index_matrix=colorrange)
+                    rgbArray = numpy.zeros((1,256,3), 'uint8')
+                    rgbArray[..., 0] = colorbar[0]
+                    rgbArray[..., 1] = colorbar[1]
+                    rgbArray[..., 2] = colorbar[2]
+                    rgbArray=rgbArray.repeat(30,0)
+                    
+                    cbfig=pyplot.figure(figsize=(10,1.5))
+                    image = pyplot.imshow(rgbArray,extent=[-1,1,0,1],aspect=0.1)
+                    pyplot.xticks(numpy.arange(-1,1.1,0.2))
+                    pyplot.xlabel('NDVI')
+                    pyplot.yticks([])
+                    pyplot.savefig(output_file2,dpi=300, bbox_inches='tight', transparent=True)
+            
                 return output_file
 
     def _pansharpenning(self, bands):
@@ -216,7 +384,7 @@ class Process(VerbosityMixin):
         pan = 1/m * bands[-1]
 
         del m
-        del bands[3]
+        del bands[-1]
         self.output("computing bands", normal=True, color='green', indent=1)
 
         for i, band in enumerate(bands):
@@ -241,6 +409,52 @@ class Process(VerbosityMixin):
     def _read_band(self, band_path):
         """ Reads a band with rasterio """
         return rasterio.open(band_path).read_band(1)
+        
+        
+    def _index2rgb(self, index_matrix):
+        """ converts a 8bit matrix to rgb values according to a colormap """
+         
+        self._read_cmap()
+        translate_colormap = numpy.vectorize(self._get_color, otypes=[numpy.uint8])
+        rgb_bands = []
+        for i in range(3):
+            rgb_bands.append(translate_colormap(index_matrix, i))
+       
+        return rgb_bands
+        
+    def _get_color(self, n,v=-1):
+        """ returns either RGB for a value [0 ... 255] or only the intensity for R(v=0),G(v=1),B(v=2) """
+        if v==-1:
+            return self.colormap[n]
+        else:
+            return self.colormap[n][v]
+            
+    def _read_cmap(self):
+        """ reads the colormap from a text file given in settings.py. See colormap_cubehelix.txt. File must contain 256 RGB values """
+        try:
+            i=0
+            colormap={0 : (0, 0, 0)}
+            with open(settings.COLORMAP) as cmap:
+                lines = cmap.readlines()
+                for line in lines:
+                    if i ==  0 and 'mode = ' in line:
+                        i=1
+                        maxval = float(line.replace('mode = ', ''))
+                    elif i > 0:
+                        str = line.split()
+                        if str==[]: # when there are empty lines at the end of the file
+                            break
+                        colormap.update({i : (int(round(float(str[0])*255/maxval)),
+                                      int(round(float(str[1])*255/maxval)),
+                                      int(round(float(str[2])*255/maxval)),
+                                      )})
+                        i += 1
+        except IOError:
+            pass
+    
+        colormap = {k: v[:4] for k, v in colormap.iteritems()}
+        self.colormap=colormap
+    
 
     def _rescale(self, bands):
         """ Rescale bands """

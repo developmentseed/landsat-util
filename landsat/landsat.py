@@ -9,6 +9,8 @@ import json
 from os.path import join
 from urllib2 import URLError
 
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
@@ -47,6 +49,8 @@ search, download, and process Landsat imagery.
 
                 -e END, --end END   End Date - Most formats are accepted e.g.
                                     Jun 12 2014 OR 06/12/2014
+                                    
+                --latest N          Returns the N latest images within the last 365 days.
 
                 -c CLOUD, --cloud CLOUD
                                     Maximum cloud percentage. Default: 20 perct
@@ -73,6 +77,10 @@ search, download, and process Landsat imagery.
 
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
+                                    
+                --ndvi [grey,color] Calculates NDVI. Produces either grayscale GTiff or RGB GTiff with seperate colorbar
+                
+                --cloudmask         Sets pixels affected by cloud cover to 0 resp. black
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -101,6 +109,8 @@ search, download, and process Landsat imagery.
 
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
+                                    
+                --ndvi [grey,color] Calculates NDVI. Produces either grayscale GTiff or RGB GTiff with seperate colorbar.
 
                 -v, --verbose       Show verbose output
 
@@ -145,16 +155,18 @@ def args_options():
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
                                help='Search return results limit\n'
-                               'default is 100')
+                               'default is 10')
     parser_search.add_argument('-s', '--start',
                                help='Start Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
     parser_search.add_argument('-e', '--end',
                                help='End Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
-    parser_search.add_argument('-c', '--cloud', type=float, default=20.0,
+    parser_search.add_argument('--latest',default=-1,type=int,
+                               help='returns the N latest images within the last 365 days')
+    parser_search.add_argument('-c', '--cloud', type=float, default=100.0,
                                help='Maximum cloud percentage '
-                               'default is 20 perct')
+                               'default is 100 perct')
     parser_search.add_argument('-p', '--pathrow',
                                help='Paths and Rows in order separated by comma. Use quotes ("001").'
                                'Example: path,row,path,row 001,001,190,204')
@@ -174,7 +186,12 @@ def args_options():
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
                                  help='Whether to also pansharpen the process '
-                                 'image. Pansharpening requires larger memory')
+                                 'image. Pansharpening requires larger memory')            
+    parser_download.add_argument('--ndvi', type=str, choices=['color','grey'],
+                                 help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
+                                 'or RGB with a seperate colorbar (color)')
+    parser_download.add_argument('--cloudmask',action='store_true',
+                                 help='Sets pixels affected by cloud cover to 0 resp. black')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -191,6 +208,11 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pansharpening requires larger memory')
+    parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
+                                 help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
+                                 'or RGB with a seperate colorbar (color)')
+    parser_process.add_argument('--cloudmask',action='store_true',
+                                 help='Sets pixels affected by cloud cover to 0 resp. black')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -231,7 +253,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip, args.ndvi, args.cloudmask)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -246,8 +268,14 @@ def main(args):
                     args.start = reformat_date(parse(args.start))
                 if args.end:
                     args.end = reformat_date(parse(args.end))
+                if args.latest>0:
+                    args.limit=25
+                    end = datetime.now()
+                    start = end-relativedelta(days=+365)
+                    args.end = end.strftime("%Y-%m-%d")
+                    args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
-                return ["You date format is incorrect. Please try again!", 1]
+                return ["Your date format is incorrect. Please try again!", 1]
 
             s = Search()
 
@@ -255,7 +283,7 @@ def main(args):
                 lat = float(args.lat) if args.lat else None
                 lon = float(args.lon) if args.lon else None
             except ValueError:
-                return ["The latitude and longitude values must be valid numbers", 1]
+                return ["The latitude and longitude values must be valid numbers", 1]           
 
             result = s.search(paths_rows=args.pathrow,
                               lat=lat,
@@ -264,22 +292,42 @@ def main(args):
                               start_date=args.start,
                               end_date=args.end,
                               cloud_max=args.cloud)
-
+         
             if result['status'] == 'SUCCESS':
-                v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                if args.latest>0:   
+                    datelist=[]
+                    for i in range(0,result['total_returned']):
+                        datelist.append((result['results'][i]['date'],result['results'][i]))
+    
+                    datelist.sort(key=lambda tup: tup[0], reverse=True)  
+                    datelist = datelist[:args.latest]
+                
+                    result['results']=[]
+                    for i in range(0,len(datelist)):
+                        result['results'].append(datelist[i][1])
+                        result['total_returned']=len(datelist)
+
+                else:
+                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                    
                 if result['total'] > 100:
                     return ['Over 100 results. Please narrow your search', 1]
                 else:
                     v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    return ['Search completed!']
+                return ['Search completed!']
+                
             elif result['status'] == 'error':
                 return [result['message'], 1]
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
+            if isinstance(args.ndvi, str):
+                args.bands='45'
             try:
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
                     bands.append(8)
+                if args.cloudmask:
+                    bands.append('QA')
 
                 downloaded = d.download(args.scenes, bands)
 
@@ -295,7 +343,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip)
+                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip, args.ndvi, args.cloudmask)
 
                         if args.upload:
                             try:
@@ -315,7 +363,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None):
+def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None, ndvi=False, cloudmask=False):
     """ Handles constructing and image process.
 
     :param path:
@@ -340,13 +388,20 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
     """
     try:
         bands = convert_to_integer_list(bands)
-        p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
+
+        if isinstance(ndvi, str):
+            p = Process(path, bands=[4,5], verbose=verbose, force_unzip=force_unzip)
+        else:
+            p = Process(path, bands=bands, verbose=verbose, force_unzip=force_unzip)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:
         exit(e.message, 1)
-
-    return p.run(pansharpen)
+    if isinstance(ndvi, str):
+        out=[p.run_ndvi(mode=ndvi,cmask=cloudmask)]
+    else:
+        out=[p.run_rgb(pansharpen)]
+    return out
 
 
 def __main__():
