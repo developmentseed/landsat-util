@@ -209,9 +209,9 @@ class Process(VerbosityMixin):
                     
                 return output_file
 
-    def run_ndvi(self, mode='grey'):
-        """ Executes the NDVI processing.
 
+    def run_ndvi(self, mode='grey', cmask=False):
+        """
         :param mode:
             Whether to create greyscale GTiff or colorized GTiff
         :type mode
@@ -244,10 +244,14 @@ class Process(VerbosityMixin):
                 bands = []
 
                 bands_path = []
-
+                
+                if cmask:
+                    self.bands.append('QA')
+                    
                 for band in self.bands:
                     bands_path.append(join(self.scene_path, self._get_full_filename(band)))
-
+                
+                
                 try:
                     for i, band in enumerate(self.bands):
                         bands.append(self._read_band(bands_path[i]))
@@ -297,20 +301,29 @@ class Process(VerbosityMixin):
 
                 # Bands are no longer needed
                 del bands
-
+                
             
                 self.output("Calculating NDVI", normal=True, arrow=True)
                 output_file = '%s_NDVI' % (self.scene)
 
-                mask=(new_bands[1]+new_bands[0])==0 #masking of the area outside the image tile
+                tilemask = numpy.empty_like(new_bands[-1], dtype=numpy.bool)
+                tilemask[(new_bands[1]+new_bands[0]==0)] = True
+
                 new_bands[0]=new_bands[0]*mult_B3+add_B3
                 new_bands[1]=new_bands[1]*mult_B4+add_B4
                 ndvi=numpy.true_divide((new_bands[1]-new_bands[0]),(new_bands[1]+new_bands[0]))
-                ndvi[mask]=-1
                 ndvi=((ndvi+1)*255 / 2).astype(numpy.uint8)
-                      
+                ndvi[tilemask]=0
+                
+                if cmask:
+                     # clouds are indicated when Bit 15&16 = 11 or 10
+                     ndvi[(new_bands[-1].astype(numpy.uint16) & 49152)>=32768]=0
+                     # cirrus are indicated when Bit 13&14 = 11 or 10
+                     ndvi[(new_bands[-1].astype(numpy.uint16) & 12288)>=8192]=0
+
                 
                 self.output("Final Steps", normal=True, arrow=True)
+                
                 if mode=='grey':
                     output_file += '_grey.TIF'
                     output_file = join(self.dst_path, output_file) 

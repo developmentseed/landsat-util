@@ -79,6 +79,8 @@ search, download, and process Landsat imagery.
                                     Pansharpening requires larger memory
                                     
                 --ndvi [grey,color] Calculates NDVI. Produces either grayscale GTiff or RGB GTiff with seperate colorbar
+                
+                --cloudmask         Sets pixels affected by cloud cover to 0 resp. black
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -188,6 +190,8 @@ def args_options():
     parser_download.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
                                  'or RGB with a seperate colorbar (color)')
+    parser_download.add_argument('--cloudmask',action='store_true',
+                                 help='Sets pixels affected by cloud cover to 0 resp. black')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -207,6 +211,8 @@ def args_options():
     parser_process.add_argument('--ndvi', type=str, choices=['color','grey'],
                                  help='Create an NDVI map. Specify if output should be GTIFF in grayscale (grey) ' 
                                  'or RGB with a seperate colorbar (color)')
+    parser_process.add_argument('--cloudmask',action='store_true',
+                                 help='Sets pixels affected by cloud cover to 0 resp. black')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -247,7 +253,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip, args.ndvi)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, force_unzip, args.ndvi, args.cloudmask)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -320,6 +326,8 @@ def main(args):
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
                     bands.append(8)
+                if args.cloudmask:
+                    bands.append('QA')
 
                 downloaded = d.download(args.scenes, bands)
 
@@ -335,7 +343,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip, args.ndvi)
+                        stored = process_image(path, args.bands, False, args.pansharpen, force_unzip, args.ndvi, args.cloudmask)
 
                         if args.upload:
                             try:
@@ -355,7 +363,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None, ndvi=False):
+def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip=None, ndvi=False, cloudmask=False):
     """ Handles constructing and image process.
 
     :param path:
@@ -390,7 +398,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, force_unzip
     except FileDoesNotExist as e:
         exit(e.message, 1)
     if isinstance(ndvi, str):
-        out=[p.run_ndvi(mode=ndvi)]
+        out=[p.run_ndvi(mode=ndvi,cmask=cloudmask)]
     else:
         out=[p.run_rgb(pansharpen)]
     return out
