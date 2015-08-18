@@ -6,7 +6,7 @@ import time
 import requests
 
 import settings
-from utils import three_digit, create_paired_list
+from utils import three_digit, create_paired_list, geocode
 
 
 class Search(object):
@@ -15,7 +15,7 @@ class Search(object):
     def __init__(self):
         self.api_url = settings.API_URL
 
-    def search(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None, cloud_min=None,
+    def search(self, paths_rows=None, lat=None, lon=None, address=None, start_date=None, end_date=None, cloud_min=None,
                cloud_max=None, limit=1):
         """
         The main method of Search class. It searches Development Seed's Landsat API.
@@ -32,6 +32,10 @@ class Search(object):
             The The longitude
         :type lon:
             String, float, integer
+        :param address:
+            The address
+        :type address:
+            String
         :param start_date:
             Date string. format: YYYY-MM-DD
         :type start_date:
@@ -78,7 +82,7 @@ class Search(object):
                 }
         """
 
-        search_string = self.query_builder(paths_rows, lat, lon, start_date, end_date, cloud_min, cloud_max)
+        search_string = self.query_builder(paths_rows, lat, lon, address, start_date, end_date, cloud_min, cloud_max)
 
         # Have to manually build the URI to bypass requests URI encoding
         # The api server doesn't accept encoded URIs
@@ -109,7 +113,7 @@ class Search(object):
 
         return result
 
-    def query_builder(self, paths_rows=None, lat=None, lon=None, start_date=None, end_date=None,
+    def query_builder(self, paths_rows=None, lat=None, lon=None, address=None, start_date=None, end_date=None,
                       cloud_min=None, cloud_max=None):
         """ Builds the proper search syntax (query) for Landsat API.
 
@@ -125,6 +129,10 @@ class Search(object):
             The The longitude
         :type lon:
             String, float, integer
+        :param address:
+            The address
+        :type address:
+            String
         :param start_date:
             Date string. format: YYYY-MM-DD
         :type start_date:
@@ -171,7 +179,9 @@ class Search(object):
         elif cloud_max:
             query.append(self.cloud_cover_prct_range_builder('-1', cloud_max))
 
-        if lat and lon:
+        if address:
+            query.append(self.address_builder(address))
+        elif lat and lon:
             query.append(self.lat_lon_builder(lat, lon))
 
         if query:
@@ -240,6 +250,20 @@ class Search(object):
             String
         """
         return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
+
+    def address_builder(self, address):
+        """ Builds lat and lon query from a geocoded address.
+
+        :param address:
+            The address
+        :type address:
+            String
+
+        :returns:
+            String
+        """
+        geocoded = geocode(address)
+        return self.lat_lon_builder(**geocoded)
 
     def lat_lon_builder(self, lat=0, lon=0):
         """ Builds lat and lon query.
