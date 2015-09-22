@@ -25,6 +25,7 @@ For full documentation visit: http://landsat-util.readthedocs.org/
 
 To run the documentation locally::
 
+    $ pip install -r requirements/dev.txt
     $ cd docs
     $ make html
 
@@ -39,5 +40,3 @@ Change Log
 +++++++++
 
 See `CHANGES.txt <CHANGES.rst>`_.
-
-

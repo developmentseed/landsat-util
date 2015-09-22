@@ -8,3 +8,5 @@ Important Notes
 - Image processing is a very heavy and resource consuming task. Each process takes about 5-10 mins. We recommend that you run the processes in smaller badges. Pansharpening, while increasing image resolution 2x, substantially increases processing time.
 
 - Landsat-util requires at least 2GB of Memory (RAM).
+
+- Make sure to read over the `section on returned products <overview.html#a-note-on-returned-products>`_ as it is different depending on scene acquisition date.

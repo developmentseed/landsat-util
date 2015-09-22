@@ -12,20 +12,15 @@ import threading
 
 import mock
 
-try:
-    from landsat.uploader import Uploader, upload, upload_part, data_collector
-    import landsat.tests.mocks as mocks
-except ImportError:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../landsat')))
-    from landsat.uploader import Uploader
-    import landsat.tests.mocks as mocks
+from landsat.uploader import Uploader, upload, upload_part, data_collector
+from .mocks import S3Connection, state
 
 
 class TestUploader(unittest.TestCase):
 
-    @mock.patch('landsat.uploader.S3Connection', mocks.S3Connection)
+    @mock.patch('landsat.uploader.S3Connection', S3Connection)
     def test_upload_to_s3(self):
-        mocks.state['mock_boto_s3_multipart_upload_data'] = []
+        state['mock_boto_s3_multipart_upload_data'] = []
         base_dir = os.path.abspath(os.path.dirname(__file__))
         landsat_image = os.path.join(base_dir, 'samples/mock_upload')
         f = open(landsat_image, 'rb').readlines()
@@ -33,17 +28,17 @@ class TestUploader(unittest.TestCase):
         u = Uploader('some_key', 'some_secret')
         u.run('some bucket', 'mock_upload', landsat_image)
 
-        self.assertEqual(mocks.state['mock_boto_s3_multipart_upload_data'], f)
+        self.assertEqual(state['mock_boto_s3_multipart_upload_data'], f)
 
 
 class upload_tests(unittest.TestCase):
 
     def test_should_be_able_to_upload_data(self):
         input = ['12', '345']
-        mocks.state['mock_boto_s3_multipart_upload_data'] = []
-        conn = mocks.S3Connection('some_key', 'some_secret', True)
+        state['mock_boto_s3_multipart_upload_data'] = []
+        conn = S3Connection('some_key', 'some_secret', True)
         upload('test_bucket', 'some_key', 'some_secret', input, 'some_key', connection=conn)
-        self.assertEqual(mocks.state['mock_boto_s3_multipart_upload_data'], ['12', '345'])
+        self.assertEqual(state['mock_boto_s3_multipart_upload_data'], ['12', '345'])
 
 
 class upload_part_tests(unittest.TestCase):
