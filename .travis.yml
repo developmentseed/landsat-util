@@ -11,6 +11,9 @@ env:
     - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
     - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
 
+virtualenv:
+  system_site_packages: true
+
 addons:
   apt:
     packages:
@@ -20,6 +23,8 @@ addons:
     - libatlas-dev
     - libatlas-base-dev
     - gfortran
+    - python-numpy
+    - python-scipy
 
 python:
 - '2.7'
@@ -29,7 +34,6 @@ before_install:
   - pip install wheel
 
 install:
-  - "pip install scipy"
   - "pip wheel -r requirements/dev.txt"
   - "pip install -r requirements/dev.txt"
 
