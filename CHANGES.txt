@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.8.0 (2015-09-22)
+------------------
+- Improved docs
+- Add `--ndvi` flag
+- Handle downloading new bands (10, 11, QA)
+- Improved color correction
+- Remove noise in pansharpened image processing
+
 0.7.0 (2015-05-29)
 ------------------
 - New documentation
