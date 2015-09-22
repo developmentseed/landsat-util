@@ -46,10 +46,10 @@ deploy:
     repo: developmentseed/landsat-util
     branch: master
 
-# after_deploy:
-#     if [ "$TRAVIS_BRANCH" == "master" ]; then
-#         echo "Start Docker Hub Push"
-#         docker build . -t developmentseed/landsat-util:0.7.0
-#         docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-#         docker push developmentseed/landsat-util:0.7.0
-#     fi
+after_deploy:
+  if [ "$TRAVIS_BRANCH" == "master" ]; then
+    echo "Start Docker Hub Push"
+    docker build . -t developmentseed/landsat-util:0.7.0
+    docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+    docker push developmentseed/landsat-util:0.7.0
+  fi
