@@ -2,7 +2,7 @@ requests==2.7.0
 python-dateutil>=2.4.2
 termcolor>=1.1.0
 numpy>=1.9.3
-rasterio>=0.26.0
+rasterio>=0.27.0
 six==1.9.0
 scipy>=0.16.0
 scikit-image>=0.11.3
