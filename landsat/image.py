@@ -10,7 +10,8 @@ import subprocess
 
 import numpy
 import rasterio
-from rasterio.warp import reproject, RESAMPLING, transform
+from rasterio.coords import disjoint_bounds
+from rasterio.warp import reproject, RESAMPLING, transform, transform_bounds
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
@@ -23,6 +24,11 @@ from decorators import rasterio_decorator
 
 class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
+    pass
+
+
+class BoundsDoNotOverlap(Exception):
+    """ Exception for when bounds do not overlap with the image """
     pass
 
 
@@ -55,7 +61,7 @@ class BaseProcess(VerbosityMixin):
 
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
@@ -73,8 +79,13 @@ class BaseProcess(VerbosityMixin):
         # Path to the unzipped folder
         self.scene_path = join(self.src_path, self.scene)
 
+        # Unzip files
         if self._check_if_zipped(path):
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
+
+        if (bounds):
+            self.bounds = bounds
+            self.scene_path = self.clip()
 
         self.bands_path = []
         for band in self.bands:
@@ -253,6 +264,57 @@ class BaseProcess(VerbosityMixin):
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
+
+    @rasterio_decorator
+    def clip(self):
+        """ Clip images based on bounds provided
+        Implementation is borrowed from
+        https://github.com/brendan-ward/rasterio/blob/e3687ce0ccf8ad92844c16d913a6482d5142cf48/rasterio/rio/convert.py
+        """
+
+        self.output("* Clipping", normal=True)
+
+        # create new folder for clipped images
+        path = check_create_folder(join(self.scene_path, 'clipped'))
+
+        try:
+            for i, band in enumerate(self.bands):
+                band_name = self._get_full_filename(band)
+                band_path = join(self.scene_path, band_name)
+
+                self.output("Band %s" % band, normal=True, color='green', indent=1)
+                with rasterio.open(band_path) as src:
+                    bounds = transform_bounds(
+                        {
+                            'proj': 'longlat',
+                            'ellps': 'WGS84',
+                            'datum': 'WGS84',
+                            'no_defs': True
+                        },
+                        src.crs,
+                        *self.bounds
+                    )
+
+                    if disjoint_bounds(bounds, src.bounds):
+                        raise BoundsDoNotOverlap('Bounds must overlap with the image')
+
+                    window = src.window(*bounds)
+
+                    out_kwargs = src.meta.copy()
+                    out_kwargs.update({
+                        'driver': 'GTiff',
+                        'height': window[0][1] - window[0][0],
+                        'width': window[1][1] - window[1][0],
+                        'transform': src.window_transform(window)
+                    })
+
+                    with rasterio.open(join(path, band_name), 'w', **out_kwargs) as out:
+                        out.write(src.read(window=window))
+
+            return path
+
+        except IOError as e:
+            exit(e.message, 1)
 
 
 class Simple(BaseProcess):
