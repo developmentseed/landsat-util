@@ -6,11 +6,13 @@ import os
 from os.path import join, isdir
 import tarfile
 import glob
+from copy import copy
 import subprocess
 
 import numpy
 import rasterio
-from rasterio.warp import reproject, RESAMPLING, transform
+from rasterio.coords import disjoint_bounds
+from rasterio.warp import reproject, RESAMPLING, transform, transform_bounds
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
@@ -23,6 +25,11 @@ from decorators import rasterio_decorator
 
 class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
+    pass
+
+
+class BoundsDoNotOverlap(Exception):
+    """ Exception for when bounds do not overlap with the image """
     pass
 
 
@@ -55,7 +62,7 @@ class BaseProcess(VerbosityMixin):
 
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
@@ -73,8 +80,13 @@ class BaseProcess(VerbosityMixin):
         # Path to the unzipped folder
         self.scene_path = join(self.src_path, self.scene)
 
+        # Unzip files
         if self._check_if_zipped(path):
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
+
+        if (bounds):
+            self.bounds = bounds
+            self.scene_path = self.clip()
 
         self.bands_path = []
         for band in self.bands:
@@ -241,7 +253,6 @@ class BaseProcess(VerbosityMixin):
         return output_file
 
     def _color_correction(self, band, band_id, low, coverage):
-
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
         p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
         temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
@@ -257,7 +268,7 @@ class BaseProcess(VerbosityMixin):
     def _calculate_cloud_ice_perc(self):
         self.output('Calculating cloud and snow coverage from QA band', normal=True, arrow=True)
 
-        a = rasterio.open(self.scene_path + '/' + self.scene + '_BQA.TIF').read_band(1)
+        a = rasterio.open(join(self.scene_path, self._get_full_filename('QA'))).read_band(1)
 
         count = 0
         snow = [56320, 39936, 31744, 28590, 26656, 23552]
@@ -274,6 +285,59 @@ class BaseProcess(VerbosityMixin):
         self.output('cloud/snow coverage: %s' % round(perc, 2), indent=1, normal=True, color='green')
 
         return perc
+
+    @rasterio_decorator
+    def clip(self):
+        """ Clip images based on bounds provided
+        Implementation is borrowed from
+        https://github.com/brendan-ward/rasterio/blob/e3687ce0ccf8ad92844c16d913a6482d5142cf48/rasterio/rio/convert.py
+        """
+
+        self.output("Clipping", normal=True)
+
+        # create new folder for clipped images
+        path = check_create_folder(join(self.scene_path, 'clipped'))
+
+        try:
+            temp_bands = copy(self.bands)
+            temp_bands.append('QA')
+            for i, band in enumerate(temp_bands):
+                band_name = self._get_full_filename(band)
+                band_path = join(self.scene_path, band_name)
+
+                self.output("Band %s" % band, normal=True, color='green', indent=1)
+                with rasterio.open(band_path) as src:
+                    bounds = transform_bounds(
+                        {
+                            'proj': 'longlat',
+                            'ellps': 'WGS84',
+                            'datum': 'WGS84',
+                            'no_defs': True
+                        },
+                        src.crs,
+                        *self.bounds
+                    )
+
+                    if disjoint_bounds(bounds, src.bounds):
+                        raise BoundsDoNotOverlap('Bounds must overlap with the image')
+
+                    window = src.window(*bounds)
+
+                    out_kwargs = src.meta.copy()
+                    out_kwargs.update({
+                        'driver': 'GTiff',
+                        'height': window[0][1] - window[0][0],
+                        'width': window[1][1] - window[1][0],
+                        'transform': src.window_transform(window)
+                    })
+
+                    with rasterio.open(join(path, band_name), 'w', **out_kwargs) as out:
+                        out.write(src.read(window=window))
+
+            return path
+
+        except IOError as e:
+            exit(e.message, 1)
 
 
 class Simple(BaseProcess):
@@ -315,14 +379,14 @@ class Simple(BaseProcess):
 
 class PanSharpen(BaseProcess):
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, **kwargs):
         if bands:
             bands.append(8)
         else:
             bands = [4, 3, 2, 8]
 
         self.band8 = bands.index(8)
-        super(PanSharpen, self).__init__(path, bands, dst_path, verbose, force_unzip)
+        super(PanSharpen, self).__init__(path, bands, **kwargs)
 
     @rasterio_decorator
     def run(self):
@@ -388,6 +452,7 @@ class PanSharpen(BaseProcess):
             output.write_band(i+1, img_as_ubyte(band))
 
             new_bands[i] = None
+
         self.output("Writing to file", normal=True, color='green', indent=1)
 
         return output_file

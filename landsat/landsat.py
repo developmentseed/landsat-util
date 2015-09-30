@@ -16,7 +16,7 @@ from boto.exception import NoAuthHandlerFound
 from downloader import Downloader, IncorrectSceneId
 from search import Search
 from uploader import Uploader
-from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
+from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
 from mixins import VerbosityMixin
 from image import Simple, PanSharpen, FileDoesNotExist
 from ndvi import NDVIWithManualColorMap, NDVI
@@ -77,6 +77,10 @@ search, download, and process Landsat imagery.
 
                 --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
 
+                --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
+                                    and with longitude and latitude units of decimal degrees separated by comma.
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+
                 -u --upload         Upload to S3 after the image processing completed
 
                 --key               Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as
@@ -106,6 +110,10 @@ search, download, and process Landsat imagery.
                                     Pansharpening requires larger memory
 
                 --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
+
+                --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
+                                    and with longitude and latitude units of decimal degrees separated by comma.
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
                 -v, --verbose       Show verbose output
 
@@ -182,6 +190,11 @@ def args_options():
                                  'image. Pansharpening requires larger memory')
     parser_download.add_argument('--ndvi', action='store_true',
                                  help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
+                                 'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
+                                 'separated by comma.' +
+                                 'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                 '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -202,6 +215,11 @@ def args_options():
                                 help='Whether to run the NDVI process. If used, bands parameter is disregarded')
     parser_process.add_argument('--ndvi1', action='store_true',
                                 help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_process.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
+                                'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
+                                'separated by comma.' +
+                                'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                '50.2682767372753')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321', default='432')
     parser_process.add_argument('-v', '--verbose', action='store_true',
@@ -239,10 +257,16 @@ def main(args):
 
     if args:
 
+        if 'clip' in args:
+            bounds = convert_to_float_list(args.clip)
+        else:
+            bounds = None
+
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip, args.ndvi1)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip,
+                                   args.ndvi1, bounds)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -308,7 +332,8 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip)
+                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
+                                               bounds=bounds)
 
                         if args.upload:
                             try:
@@ -326,7 +351,8 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None, ndvi1=False):
+def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
+                  ndvi1=False, bounds=None):
     """ Handles constructing and image process.
 
     :param path:
@@ -353,14 +379,15 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
         bands = convert_to_integer_list(bands)
         if pansharpen:
             p = PanSharpen(path, bands=bands, dst_path=settings.PROCESSED_IMAGE,
-                           verbose=verbose, force_unzip=force_unzip)
+                           verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         elif ndvi1:
-            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip)
+            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip, bounds=bounds)
         elif ndvi:
             p = NDVIWithManualColorMap(path, dst_path=settings.PROCESSED_IMAGE,
-                                       verbose=verbose, force_unzip=force_unzip)
+                                       verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         else:
-            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip)
+            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
+                       bounds=bounds)
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:

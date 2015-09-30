@@ -9,7 +9,7 @@ from image import BaseProcess
 
 class NDVI(BaseProcess):
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, **kwargs):
         bands = [4, 5]
         self.cmap = {0: (255, 255, 255, 0),
                      1: (250, 250, 250, 255),
@@ -267,7 +267,7 @@ class NDVI(BaseProcess):
                      253: (255, 0, 207, 255),
                      254: (255, 0, 223, 255),
                      255: (255, 0, 239, 255)}
-        super(NDVI, self).__init__(path, bands, dst_path, verbose, force_unzip)
+        super(NDVI, self).__init__(path, bands, **kwargs)
 
     @rasterio_decorator
     def run(self):

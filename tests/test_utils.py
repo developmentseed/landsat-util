@@ -105,6 +105,24 @@ class TestUtils(unittest.TestCase):
         r = utils.convert_to_integer_list('1,11,10,QA')
         self.assertEqual([1, 11, 10, 'QA'], r)
 
+    def test_convert_to_float_list(self):
+        # correct input
+        r = utils.convert_to_float_list('-1,2,-3')
+        self.assertEqual([-1.0, 2.0, -3.0], r)
+
+        # try other cobinations
+        r = utils.convert_to_float_list('1, 2, 3')
+        self.assertEqual([1.0, 2.0, 3.0], r)
+
+        r = utils.convert_to_float_list('1s,2df,3d/')
+        self.assertEqual([1.0, 2.0, 3.0], r)
+
+        r = utils.convert_to_float_list([1, 3, 4])
+        self.assertEqual([1, 3, 4], r)
+
+        r = utils.convert_to_float_list('1,11,10')
+        self.assertEqual([1.0, 11.0, 10.0], r)
+
 
 if __name__ == '__main__':
     unittest.main()

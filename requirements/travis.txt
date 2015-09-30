@@ -1,6 +1,0 @@
-rasterio>=0.21.0
-homura>=0.1.1
-termcolor>=1.1.0
-python-dateutil>=2.4.2
-mock>=1.0.1
-boto>=2.38.0
