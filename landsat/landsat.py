@@ -257,8 +257,7 @@ def main(args):
 
     if args:
 
-        if args.clip:
-            bounds = convert_to_float_list(args.clip)
+        bounds = convert_to_float_list(args.clip) if args.clip else None
 
         if args.subs == 'process':
             verbose = True if args.verbose else False
