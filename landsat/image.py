@@ -476,6 +476,3 @@ class PanSharpen(BaseProcess):
             bands[key] = (bands[key] * 65535).astype('uint16')
 
         return bands
-
-if __name__ == "__main__":
-    BaseProcess('/Users/ajdevseed/landsat/downloads/LC81920252015157LGN00', [4, 3, 2], '/Users/ajdevseed/landsat/processed', bounds=[-346.06658935546875, 49.93531194616915, -345.4595947265625, 50.2682767372753])
