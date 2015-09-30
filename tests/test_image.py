@@ -43,6 +43,13 @@ class TestProcess(unittest.TestCase):
         p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_123.TIF')))
 
+    def test_simple_with_clip(self):
+
+        p = Simple(path=self.landsat_image, bands=[1, 2, 3], dst_path=self.temp_folder,
+                   bounds=[-87.48138427734375, 30.700515832683923, -87.43331909179688, 30.739475058679485])
+        p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_123.TIF')))
+
     def test_simple_with_zip_file(self):
 
         p = Simple(path=self.landsat_image, dst_path=self.temp_folder)
@@ -59,9 +66,24 @@ class TestProcess(unittest.TestCase):
         p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432_pan.TIF')))
 
+    def test_pansharpen_with_clip(self):
+        """ test with pansharpen and clipping """
+
+        p = PanSharpen(path=self.landsat_image, bands=[4, 3, 2], dst_path=self.temp_folder,
+                       bounds=[-87.48138427734375, 30.700515832683923, -87.43331909179688, 30.739475058679485])
+        p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_bands_432_pan.TIF')))
+
     def test_ndvi(self):
 
         p = NDVI(path=self.landsat_image, dst_path=self.temp_folder)
+        print p.run()
+        self.assertTrue(exists(join(self.temp_folder, 'test', 'test_NDVI.TIF')))
+
+    def test_ndvi_with_clip(self):
+
+        p = NDVI(path=self.landsat_image, dst_path=self.temp_folder,
+                 bounds=[-87.48138427734375, 30.700515832683923, -87.43331909179688, 30.739475058679485])
         print p.run()
         self.assertTrue(exists(join(self.temp_folder, 'test', 'test_NDVI.TIF')))
 
