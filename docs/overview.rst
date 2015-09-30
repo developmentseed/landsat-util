@@ -81,6 +81,12 @@ Process *and* pansharpen a downloaded image::
 
     $: landsat process path/to/LC80090452014008LGN00.tar.bz --pansharpen
 
+Clip an image before processing (The coordinates shows below show Prague)::
+
+    $: landsat process path/to/LC81920252015157LGN00.tar.bz --pansharpen --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+
+Note: Values must be in WGS84 datum, and with longitude and latitude units of decimal degrees separated by comma.
+
 A note on returned products
 ++++++++++++++++
 
