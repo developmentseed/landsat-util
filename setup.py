@@ -47,5 +47,5 @@ setup(
       'boto>=2.38.0'
     ],
     test_suite='nose.collector',
-    test_require=test_requirements
+    tests_require=test_requirements
 )

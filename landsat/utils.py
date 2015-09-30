@@ -278,3 +278,31 @@ def convert_to_integer_list(value):
             except ValueError:
                 pass
         return s
+
+
+def convert_to_float_list(value):
+    """ Converts a comma separate string to a list
+
+    :param value:
+        the format must be 1.2,-3.5 (commas with no space)
+    :type value:
+        String
+
+    :returns:
+        List
+
+    :example:
+        >>> convert_to_integer_list('003,003,004,004')
+        [1.2, -3.5]
+
+    """
+    if isinstance(value, list) or value is None:
+        return value
+    else:
+        s = re.findall('([-+]?\d*\.\d+|\d+|[-+]?\d+)', value)
+        for k, v in enumerate(s):
+            try:
+                s[k] = float(v)
+            except ValueError:
+                pass
+        return s

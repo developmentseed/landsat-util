@@ -37,6 +37,6 @@ Recently Added Features
 - Add more color options such as false color, true color, etc.
 
 Change Log
-+++++++++
+++++++++++
 
 See `CHANGES.txt <CHANGES.rst>`_.
