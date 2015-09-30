@@ -381,14 +381,16 @@ class Simple(BaseProcess):
 
 class PanSharpen(BaseProcess):
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, **kwargs):
         if bands:
             bands.append(8)
         else:
             bands = [4, 3, 2, 8]
 
+        print kwargs
+
         self.band8 = bands.index(8)
-        super(PanSharpen, self).__init__(path, bands, dst_path, verbose, force_unzip)
+        super(PanSharpen, self).__init__(path, bands, **kwargs)
 
     @rasterio_decorator
     def run(self):
