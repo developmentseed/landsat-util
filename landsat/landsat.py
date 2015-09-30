@@ -378,7 +378,7 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
         bands = convert_to_integer_list(bands)
         if pansharpen:
             p = PanSharpen(path, bands=bands, dst_path=settings.PROCESSED_IMAGE,
-                           verbose=verbose, force_unzip=force_unzip)
+                           verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         elif ndvi1:
             p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip, bounds=bounds)
         elif ndvi:
