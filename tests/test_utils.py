@@ -114,7 +114,7 @@ class TestUtils(unittest.TestCase):
         r = utils.convert_to_float_list('1, 2, 3')
         self.assertEqual([1.0, 2.0, 3.0], r)
 
-        r = utils.convert_to_foat_list('1s,2df,3d/')
+        r = utils.convert_to_float_list('1s,2df,3d/')
         self.assertEqual([1.0, 2.0, 3.0], r)
 
         r = utils.convert_to_float_list([1, 3, 4])
