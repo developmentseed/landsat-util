@@ -159,7 +159,7 @@ class BaseProcess(VerbosityMixin):
         try:
             # check if file is already unzipped, skip
             if isdir(dst) and not force_unzip:
-                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                self.output('%s is already unzipped.' % scene, normal=True, color='green', indent=1)
                 return
             else:
                 tar = tarfile.open(src, 'r')
@@ -253,8 +253,6 @@ class BaseProcess(VerbosityMixin):
         return output_file
 
     def _color_correction(self, band, band_id, low, coverage):
-        band = band.astype(numpy.uint16)
-
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
         p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
         temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
@@ -352,7 +350,7 @@ class Simple(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output('Image processing started for bands %s' % '-'.join(map(str, self.bands)), normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -397,7 +395,8 @@ class PanSharpen(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output('PanSharpened Image processing started for bands %s' % '-'.join(map(str, self.bands)),
+                    normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -431,6 +430,7 @@ class PanSharpen(BaseProcess):
 
         return self._write_to_file(new_bands, pan, **rasterio_options)
 
+    @rasterio_decorator
     def _write_to_file(self, new_bands, pan, **kwargs):
 
         # Read coverage from QBA
@@ -450,6 +450,7 @@ class PanSharpen(BaseProcess):
             band = self._color_correction(band, self.bands[i], 0, coverage)
 
             output.write_band(i+1, img_as_ubyte(band))
+
             new_bands[i] = None
 
         self.output("Writing to file", normal=True, color='green', indent=1)
@@ -476,3 +477,9 @@ class PanSharpen(BaseProcess):
             bands[key] = (bands[key] * 65535).astype('uint16')
 
         return bands
+
+if __name__ == '__main__':
+
+    p = PanSharpen('/Users/ajdevseed/Desktop/LC81950282014159LGN00')
+
+    p.run()
