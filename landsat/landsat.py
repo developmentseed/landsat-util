@@ -95,6 +95,8 @@ search, download, and process Landsat imagery.
 
                 --force-unzip       Force unzip tar file
 
+		--use-aria2        Use aria2 for parallel downloading
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -204,6 +206,7 @@ def args_options():
     parser_download.add_argument('--bucket', help='Bucket name (required if uploading to s3)')
     parser_download.add_argument('--region', help='URL to S3 region e.g. s3-us-west-2.amazonaws.com')
     parser_download.add_argument('--force-unzip', help='Force unzip tar file', action='store_true')
+    parser_download.add_argument('--use-aria2', help='Use aria2 for parallel downloading', action='store_true')
 
     parser_process = subparsers.add_parser('process', help='Process Landsat imagery')
     parser_process.add_argument('path',
@@ -310,7 +313,8 @@ def main(args):
             elif result['status'] == 'error':
                 return [result['message'], 1]
         elif args.subs == 'download':
-            d = Downloader(download_dir=args.dest)
+            use_aria2 = True if args.use_aria2 else False
+            d = Downloader(download_dir=args.dest, use_aria2=use_aria2)
             try:
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:

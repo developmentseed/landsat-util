@@ -8,6 +8,7 @@ import requests
 from utils import check_create_folder
 from mixins import VerbosityMixin
 import settings
+import subprocess
 
 
 class RemoteFileDoesntExist(Exception):
@@ -23,10 +24,11 @@ class IncorrectSceneId(Exception):
 class Downloader(VerbosityMixin):
     """ The downloader class """
 
-    def __init__(self, verbose=False, download_dir=None):
+    def __init__(self, verbose=False, download_dir=None, use_aria2=False):
         self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
         self.google = settings.GOOGLE_STORAGE
         self.s3 = settings.S3_LANDSAT
+        self.use_aria2 = use_aria2
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
@@ -173,8 +175,10 @@ class Downloader(VerbosityMixin):
             if size == self.get_remote_file_size(url):
                 self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
                 return False
-
-        fetch(url, path)
+        if self.use_aria2:
+            subprocess.Popen(["aria2c", "--dir="+path, "--file-allocation=none", "-x", "5", "-s", "20", url]).wait()
+        else:
+            fetch(url, path)
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
         return True

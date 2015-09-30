@@ -8,6 +8,7 @@ import errno
 import shutil
 import unittest
 from tempfile import mkdtemp
+import logging
 
 import mock
 
@@ -97,6 +98,8 @@ class TestDownloader(unittest.TestCase):
         mock_fetch.return_value = True
 
         scene = self.scene_s3
+        log= logging.getLogger( "tests.test_download.TestDownloader" )
+        log.debug( "mock_fetch= %r", mock_fetch )
         self.assertTrue(self.d.amazon_s3(scene, 11, self.temp_folder))
 
         # If scene id is incorrect
@@ -111,6 +114,8 @@ class TestDownloader(unittest.TestCase):
 
         sat = self.d.scene_interpreter(self.scene)
         url = self.d.google_storage_url(sat)
+        log= logging.getLogger( "tests.test_download.TestDownloader" )
+        log.debug( "mock_fetch= %r", mock_fetch )
 
         self.assertTrue(self.d.fetch(url, self.temp_folder, self.scene))
 
