@@ -270,7 +270,7 @@ class BaseProcess(VerbosityMixin):
     def _calculate_cloud_ice_perc(self):
         self.output('Calculating cloud and snow coverage from QA band', normal=True, arrow=True)
 
-        a = rasterio.open(self.scene_path + '/' + self.scene + '_BQA.TIF').read_band(1)
+        a = rasterio.open(join(self.scene_path, self._get_full_filename('QA'))).read_band(1)
 
         count = 0
         snow = [56320, 39936, 31744, 28590, 26656, 23552]
