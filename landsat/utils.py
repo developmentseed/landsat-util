@@ -299,7 +299,9 @@ def convert_to_float_list(value):
     if isinstance(value, list) or value is None:
         return value
     else:
-        s = re.findall('([-+]?\d*\.\d+|\d+)', value)
+        print value
+        s = re.findall('([-+]?\d*\.\d+|\d+|[-+]?\d+)', value)
+        print s
         for k, v in enumerate(s):
             try:
                 s[k] = float(v)
