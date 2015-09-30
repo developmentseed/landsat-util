@@ -387,8 +387,6 @@ class PanSharpen(BaseProcess):
         else:
             bands = [4, 3, 2, 8]
 
-        print kwargs
-
         self.band8 = bands.index(8)
         super(PanSharpen, self).__init__(path, bands, **kwargs)
 
