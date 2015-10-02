@@ -344,7 +344,7 @@ def main(args):
                 if args.pansharpen:
                     bands.append(8)
 
-                if 'ndvi' in args or 'ndvigrey' in args:
+                if args.ndvi:
                     bands = [4, 5]
 
                 downloaded = d.download(args.scenes, bands)
