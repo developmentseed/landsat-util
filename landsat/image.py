@@ -3,11 +3,12 @@
 # License: CC0 1.0 Universal
 
 import os
-from os.path import join, isdir
 import tarfile
 import glob
 from copy import copy
 import subprocess
+from shutil import copyfile
+from os.path import join, isdir
 
 import numpy
 import rasterio
@@ -187,15 +188,30 @@ class BaseProcess(VerbosityMixin):
 
         return False
 
-    def _read_cloud_cover(self):
+    def _read_metadata(self):
+        output = {}
         try:
             with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
                 lines = mtl.readlines()
                 for line in lines:
+                    if 'REFLECTANCE_ADD_BAND_3' in line:
+                        output['REFLECTANCE_ADD_BAND_3'] = float(line.replace('REFLECTANCE_ADD_BAND_3 = ', ''))
+
+                    if 'REFLECTANCE_MULT_BAND_3' in line:
+                        output['REFLECTANCE_MULT_BAND_3'] = float(line.replace('REFLECTANCE_MULT_BAND_3 = ', ''))
+
+                    if 'REFLECTANCE_ADD_BAND_4' in line:
+                        output['REFLECTANCE_ADD_BAND_4'] = float(line.replace('REFLECTANCE_ADD_BAND_4 = ', ''))
+
+                    if 'REFLECTANCE_MULT_BAND_4' in line:
+                        output['REFLECTANCE_MULT_BAND_4'] = float(line.replace('REFLECTANCE_MULT_BAND_4 = ', ''))
+
                     if 'CLOUD_COVER' in line:
-                        return float(line.replace('CLOUD_COVER = ', ''))
+                        output['CLOUD_COVER'] = float(line.replace('CLOUD_COVER = ', ''))
+
+                    return output
         except IOError:
-            return 0
+            return output
 
     def _get_image_data(self):
         src = rasterio.open(self.bands_path[-1])
@@ -333,6 +349,9 @@ class BaseProcess(VerbosityMixin):
 
                     with rasterio.open(join(path, band_name), 'w', **out_kwargs) as out:
                         out.write(src.read(window=window))
+
+            # Copy MTL to the clipped folder
+            copyfile(join(self.scene_path, self.scene + '_MTL.txt'), join(path, self.scene + '_MTL.txt'))
 
             return path
 
