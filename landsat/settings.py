@@ -29,4 +29,4 @@ DOWNLOAD_DIR = join(LANDSAT_DIR, 'downloads')
 PROCESSED_IMAGE = join(LANDSAT_DIR, 'processed')
 
 # Colormap File
-COLORMAP = join(abspath(dirname(__file__)), 'colormap_cubehelix')
+COLORMAP = join(abspath(dirname(__file__)), 'maps', 'colormap_ndvi_cfastie.txt')
