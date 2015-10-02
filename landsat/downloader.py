@@ -285,4 +285,3 @@ if __name__ == '__main__':
     d = Downloader()
 
     # d.download(['LC81990242015046LGN00', 'LC80030172015001LGN00'])
-    d.download(['LC80030172015001LGN00'], bands=[5, 4])
