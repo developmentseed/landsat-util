@@ -4,5 +4,5 @@ RUN     apt-get install --yes python-pip python-skimage python-numpy python-scip
 ADD     landsat /usr/local/lib/python2.7/dist-packages/landsat
 ADD     bin/landsat /usr/local/bin/
 ADD     . /landsat
-RUN     cd /landsat && pip install -r requirements/base.txt
+RUN     cd /landsat && pip install -r requirements/docker.txt
 
