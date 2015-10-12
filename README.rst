@@ -39,4 +39,4 @@ Recently Added Features
 Change Log
 ++++++++++
 
-See `CHANGES.txt <CHANGES.rst>`_.
+See `CHANGES.txt <CHANGES.txt>`_.
