@@ -104,7 +104,7 @@ class NDVIWithManualColorMap(NDVI):
         # colormaps will overwrite our transparency masks so we will manually
         # create three RGB bands
 
-        self.output("Creating Manual ColorMap", normal=True, arrow=True)
+        self.output("Applying ColorMap", normal=True, arrow=True)
         self.cmap[0] = (0, 0, 0, 255)
 
         v_manual_colormap = numpy.vectorize(self.manual_colormap, otypes=[numpy.uint8])
