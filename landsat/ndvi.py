@@ -125,8 +125,6 @@ class NDVIWithManualColorMap(NDVI):
 
                 for i in range(3):
                     output.write_band(i+1, rgb_bands[i])
-                # output.write_colormap(1, cmap)
-                # output.write_mask(no_data_mask)
 
             self.output("Writing to file", normal=True, color='green', indent=1)
         return output_file
