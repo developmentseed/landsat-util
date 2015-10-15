@@ -34,7 +34,7 @@ class TestLandsat(unittest.TestCase):
         args = ['search', '--start', 'berlin', '--end', 'january 10 2014']
 
         self.assertEquals(landsat.main(self.parser.parse_args(args)),
-                          ['You date format is incorrect. Please try again!', 1])
+                          ['Your date format is incorrect. Please try again!', 1])
 
     def test_too_many_results(self):
         """ Test when search return too many results """
