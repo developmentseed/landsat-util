@@ -70,8 +70,7 @@ class NDVI(BaseProcess):
 
         output_band = numpy.rint((calc_band + 1) * 255 / 2).astype(numpy.uint8)
 
-        output_file = '%s_NDVI.TIF' % (self.scene)
-        output_file = join(self.dst_path, output_file)
+        output_file = join(self.dst_path, self._filename(suffix='NDVI'))
 
         return self.write_band(output_band, output_file, image_data)
 
