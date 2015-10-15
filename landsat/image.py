@@ -70,6 +70,7 @@ class BaseProcess(VerbosityMixin):
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
+        self.clipped = False
 
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
