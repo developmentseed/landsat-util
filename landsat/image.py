@@ -18,6 +18,7 @@ from rasterio.warp import reproject, RESAMPLING, transform, transform_bounds
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
+from polyline.codec import PolylineCodec
 
 from mixins import VerbosityMixin
 from utils import get_file, check_create_folder, exit
@@ -88,6 +89,7 @@ class BaseProcess(VerbosityMixin):
         if (bounds):
             self.bounds = bounds
             self.scene_path = self.clip()
+            self.clipped = True
 
         self.bands_path = []
         for band in self.bands:
@@ -240,20 +242,16 @@ class BaseProcess(VerbosityMixin):
         return new_bands
 
     @rasterio_decorator
-    def _write_to_file(self, new_bands, suffix=None, **kwargs):
+    def _write_to_file(self, new_bands, **kwargs):
 
         # Read coverage from QBA
         coverage = self._calculate_cloud_ice_perc()
 
         self.output("Final Steps", normal=True, arrow=True)
 
-        output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
+        suffix = 'bands_%s' % "".join(map(str, self.bands))
 
-        if suffix:
-            output_file += suffix
-
-        output_file += '.TIF'
-        output_file = join(self.dst_path, output_file)
+        output_file = join(self.dst_path, self._filename(suffix=suffix))
 
         output = rasterio.open(output_file, 'w', **kwargs)
 
@@ -301,6 +299,31 @@ class BaseProcess(VerbosityMixin):
         self.output('cloud/snow coverage: %s' % round(perc, 2), indent=1, normal=True, color='green')
 
         return perc
+
+    def _filename(self, name=None, suffix=None, prefix=None):
+        """ File name generator for processed images """
+
+        filename = ''
+
+        if prefix:
+            filename += str(prefix) + '_'
+
+        if name:
+            filename += str(name)
+        else:
+            filename += str(self.scene)
+
+        if suffix:
+            filename += '_' + str(suffix)
+
+        if self.clipped:
+            bounds = [tuple(self.bounds[0:2]), tuple(self.bounds[2:4])]
+            polyline = PolylineCodec().encode(bounds)
+            filename += '_clipped_' + polyline
+
+        filename += '.TIF'
+
+        return filename
 
     @rasterio_decorator
     def clip(self):
@@ -457,9 +480,9 @@ class PanSharpen(BaseProcess):
 
         self.output("Final Steps", normal=True, arrow=True)
 
-        output_file = '%s_bands_%s_pan.TIF' % (self.scene, "".join(map(str, self.bands)))
+        suffix = 'bands_%s_pan' % "".join(map(str, self.bands))
 
-        output_file = join(self.dst_path, output_file)
+        output_file = join(self.dst_path, self._filename(suffix=suffix))
 
         output = rasterio.open(output_file, 'w', **kwargs)
 
