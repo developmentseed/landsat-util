@@ -1,5 +1,5 @@
 landsat-util
-==============
+============
 
 .. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
     :target: https://travis-ci.org/developmentseed/landsat-util
@@ -30,6 +30,7 @@ You can also run your own API and connect it to this tool.
 
    installation
    overview
+   commands
    todo
    api
    notes
