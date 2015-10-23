@@ -306,3 +306,41 @@ def convert_to_float_list(value):
             except ValueError:
                 pass
         return s
+
+
+def adjust_bounding_box(bounds1, bounds2):
+    """ If the bounds 2 corners are outside of bounds1, they will be adjusted to bounds1 corners
+
+    @params
+    bounds1 - The source bounding box
+    bounds2 - The target bounding box that has to be within bounds1
+
+    @return
+    A bounding box tuple in (y1, x1, y2, x2) format
+    """
+
+    # out of bound check
+    # If it is completely outside of target bounds, return target bounds
+    if ((bounds2[0] > bounds1[0] and bounds2[2] > bounds1[0]) or
+            (bounds2[2] < bounds1[2] and bounds2[2] < bounds1[0])):
+        return bounds1
+
+    if ((bounds2[1] < bounds1[1] and bounds2[3] < bounds1[1]) or
+            (bounds2[3] > bounds1[3] and bounds2[1] > bounds1[3])):
+        return bounds1
+
+    new_bounds = list(bounds2)
+
+    # Adjust Y axis (Longitude)
+    if (bounds2[0] > bounds1[0] or bounds2[0] < bounds1[3]):
+        new_bounds[0] = bounds1[0]
+    if (bounds2[2] < bounds1[2] or bounds2[2] > bounds1[0]):
+        new_bounds[2] = bounds1[2]
+
+    # Adjust X axis (Latitude)
+    if (bounds2[1] < bounds1[1] or bounds2[1] > bounds1[3]):
+        new_bounds[1] = bounds1[1]
+    if (bounds2[3] > bounds1[3] or bounds2[3] < bounds1[1]):
+        new_bounds[3] = bounds1[3]
+
+    return tuple(new_bounds)

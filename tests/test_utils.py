@@ -123,6 +123,48 @@ class TestUtils(unittest.TestCase):
         r = utils.convert_to_float_list('1,11,10')
         self.assertEqual([1.0, 11.0, 10.0], r)
 
+    def test_adjust_bounding_box(self):
+
+        # Test target bounds with origin bounds
+        # should return the target bounds
+        origin = (100, 10, 80, 20)
+        target = (90, 15, 91, 15)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), target)
+
+        # Test target bounds intersects with origin bounds
+        # should return the expected bounds
+        origin = (100, 10, 80, 20)
+        target = (120, -5, 99, 15)
+        expected = (100, 10, 99, 15)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), expected)
+
+        # Test target bounds do not intersect with origin bounds at all
+        # Target bounds are above origin bounds
+        # should return the origin bounds
+        origin = (100, 10, 80, 20)
+        target = (120, -5, 110, 9)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are on the right side of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (82, 23, 91, 26)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are below of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (70, 11, 60, 18)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are on the left side of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (80, -20, 79, -19)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
 
 if __name__ == '__main__':
     unittest.main()
