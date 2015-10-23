@@ -105,6 +105,66 @@ class TestUtils(unittest.TestCase):
         r = utils.convert_to_integer_list('1,11,10,QA')
         self.assertEqual([1, 11, 10, 'QA'], r)
 
+    def test_convert_to_float_list(self):
+        # correct input
+        r = utils.convert_to_float_list('-1,2,-3')
+        self.assertEqual([-1.0, 2.0, -3.0], r)
+
+        # try other cobinations
+        r = utils.convert_to_float_list('1, 2, 3')
+        self.assertEqual([1.0, 2.0, 3.0], r)
+
+        r = utils.convert_to_float_list('1s,2df,3d/')
+        self.assertEqual([1.0, 2.0, 3.0], r)
+
+        r = utils.convert_to_float_list([1, 3, 4])
+        self.assertEqual([1, 3, 4], r)
+
+        r = utils.convert_to_float_list('1,11,10')
+        self.assertEqual([1.0, 11.0, 10.0], r)
+
+    def test_adjust_bounding_box(self):
+
+        # Test target bounds with origin bounds
+        # should return the target bounds
+        origin = (100, 10, 80, 20)
+        target = (90, 15, 91, 15)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), target)
+
+        # Test target bounds intersects with origin bounds
+        # should return the expected bounds
+        origin = (100, 10, 80, 20)
+        target = (120, -5, 99, 15)
+        expected = (100, 10, 99, 15)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), expected)
+
+        # Test target bounds do not intersect with origin bounds at all
+        # Target bounds are above origin bounds
+        # should return the origin bounds
+        origin = (100, 10, 80, 20)
+        target = (120, -5, 110, 9)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are on the right side of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (82, 23, 91, 26)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are below of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (70, 11, 60, 18)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+        # Target bounds are on the left side of origin bounds
+        origin = (100, 10, 80, 20)
+        target = (80, -20, 79, -19)
+
+        self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
 
 if __name__ == '__main__':
     unittest.main()
