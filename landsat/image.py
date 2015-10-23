@@ -21,7 +21,7 @@ from skimage.exposure import rescale_intensity
 from polyline.codec import PolylineCodec
 
 from mixins import VerbosityMixin
-from utils import get_file, check_create_folder, exit
+from utils import get_file, check_create_folder, exit, adjust_bounding_box
 from decorators import rasterio_decorator
 
 
@@ -359,7 +359,7 @@ class BaseProcess(VerbosityMixin):
                     )
 
                     if disjoint_bounds(bounds, src.bounds):
-                        raise BoundsDoNotOverlap('Bounds must overlap with the image')
+                        bounds = adjust_bounding_box(src.bounds, bounds)
 
                     window = src.window(*bounds)
 
