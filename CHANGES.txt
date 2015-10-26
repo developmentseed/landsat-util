@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.9.1 (2015-10-26)
+------------------
+- Add missing package (polyline) to setup.py
+
 0.9.0 (2015-10-23)
 ------------------
 - Improved pansharpening
