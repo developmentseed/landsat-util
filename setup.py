@@ -44,7 +44,8 @@ setup(
       'scipy>=0.16.0',
       'scikit-image>=0.11.3',
       'homura>=0.1.2',
-      'boto>=2.38.0'
+      'boto>=2.38.0',
+      'polyline==1.1'
     ],
     test_suite='nose.collector',
     tests_require=test_requirements
