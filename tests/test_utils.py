@@ -106,7 +106,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual([1, 11, 10, 'QA'], r)
 
     def test_geocode(self):
-        self.assertEqual({'lat': 38.89767579999999, 'lon': -77.0364827}, utils.geocode('1600 Pennsylvania Ave NW, Washington, DC 20500'))
+        self.assertEqual({'lat': 38.89767579999999, 'lon': -77.0364823}, utils.geocode('1600 Pennsylvania Ave NW, Washington, DC 20500'))
         self.assertRaises(ValueError, utils.geocode, 'Pennsylvania Ave NW, Washington, DC')
         self.assertEqual({'lat': 38.8987352, 'lon': -77.0350902}, utils.geocode('Pennsylvania Ave NW, Washington, DC', 10.))
 
