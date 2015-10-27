@@ -35,6 +35,8 @@ Commands
                     -c CLOUD, --cloud CLOUD
                                         Maximum cloud percentage. Default: 20 perct
 
+                    --json              Returns a bare JSON response
+
                     -h, --help          Show this help message and exit
 
             Download:
