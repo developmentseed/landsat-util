@@ -3,26 +3,35 @@
 # License: CC0 1.0 Universal
 
 import os
-from os.path import join, isdir
 import tarfile
 import glob
+from copy import copy
 import subprocess
+from shutil import copyfile
+from os.path import join, isdir
 
 import numpy
 import rasterio
-from rasterio.warp import reproject, RESAMPLING, transform
+from rasterio.coords import disjoint_bounds
+from rasterio.warp import reproject, RESAMPLING, transform, transform_bounds
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
+from polyline.codec import PolylineCodec
 
 from mixins import VerbosityMixin
-from utils import get_file, check_create_folder, exit
+from utils import get_file, check_create_folder, exit, adjust_bounding_box
 from decorators import rasterio_decorator
 
 
 class FileDoesNotExist(Exception):
     """ Exception to be used when the file does not exist. """
+    pass
+
+
+class BoundsDoNotOverlap(Exception):
+    """ Exception for when bounds do not overlap with the image """
     pass
 
 
@@ -55,12 +64,13 @@ class BaseProcess(VerbosityMixin):
 
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
 
         self.projection = {'init': 'epsg:3857'}
         self.dst_crs = {'init': u'epsg:3857'}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
+        self.clipped = False
 
         # Landsat source path
         self.src_path = path.replace(get_file(path), '')
@@ -73,8 +83,14 @@ class BaseProcess(VerbosityMixin):
         # Path to the unzipped folder
         self.scene_path = join(self.src_path, self.scene)
 
+        # Unzip files
         if self._check_if_zipped(path):
             self._unzip(join(self.src_path, get_file(path)), join(self.src_path, self.scene), self.scene, force_unzip)
+
+        if (bounds):
+            self.bounds = bounds
+            self.scene_path = self.clip()
+            self.clipped = True
 
         self.bands_path = []
         for band in self.bands:
@@ -137,7 +153,8 @@ class BaseProcess(VerbosityMixin):
         for i, band in enumerate(bands):
             self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
             reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
-                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest)
+                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest,
+                      num_threads=2)
 
     def _unzip(self, src, dst, scene, force_unzip=False):
         """ Unzip tar files """
@@ -146,7 +163,7 @@ class BaseProcess(VerbosityMixin):
         try:
             # check if file is already unzipped, skip
             if isdir(dst) and not force_unzip:
-                self.output("%s is already unzipped." % scene, normal=True, arrow=True)
+                self.output('%s is already unzipped.' % scene, normal=True, color='green', indent=1)
                 return
             else:
                 tar = tarfile.open(src, 'r')
@@ -174,15 +191,30 @@ class BaseProcess(VerbosityMixin):
 
         return False
 
-    def _read_cloud_cover(self):
+    def _read_metadata(self):
+        output = {}
         try:
             with open(self.scene_path + '/' + self.scene + '_MTL.txt', 'rU') as mtl:
                 lines = mtl.readlines()
                 for line in lines:
+                    if 'REFLECTANCE_ADD_BAND_3' in line:
+                        output['REFLECTANCE_ADD_BAND_3'] = float(line.replace('REFLECTANCE_ADD_BAND_3 = ', ''))
+
+                    if 'REFLECTANCE_MULT_BAND_3' in line:
+                        output['REFLECTANCE_MULT_BAND_3'] = float(line.replace('REFLECTANCE_MULT_BAND_3 = ', ''))
+
+                    if 'REFLECTANCE_ADD_BAND_4' in line:
+                        output['REFLECTANCE_ADD_BAND_4'] = float(line.replace('REFLECTANCE_ADD_BAND_4 = ', ''))
+
+                    if 'REFLECTANCE_MULT_BAND_4' in line:
+                        output['REFLECTANCE_MULT_BAND_4'] = float(line.replace('REFLECTANCE_MULT_BAND_4 = ', ''))
+
                     if 'CLOUD_COVER' in line:
-                        return float(line.replace('CLOUD_COVER = ', ''))
+                        output['CLOUD_COVER'] = float(line.replace('CLOUD_COVER = ', ''))
+
+                    return output
         except IOError:
-            return 0
+            return output
 
     def _get_image_data(self):
         src = rasterio.open(self.bands_path[-1])
@@ -211,26 +243,22 @@ class BaseProcess(VerbosityMixin):
         return new_bands
 
     @rasterio_decorator
-    def _write_to_file(self, new_bands, suffix=None, **kwargs):
+    def _write_to_file(self, new_bands, **kwargs):
 
-        # Read cloud coverage from mtl file
-        cloud_cover = self._read_cloud_cover()
+        # Read coverage from QBA
+        coverage = self._calculate_cloud_ice_perc()
 
         self.output("Final Steps", normal=True, arrow=True)
 
-        output_file = '%s_bands_%s' % (self.scene, "".join(map(str, self.bands)))
+        suffix = 'bands_%s' % "".join(map(str, self.bands))
 
-        if suffix:
-            output_file += suffix
-
-        output_file += '.TIF'
-        output_file = join(self.dst_path, output_file)
+        output_file = join(self.dst_path, self._filename(suffix=suffix))
 
         output = rasterio.open(output_file, 'w', **kwargs)
 
         for i, band in enumerate(new_bands):
             # Color Correction
-            band = self._color_correction(band, self.bands[i], 0, cloud_cover)
+            band = self._color_correction(band, self.bands[i], 0, coverage)
 
             output.write_band(i+1, img_as_ubyte(band))
 
@@ -239,13 +267,11 @@ class BaseProcess(VerbosityMixin):
 
         return output_file
 
-    def _color_correction(self, band, band_id, low, cloud_cover):
-        band = band.astype(numpy.uint16)
-
+    def _color_correction(self, band, band_id, low, coverage):
         self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (cloud_cover * 3 / 4))
+        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
         temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
-        cloud_divide = 65000 - cloud_cover * 100
+        cloud_divide = 65000 - coverage * 100
         mask = numpy.logical_and(band < cloud_cut_low, band > 0)
         temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
         temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
@@ -253,6 +279,108 @@ class BaseProcess(VerbosityMixin):
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
+
+    def _calculate_cloud_ice_perc(self):
+        self.output('Calculating cloud and snow coverage from QA band', normal=True, arrow=True)
+
+        a = rasterio.open(join(self.scene_path, self._get_full_filename('QA'))).read_band(1)
+
+        count = 0
+        snow = [56320, 39936, 31744, 28590, 26656, 23552]
+        cloud = [61440, 59424, 57344, 53248, 28672, 36896, 36864, 24576]
+
+        for item in cloud:
+            count += numpy.extract(a == item, a).size
+
+        for item in snow:
+            count += numpy.extract(a == item, a).size * 2
+
+        perc = numpy.true_divide(count, a.size) * 100
+
+        self.output('cloud/snow coverage: %s' % round(perc, 2), indent=1, normal=True, color='green')
+
+        return perc
+
+    def _filename(self, name=None, suffix=None, prefix=None):
+        """ File name generator for processed images """
+
+        filename = ''
+
+        if prefix:
+            filename += str(prefix) + '_'
+
+        if name:
+            filename += str(name)
+        else:
+            filename += str(self.scene)
+
+        if suffix:
+            filename += '_' + str(suffix)
+
+        if self.clipped:
+            bounds = [tuple(self.bounds[0:2]), tuple(self.bounds[2:4])]
+            polyline = PolylineCodec().encode(bounds)
+            filename += '_clipped_' + polyline
+
+        filename += '.TIF'
+
+        return filename
+
+    @rasterio_decorator
+    def clip(self):
+        """ Clip images based on bounds provided
+        Implementation is borrowed from
+        https://github.com/brendan-ward/rasterio/blob/e3687ce0ccf8ad92844c16d913a6482d5142cf48/rasterio/rio/convert.py
+        """
+
+        self.output("Clipping", normal=True)
+
+        # create new folder for clipped images
+        path = check_create_folder(join(self.scene_path, 'clipped'))
+
+        try:
+            temp_bands = copy(self.bands)
+            temp_bands.append('QA')
+            for i, band in enumerate(temp_bands):
+                band_name = self._get_full_filename(band)
+                band_path = join(self.scene_path, band_name)
+
+                self.output("Band %s" % band, normal=True, color='green', indent=1)
+                with rasterio.open(band_path) as src:
+                    bounds = transform_bounds(
+                        {
+                            'proj': 'longlat',
+                            'ellps': 'WGS84',
+                            'datum': 'WGS84',
+                            'no_defs': True
+                        },
+                        src.crs,
+                        *self.bounds
+                    )
+
+                    if disjoint_bounds(bounds, src.bounds):
+                        bounds = adjust_bounding_box(src.bounds, bounds)
+
+                    window = src.window(*bounds)
+
+                    out_kwargs = src.meta.copy()
+                    out_kwargs.update({
+                        'driver': 'GTiff',
+                        'height': window[0][1] - window[0][0],
+                        'width': window[1][1] - window[1][0],
+                        'transform': src.window_transform(window)
+                    })
+
+                    with rasterio.open(join(path, band_name), 'w', **out_kwargs) as out:
+                        out.write(src.read(window=window))
+
+            # Copy MTL to the clipped folder
+            copyfile(join(self.scene_path, self.scene + '_MTL.txt'), join(path, self.scene + '_MTL.txt'))
+
+            return path
+
+        except IOError as e:
+            exit(e.message, 1)
 
 
 class Simple(BaseProcess):
@@ -265,7 +393,7 @@ class Simple(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("* Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output('Image processing started for bands %s' % '-'.join(map(str, self.bands)), normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -294,12 +422,14 @@ class Simple(BaseProcess):
 
 class PanSharpen(BaseProcess):
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False):
+    def __init__(self, path, bands=None, **kwargs):
         if bands:
             bands.append(8)
         else:
             bands = [4, 3, 2, 8]
-        super(PanSharpen, self).__init__(path, bands, dst_path, verbose, force_unzip)
+
+        self.band8 = bands.index(8)
+        super(PanSharpen, self).__init__(path, bands, **kwargs)
 
     @rasterio_decorator
     def run(self):
@@ -308,7 +438,8 @@ class PanSharpen(BaseProcess):
             (String) the path to the processed image
         """
 
-        self.output("* PanSharpened Image processing started for bands %s" % "-".join(map(str, self.bands)), normal=True)
+        self.output('PanSharpened Image processing started for bands %s' % '-'.join(map(str, self.bands)),
+                    normal=True, arrow=True)
 
         bands = self._read_bands()
         image_data = self._get_image_data()
@@ -323,8 +454,10 @@ class PanSharpen(BaseProcess):
         # Bands are no longer needed
         del bands
 
-        new_bands = self._pansharpenning(new_bands)
-        del self.bands[3]
+        # Calculate pan band
+        pan = self._pansize(new_bands)
+        del self.bands[self.band8]
+        del new_bands[self.band8]
 
         rasterio_options = {
             'driver': 'GTiff',
@@ -338,28 +471,44 @@ class PanSharpen(BaseProcess):
             'crs': self.dst_crs
         }
 
-        return self._write_to_file(new_bands, '_pan', **rasterio_options)
+        return self._write_to_file(new_bands, pan, **rasterio_options)
 
-    def _pansharpenning(self, bands):
+    @rasterio_decorator
+    def _write_to_file(self, new_bands, pan, **kwargs):
 
-        self.output("Pansharpening", normal=True, arrow=True)
-        # Pan sharpening
-        m = sum(bands[:3])
-        m = m + 0.1
+        # Read coverage from QBA
+        coverage = self._calculate_cloud_ice_perc()
 
-        self.output("calculating pan ratio", normal=True, color='green', indent=1)
-        pan = 1/m * bands[-1]
+        self.output("Final Steps", normal=True, arrow=True)
 
-        del m
-        del bands[3]
-        self.output("computing bands", normal=True, color='green', indent=1)
+        suffix = 'bands_%s_pan' % "".join(map(str, self.bands))
 
-        for i, band in enumerate(bands):
-            bands[i] = band * pan
+        output_file = join(self.dst_path, self._filename(suffix=suffix))
 
-        del pan
+        output = rasterio.open(output_file, 'w', **kwargs)
 
-        return bands
+        for i, band in enumerate(new_bands):
+            # Color Correction
+            band = numpy.multiply(band, pan)
+            band = self._color_correction(band, self.bands[i], 0, coverage)
+
+            output.write_band(i+1, img_as_ubyte(band))
+
+            new_bands[i] = None
+
+        self.output("Writing to file", normal=True, color='green', indent=1)
+
+        return output_file
+
+    def _pansize(self, bands):
+
+        self.output('Calculating Pan Ratio', normal=True, arrow=True)
+
+        m = numpy.add(bands[0], bands[1])
+        m = numpy.add(m, bands[2])
+        pan = numpy.multiply(numpy.nan_to_num(numpy.true_divide(1, m)), bands[self.band8])
+
+        return pan
 
     def _rescale(self, bands):
         """ Rescale bands """
@@ -371,3 +520,9 @@ class PanSharpen(BaseProcess):
             bands[key] = (bands[key] * 65535).astype('uint16')
 
         return bands
+
+if __name__ == '__main__':
+
+    p = PanSharpen('/Users/ajdevseed/Desktop/LC81950282014159LGN00')
+
+    p.run()

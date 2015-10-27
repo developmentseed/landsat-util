@@ -1,6 +1,27 @@
 Changes
 =======
 
+0.9.1 (2015-10-26)
+------------------
+- Add missing package (polyline) to setup.py
+
+0.9.0 (2015-10-23)
+------------------
+- Improved pansharpening
+- Use BQA bands for cloud/snow coverage and use in color correction
+- Fix a bug in NDVI process where novalues appeared in the image
+- Add support for different NDVI color maps (three included)
+- Add support for image clipping using the new `--clip` flag
+- Multiple bug fixes
+
+0.8.0 (2015-09-22)
+------------------
+- Improved docs
+- Add `--ndvi` flag
+- Handle downloading new bands (10, 11, QA)
+- Improved color correction
+- Remove noise in pansharpened image processing
+
 0.7.0 (2015-05-29)
 ------------------
 - New documentation

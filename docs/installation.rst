@@ -8,7 +8,7 @@ Mac OSX
 
     $: pip install landsat-util
 
-Ubuntu 14.10
+Ubuntu 14.04
 ++++++++++++
 
 Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``::

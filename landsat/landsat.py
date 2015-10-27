@@ -9,6 +9,8 @@ import json
 from os.path import join
 from urllib2 import URLError
 
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
@@ -16,7 +18,7 @@ from boto.exception import NoAuthHandlerFound
 from downloader import Downloader, IncorrectSceneId
 from search import Search
 from uploader import Uploader
-from utils import reformat_date, convert_to_integer_list, timer, exit, get_file
+from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
 from mixins import VerbosityMixin
 from image import Simple, PanSharpen, FileDoesNotExist
 from ndvi import NDVIWithManualColorMap, NDVI
@@ -51,6 +53,8 @@ search, download, and process Landsat imagery.
                 -e END, --end END   End Date - Most formats are accepted e.g.
                                     Jun 12 2014 OR 06/12/2014
 
+                --latest N          Returns the N latest images within the last 365 days.
+
                 -c CLOUD, --cloud CLOUD
                                     Maximum cloud percentage. Default: 20 perct
 
@@ -77,7 +81,11 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
+                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+
+                --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
+                                    and with longitude and latitude units of decimal degrees separated by comma.
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -107,7 +115,13 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Whether to run the NDVI process. If used, bands parameter is disregarded
+                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+
+                --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
+
+                --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
+                                    and with longitude and latitude units of decimal degrees separated by comma.
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
                 -v, --verbose       Show verbose output
 
@@ -152,16 +166,18 @@ def args_options():
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
                                help='Search return results limit\n'
-                               'default is 100')
+                               'default is 10')
     parser_search.add_argument('-s', '--start',
                                help='Start Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
     parser_search.add_argument('-e', '--end',
                                help='End Date - Most formats are accepted '
                                'e.g. Jun 12 2014 OR 06/12/2014')
-    parser_search.add_argument('-c', '--cloud', type=float, default=20.0,
+    parser_search.add_argument('--latest', default=-1, type=int,
+                               help='returns the N latest images within the last 365 days')
+    parser_search.add_argument('-c', '--cloud', type=float, default=100.0,
                                help='Maximum cloud percentage '
-                               'default is 20 perct')
+                               'default is 100 perct')
     parser_search.add_argument('-p', '--pathrow',
                                help='Paths and Rows in order separated by comma. Use quotes ("001").'
                                'Example: path,row,path,row 001,001,190,204')
@@ -177,7 +193,7 @@ def args_options():
                                  help="Provide Full sceneID, e.g. LC81660392014196LGN00")
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
-                                 'the band from S3. If the band does not exist, an error is returned')
+                                 'the band from S3. If the band does not exist, an error is returned', default='432')
     parser_download.add_argument('-d', '--dest', help='Destination path')
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
@@ -185,6 +201,11 @@ def args_options():
                                  'image. Pansharpening requires larger memory')
     parser_download.add_argument('--ndvi', action='store_true',
                                  help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
+                                 'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
+                                 'separated by comma.' +
+                                 'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                 '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
@@ -201,12 +222,15 @@ def args_options():
     parser_process.add_argument('--pansharpen', action='store_true',
                                 help='Whether to also pansharpen the process '
                                 'image. Pansharpening requires larger memory')
-    parser_process.add_argument('--ndvi', action='store_true',
-                                help='Whether to run the NDVI process. If used, bands parameter is disregarded')
-    parser_process.add_argument('--ndvi1', action='store_true',
-                                help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_process.add_argument('--ndvi', action='store_true', help='Create an NDVI map in color.')
+    parser_process.add_argument('--ndvigrey', action='store_true', help='Create an NDVI map in grayscale (grey)')
+    parser_process.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
+                                'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
+                                'separated by comma.' +
+                                'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                '50.2682767372753')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
-                                'Example: --bands 321')
+                                'Example: --bands 321', default='432')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
     parser_process.add_argument('-u', '--upload', action='store_true',
@@ -242,10 +266,16 @@ def main(args):
 
     if args:
 
+        if 'clip' in args:
+            bounds = convert_to_float_list(args.clip)
+        else:
+            bounds = None
+
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip, args.ndvi1)
+            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip,
+                                   args.ndvigrey, bounds)
 
             if args.upload:
                 u = Uploader(args.key, args.secret, args.region)
@@ -260,8 +290,14 @@ def main(args):
                     args.start = reformat_date(parse(args.start))
                 if args.end:
                     args.end = reformat_date(parse(args.end))
+                if args.latest > 0:
+                    args.limit = 25
+                    end = datetime.now()
+                    start = end-relativedelta(days=+365)
+                    args.end = end.strftime("%Y-%m-%d")
+                    args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
-                return ["You date format is incorrect. Please try again!", 1]
+                return ["Your date format is incorrect. Please try again!", 1]
 
             s = Search()
 
@@ -285,12 +321,28 @@ def main(args):
                               cloud_max=args.cloud)
 
             if result['status'] == 'SUCCESS':
-                v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                if args.latest > 0:
+                    datelist = []
+                    for i in range(0, result['total_returned']):
+                        datelist.append((result['results'][i]['date'], result['results'][i]))
+
+                    datelist.sort(key=lambda tup: tup[0], reverse=True)
+                    datelist = datelist[:args.latest]
+
+                    result['results'] = []
+                    for i in range(0, len(datelist)):
+                        result['results'].append(datelist[i][1])
+                        result['total_returned'] = len(datelist)
+
+                else:
+                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
+
                 if result['total'] > 100:
                     return ['Over 100 results. Please narrow your search', 1]
                 else:
                     v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                    return ['Search completed!']
+                return ['Search completed!']
+
             elif result['status'] == 'error':
                 return [result['message'], 1]
         elif args.subs == 'download':
@@ -299,6 +351,7 @@ def main(args):
                 bands = convert_to_integer_list(args.bands)
                 if args.pansharpen:
                     bands.append(8)
+
                 if args.ndvi:
                     bands = [4, 5]
 
@@ -316,7 +369,8 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip)
+                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
+                                               bounds=bounds)
 
                         if args.upload:
                             try:
@@ -327,16 +381,15 @@ def main(args):
                                 return ["Connection timeout. Probably the region parameter is incorrect", 1]
                             u.run(args.bucket, get_file(stored), stored)
 
-                        v.output("The output is stored at %s" % stored, normal=True, arrow=True)
-
-                    return ['Image Processing Completed', 0]
+                    return ['The output is stored at %s' % stored, 0]
                 else:
                     return ['Download Completed', 0]
             except IncorrectSceneId:
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None, ndvi1=False):
+def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
+                  ndvigrey=False, bounds=None):
     """ Handles constructing and image process.
 
     :param path:
@@ -363,14 +416,16 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
         bands = convert_to_integer_list(bands)
         if pansharpen:
             p = PanSharpen(path, bands=bands, dst_path=settings.PROCESSED_IMAGE,
-                           verbose=verbose, force_unzip=force_unzip)
-        elif ndvi1:
-            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip)
+                           verbose=verbose, force_unzip=force_unzip, bounds=bounds)
+        elif ndvigrey:
+            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip, bounds=bounds)
         elif ndvi:
             p = NDVIWithManualColorMap(path, dst_path=settings.PROCESSED_IMAGE,
-                                       verbose=verbose, force_unzip=force_unzip)
+                                       verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         else:
-            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip)
+            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
+                       bounds=bounds)
+
     except IOError:
         exit("Zip file corrupted", 1)
     except FileDoesNotExist as e:

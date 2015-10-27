@@ -1,11 +1,5 @@
-requests==2.5.3
-python-dateutil>=2.4.2
-termcolor>=1.1.0
-numpy>=1.9.2
-rasterio>=0.21.0
-six==1.9.0
+-r docker.txt
+
+numpy>=1.9.3
+scipy>=0.16.0
 scikit-image>=0.11.3
-homura>=0.1.1
-scipy>=0.15.1
-boto>=2.38.0
-geocoder>=1.5.1
