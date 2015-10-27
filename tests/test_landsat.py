@@ -3,6 +3,7 @@
 
 """Tests for landsat"""
 
+import json
 import unittest
 import subprocess
 import errno
@@ -66,6 +67,15 @@ class TestLandsat(unittest.TestCase):
 
         self.assertEquals(landsat.main(self.parser.parse_args(args)),
                           ['Check your request and try again', 1])
+
+    def test_search_json_output(self):
+        """Test json output in search"""
+        args = ['search', '--latest', '10', '--json']
+
+        output = landsat.main(self.parser.parse_args(args))
+        j = json.loads(output)
+
+        self.assertEquals(type(j), dict)
 
     @mock.patch('landsat.landsat.Downloader')
     def test_download_correct(self, mock_downloader):

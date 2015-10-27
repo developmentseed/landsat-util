@@ -3,6 +3,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+import sys
 import argparse
 import textwrap
 import json
@@ -55,6 +56,8 @@ search, download, and process Landsat imagery.
 
                 -c CLOUD, --cloud CLOUD
                                     Maximum cloud percentage. Default: 20 perct
+
+                --json              Returns a bare JSON response
 
                 -h, --help          Show this help message and exit
 
@@ -181,6 +184,7 @@ def args_options():
                                'Example: path,row,path,row 001,001,190,204')
     parser_search.add_argument('--lat', type=float, help='The latitude')
     parser_search.add_argument('--lon', type=float, help='The longitude')
+    parser_search.add_argument('--json', action='store_true', help='Returns a bare JSON response')
 
     parser_download = subparsers.add_parser('download',
                                             help='Download images from Google Storage')
@@ -313,6 +317,9 @@ def main(args):
                               cloud_max=args.cloud)
 
             if result['status'] == 'SUCCESS':
+                if args.json:
+                    return json.dumps(result)
+
                 if args.latest > 0:
                     datelist = []
                     for i in range(0, result['total_returned']):
@@ -431,8 +438,12 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    with timer():
-        exit(*main(args))
+    if args.json:
+        print main(args)
+        sys.exit(0)
+    else:
+        with timer():
+            exit(*main(args))
 
 if __name__ == "__main__":
     try:

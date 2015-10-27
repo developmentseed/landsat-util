@@ -36,6 +36,9 @@ Search by latitude and longitude::
 
     $: landsat search --lat 38.9004204 --lon -77.0237117
 
+Search by latitude and longitude with pure json output::
+
+    $: landsat search --lat 38.9004204 --lon -77.0237117 --json
 
 Download
 ++++++++
