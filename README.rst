@@ -29,6 +29,11 @@ To run the documentation locally::
     $ cd docs
     $ make html
 
+Travis Tests
+++++++++++++
+
+To speed up testing on travis, we use a docker image. If you add new packages, to ensure that tests will pass on Travis, make sure to rebuild the docker image and push it to DockerHub with `travis` tag.
+
 Recently Added Features
 +++++++++++++++++++++++
 
