@@ -32,7 +32,7 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-            landsat.py search [-p --pathrow] [--lat] [--lon] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
+            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
 
             optional arguments:
                 -p, --pathrow       Paths and Rows in order separated by comma. Use quotes "001,003".
@@ -41,6 +41,8 @@ search, download, and process Landsat imagery.
                 --lat               Latitude
 
                 --lon               Longitude
+
+                --address           Street address
 
                 -l LIMIT, --limit LIMIT
                                     Search return results limit default is 10
@@ -184,6 +186,7 @@ def args_options():
                                'Example: path,row,path,row 001,001,190,204')
     parser_search.add_argument('--lat', type=float, help='The latitude')
     parser_search.add_argument('--lon', type=float, help='The longitude')
+    parser_search.add_argument('--address', type=str, help='The address')
     parser_search.add_argument('--json', action='store_true', help='Returns a bare JSON response')
 
     parser_download = subparsers.add_parser('download',
@@ -308,9 +311,14 @@ def main(args):
             except ValueError:
                 return ["The latitude and longitude values must be valid numbers", 1]
 
+            address = args.address
+            if address and (lat and lon):
+                return ["Cannot specify both address and latitude-longitude"]
+
             result = s.search(paths_rows=args.pathrow,
                               lat=lat,
                               lon=lon,
+                              address=address,
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
