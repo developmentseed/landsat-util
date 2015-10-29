@@ -19,11 +19,11 @@ deploy:
     branch: master
 
 after_deploy:
+  docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
   if [ "$TRAVIS_BRANCH" == "master" ]; then
     echo "Start Docker Hub Push"
     VER=$(python -c "import landsat; print landsat.__version__")
     docker build . -t developmentseed/landsat-util:$VER
-    docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
     docker push developmentseed/landsat-util:$VER
   fi
   docker push developmentseed/landsat-util:travis
