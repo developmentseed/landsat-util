@@ -43,9 +43,10 @@ To test with docker image locally run:
 Recently Added Features
 +++++++++++++++++++++++
 
-- Add longitude latitude search
-- Improve console output
-- Add more color options such as false color, true color, etc.
+- Improved pansharpening
+- Use BQA bands for cloud/snow coverage and use in color correction
+- Add support for different NDVI color maps (three included)
+- Add support for image clipping using the new `--clip` flag
 
 Change Log
 ++++++++++
