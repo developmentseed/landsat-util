@@ -3,6 +3,9 @@ sudo: required
 services:
   - docker
 
+before_script:
+- docker build -t 'developmentseed/landsat-util:travis' .
+
 script:
 - docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
 
