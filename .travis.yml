@@ -1,44 +1,15 @@
 language: python
 
-sudo: false
+sudo: required
 
-cache:
-  directories:
-    - ~/.cache/pip
-
-env:
-  global:
-    - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
-    - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
-
-virtualenv:
-  system_site_packages: true
-
-addons:
-  apt:
-    packages:
-    - libgdal1h
-    - gdal-bin
-    - libgdal-dev
-    - libatlas-dev
-    - libatlas-base-dev
-    - gfortran
-    - python-numpy
-    - python-scipy
+services:
+  - docker
 
 python:
 - '2.7'
 
-before_install:
-  - pip install -U pip
-  - pip install wheel
-
-install:
-  - "pip wheel -r requirements/dev.txt"
-  - "pip install -r requirements/dev.txt"
-
 script:
-- nosetests
+- docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
 
 deploy:
   provider: pypi
