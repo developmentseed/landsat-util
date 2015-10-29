@@ -9,6 +9,10 @@ before_script:
 script:
 - docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
 
+after_success:
+- docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+- docker push developmentseed/landsat-util:travis
+
 deploy:
   provider: pypi
   user: devseed
@@ -19,11 +23,11 @@ deploy:
     branch: master
 
 after_deploy:
-  docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
   if [ "$TRAVIS_BRANCH" == "master" ]; then
     echo "Start Docker Hub Push"
     VER=$(python -c "import landsat; print landsat.__version__")
+    docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
     docker build . -t developmentseed/landsat-util:$VER
     docker push developmentseed/landsat-util:$VER
   fi
-  docker push developmentseed/landsat-util:travis
+
