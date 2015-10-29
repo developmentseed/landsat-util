@@ -20,6 +20,8 @@ Commands
 
                     --lon               Longitude
 
+                    --address           Street address
+
                     -l LIMIT, --limit LIMIT
                                         Search return results limit default is 10
 
