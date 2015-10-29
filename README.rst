@@ -21,7 +21,7 @@ Landsat-util is a command line utility that makes it easy to search, download, a
 Docs
 +++++
 
-For full documentation visit: http://landsat-util.readthedocs.org/
+For full documentation visit: https://pythonhosted.org/landsat-util/
 
 To run the documentation locally::
 
@@ -32,14 +32,21 @@ To run the documentation locally::
 Travis Tests
 ++++++++++++
 
-To speed up testing on travis, we use a docker image. If you add new packages, to ensure that tests will pass on Travis, make sure to rebuild the docker image and push it to DockerHub with `travis` tag.
+To speed up testing on travis, we use a docker image.
+
+To test with docker image locally run:
+
+.. code::
+
+    $ docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
 
 Recently Added Features
 +++++++++++++++++++++++
 
-- Add longitude latitude search
-- Improve console output
-- Add more color options such as false color, true color, etc.
+- Improved pansharpening
+- Use BQA bands for cloud/snow coverage and use in color correction
+- Add support for different NDVI color maps (three included)
+- Add support for image clipping using the new `--clip` flag
 
 Change Log
 ++++++++++
