@@ -4,7 +4,7 @@ services:
   - docker
 
 before_script:
-- docker build -t 'developmentseed/landsat-util:travis' .
+- docker build --file="travis-dockerfile" -t "developmentseed/landsat-util:travis" .
 
 script:
 - docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
@@ -26,3 +26,4 @@ after_deploy:
     docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
     docker push developmentseed/landsat-util:$VER
   fi
+  docker push developmentseed/landsat-util:travis
