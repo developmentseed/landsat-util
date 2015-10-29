@@ -21,7 +21,7 @@ Landsat-util is a command line utility that makes it easy to search, download, a
 Docs
 +++++
 
-For full documentation visit: http://landsat-util.readthedocs.org/
+For full documentation visit: https://pythonhosted.org/landsat-util/
 
 To run the documentation locally::
 
