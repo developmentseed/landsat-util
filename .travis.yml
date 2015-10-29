@@ -1,12 +1,7 @@
-language: python
-
 sudo: required
 
 services:
   - docker
-
-python:
-- '2.7'
 
 script:
 - docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
