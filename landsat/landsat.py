@@ -32,7 +32,8 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
+            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
+                              [-h]
 
             optional arguments:
                 -p, --pathrow       Paths and Rows in order separated by comma. Use quotes "001,003".
@@ -88,7 +89,8 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -124,7 +126,8 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -v, --verbose       Show verbose output
 
@@ -297,7 +300,7 @@ def main(args):
                 if args.latest > 0:
                     args.limit = 25
                     end = datetime.now()
-                    start = end-relativedelta(days=+365)
+                    start = end - relativedelta(days=+365)
                     args.end = end.strftime("%Y-%m-%d")
                     args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
