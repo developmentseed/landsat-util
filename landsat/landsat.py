@@ -87,6 +87,8 @@ search, download, and process Landsat imagery.
 
                 --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
 
+                --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
+
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
                                     Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
@@ -380,7 +382,7 @@ def main(args):
                             path = path + '.tar.bz'
 
                         stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
-                                               bounds=bounds)
+                                               args.ndvigrey, bounds=bounds)
 
                         if args.upload:
                             try:
@@ -449,9 +451,10 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    if args.json:
-        print main(args)
-        sys.exit(0)
+    if args.subs == 'search':
+        if args.json:
+            print main(args)
+            sys.exit(0)
     else:
         with timer():
             exit(*main(args))
