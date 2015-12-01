@@ -210,6 +210,7 @@ def args_options():
                                  'image. Pansharpening requires larger memory')
     parser_download.add_argument('--ndvi', action='store_true',
                                  help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_download.add_argument('--ndvigrey', action='store_true', help='Create an NDVI map in grayscale (grey)')
     parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                  'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                  'separated by comma.' +
