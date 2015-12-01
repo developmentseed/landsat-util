@@ -88,6 +88,29 @@ class TestLandsat(unittest.TestCase):
         mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [11])
         self.assertEquals(output, ['Download Completed', 0])
 
+    @mock.patch('landsat.landsat.Downloader')
+    def test_download_correct_zip(self, mock_downloader):
+        """Download command should download zip if no bands are given"""
+        mock_downloader.download.return_value = True
+
+        args = ['download', 'LC80010092015051LGN00', '-d', self.mock_path]
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(download_dir=self.mock_path)
+        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [])
+        self.assertEquals(output, ['Download Completed', 0])
+
+    @mock.patch('landsat.landsat.process_image')
+    @mock.patch('landsat.landsat.Downloader.download')
+    def test_download_no_bands_with_process(self, mock_downloader, mock_process):
+        """Download command should not download zip if no bands are given but process flag is used"""
+        mock_downloader.return_value = {'LC80010092015051LGN00': 'aws'}
+        mock_process.return_value = 'image.TIF'
+
+        args = ['download', 'LC80010092015051LGN00', '-p', '-d', self.mock_path]
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(['LC80010092015051LGN00'], [4, 3, 2])
+        self.assertEquals(output, ["The output is stored at image.TIF", 0])
+
     def test_download_incorrect(self):
         """Test download command with incorrect input"""
         args = ['download', 'LT813600']

@@ -202,7 +202,7 @@ def args_options():
                                  help="Provide Full sceneID, e.g. LC81660392014196LGN00")
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
-                                 'the band from S3. If the band does not exist, an error is returned', default='432')
+                                 'the band from S3. If the band does not exist, an error is returned', default='')
     parser_download.add_argument('-d', '--dest', help='Destination path')
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
@@ -362,15 +362,22 @@ def main(args):
             d = Downloader(download_dir=args.dest)
             try:
                 bands = convert_to_integer_list(args.bands)
-                if args.pansharpen:
-                    bands.append(8)
 
-                if args.ndvi or args.ndvigrey:
-                    bands = [4, 5]
+                if args.process:
+                    if args.pansharpen:
+                        bands.append(8)
+
+                    if args.ndvi or args.ndvigrey:
+                        bands = [4, 5]
+
+                    if not args.bands:
+                        bands = [4, 3, 2]
 
                 downloaded = d.download(args.scenes, bands)
 
                 if args.process:
+                    if not args.bands:
+                        args.bands = '432'
                     force_unzip = True if args.force_unzip else False
                     for scene, src in downloaded.iteritems():
                         if args.dest:
