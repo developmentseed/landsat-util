@@ -371,6 +371,8 @@ def main(args):
                 downloaded = d.download(args.scenes, bands)
 
                 if args.process:
+                    if not args.bands:
+                        args.bands = '432'
                     force_unzip = True if args.force_unzip else False
                     for scene, src in downloaded.iteritems():
                         if args.dest:
