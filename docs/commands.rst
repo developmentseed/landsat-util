@@ -64,6 +64,8 @@ Commands
 
                     --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
 
+                    --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
+
                     --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                         and with longitude and latitude units of decimal degrees separated by comma.
                                         Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
