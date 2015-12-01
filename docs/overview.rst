@@ -53,7 +53,7 @@ Download images by their custom sceneID, which you get from landsat search::
 
     $: landsat download LC80090452014008LGN00
 
-Download only band 4, 3 and 2 for a particular sceneID::
+By default landsat-util downloads the full zip file from Google Storage unless you specify the bands or run an image processing right after download. For example to download only band 4, 3 and 2 for a particular sceneID run::
 
     $: landsat download LC80090452014008LGN00 --bands 432
 
