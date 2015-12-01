@@ -362,11 +362,16 @@ def main(args):
             d = Downloader(download_dir=args.dest)
             try:
                 bands = convert_to_integer_list(args.bands)
-                if args.pansharpen:
-                    bands.append(8)
 
-                if args.ndvi or args.ndvigrey:
-                    bands = [4, 5]
+                if args.process:
+                    if args.pansharpen:
+                        bands.append(8)
+
+                    if args.ndvi or args.ndvigrey:
+                        bands = [4, 5]
+
+                    if not args.bands:
+                        bands = [4, 3, 2]
 
                 downloaded = d.download(args.scenes, bands)
 
