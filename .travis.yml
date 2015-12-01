@@ -27,7 +27,9 @@ deploy:
     secure: WtawFW/999XYszmZfj1Qk82l00OSyP2JBVOOGCERrW1gVO7MYtYsgP31HKRSzNTCTHJNVDpdK4WZWY6zPQqC3l2UfWYYsvRn0hCoI8AJxE5VCUEg6Ccpe6fMJuhp1pq6Zy7yrfBSZcOB9aqSHLBJsunD2o3mNlTC8WV8vNK74ck=
   on:
     repo: developmentseed/landsat-util
-    branch: master
+    branch:
+      - master
+      - develop
 
 after_deploy:
   if [ "$TRAVIS_BRANCH" == "master" ]; then

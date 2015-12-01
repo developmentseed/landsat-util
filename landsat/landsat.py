@@ -32,7 +32,8 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
+            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
+                              [-h]
 
             optional arguments:
                 -p, --pathrow       Paths and Rows in order separated by comma. Use quotes "001,003".
@@ -86,9 +87,12 @@ search, download, and process Landsat imagery.
 
                 --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
 
+                --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
+
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -124,7 +128,8 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -v, --verbose       Show verbose output
 
@@ -205,6 +210,7 @@ def args_options():
                                  'image. Pansharpening requires larger memory')
     parser_download.add_argument('--ndvi', action='store_true',
                                  help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_download.add_argument('--ndvigrey', action='store_true', help='Create an NDVI map in grayscale (grey)')
     parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                  'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                  'separated by comma.' +
@@ -297,7 +303,7 @@ def main(args):
                 if args.latest > 0:
                     args.limit = 25
                     end = datetime.now()
-                    start = end-relativedelta(days=+365)
+                    start = end - relativedelta(days=+365)
                     args.end = end.strftime("%Y-%m-%d")
                     args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
@@ -359,7 +365,7 @@ def main(args):
                 if args.pansharpen:
                     bands.append(8)
 
-                if args.ndvi:
+                if args.ndvi or args.ndvigrey:
                     bands = [4, 5]
 
                 downloaded = d.download(args.scenes, bands)
@@ -377,7 +383,7 @@ def main(args):
                             path = path + '.tar.bz'
 
                         stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
-                                               bounds=bounds)
+                                               args.ndvigrey, bounds=bounds)
 
                         if args.upload:
                             try:
@@ -446,9 +452,10 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    if args.json:
-        print main(args)
-        sys.exit(0)
+    if args.subs == 'search':
+        if args.json:
+            print main(args)
+            sys.exit(0)
     else:
         with timer():
             exit(*main(args))
