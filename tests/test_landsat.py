@@ -88,6 +88,17 @@ class TestLandsat(unittest.TestCase):
         mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [11])
         self.assertEquals(output, ['Download Completed', 0])
 
+    @mock.patch('landsat.landsat.Downloader')
+    def test_download_correct_zip(self, mock_downloader):
+        """Download command should download zip if no bands are given"""
+        mock_downloader.download.return_value = True
+
+        args = ['download', 'LC80010092015051LGN00', '-d', self.mock_path]
+        output = landsat.main(self.parser.parse_args(args))
+        mock_downloader.assert_called_with(download_dir=self.mock_path)
+        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [])
+        self.assertEquals(output, ['Download Completed', 0])
+
     def test_download_incorrect(self):
         """Test download command with incorrect input"""
         args = ['download', 'LT813600']
