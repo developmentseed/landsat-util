@@ -5,7 +5,7 @@ from os.path import join, exists, getsize
 from homura import download as fetch
 import requests
 
-from utils import check_create_folder
+from utils import check_create_folder, url_builder
 from mixins import VerbosityMixin
 import settings
 
@@ -192,7 +192,7 @@ class Downloader(VerbosityMixin):
             (String) The URL to a google storage file
         """
         filename = sat['scene'] + '.tar.bz'
-        return "/".join([self.google, sat['sat'], sat['path'], sat['row'], filename])
+        return url_builder([self.google, sat['sat'], sat['path'], sat['row'], filename])
 
     def amazon_s3_url(self, sat, filename):
         """
@@ -210,7 +210,7 @@ class Downloader(VerbosityMixin):
         :returns:
             (String) The URL to a S3 file
         """
-        return "/".join([self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename])
+        return url_builder([self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename])
 
     def remote_file_exists(self, url):
         """ Checks whether the remote file exists.
