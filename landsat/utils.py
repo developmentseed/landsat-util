@@ -391,3 +391,17 @@ def adjust_bounding_box(bounds1, bounds2):
         new_bounds[3] = bounds1[3]
 
     return tuple(new_bounds)
+
+
+def remove_slash(value):
+
+    assert(isinstance(value, str))
+    return re.sub('(^\/|\/$)', '', value)
+
+
+def url_builder(segments):
+
+    # Only accept list or tuple
+    assert((isinstance(segments, list) or isinstance(segments, tuple)))
+    return "/".join([remove_slash(s) for s in segments])
+
