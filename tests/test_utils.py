@@ -175,6 +175,16 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
 
+    def test_url_builder(self):
+
+        self.assertEqual('http://example.com/segment1/segment2',
+                         utils.url_builder(['/http://example.com', 'segment1/', '/segment2']))
+
+        self.assertEqual('http://example.com/segment1/segment2',
+                         utils.url_builder(('/http://example.com', 'segment1/', '/segment2',)))
+
+        with self.assertRaises(AssertionError):
+            utils.url_builder('example.com')
 
 if __name__ == '__main__':
     unittest.main()
