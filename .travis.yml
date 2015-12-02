@@ -11,6 +11,7 @@ env:
 
 
 before_script:
+- pip install twine
 - docker build --file="travis-dockerfile" -t "developmentseed/landsat-util:travis" .
 
 script:
@@ -19,9 +20,6 @@ script:
 after_success:
 - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
 - docker push developmentseed/landsat-util:travis
-
-before_deploy:
-  - pip install twine
 
 deploy:
   provider: pypi
