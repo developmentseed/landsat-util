@@ -11,7 +11,7 @@ env:
 
 
 install:
-- pip install twine
+- pip install --user twine
 
 before_script:
 - docker build --file="travis-dockerfile" -t "developmentseed/landsat-util:travis" .
