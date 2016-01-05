@@ -3,6 +3,7 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+import sys
 import argparse
 import textwrap
 import json
@@ -31,7 +32,8 @@ search, download, and process Landsat imagery.
 
     Commands:
         Search:
-            landsat.py search [-p --pathrow] [--lat] [--lon] [-l LIMIT] [-s START] [-e END] [-c CLOUD] [-h]
+            landsat.py search [-p --pathrow] [--lat] [--lon] [--address] [-l LIMIT] [-s START] [-e END] [-c CLOUD]
+                              [-h]
 
             optional arguments:
                 -p, --pathrow       Paths and Rows in order separated by comma. Use quotes "001,003".
@@ -40,6 +42,8 @@ search, download, and process Landsat imagery.
                 --lat               Latitude
 
                 --lon               Longitude
+
+                --address           Street address
 
                 -l LIMIT, --limit LIMIT
                                     Search return results limit default is 10
@@ -55,6 +59,8 @@ search, download, and process Landsat imagery.
 
                 -c CLOUD, --cloud CLOUD
                                     Maximum cloud percentage. Default: 20 perct
+
+                --json              Returns a bare JSON response
 
                 -h, --help          Show this help message and exit
 
@@ -81,9 +87,12 @@ search, download, and process Landsat imagery.
 
                 --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
 
+                --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
+
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
 
@@ -119,7 +128,8 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    50.2682767372753
 
                 -v, --verbose       Show verbose output
 
@@ -181,6 +191,8 @@ def args_options():
                                'Example: path,row,path,row 001,001,190,204')
     parser_search.add_argument('--lat', type=float, help='The latitude')
     parser_search.add_argument('--lon', type=float, help='The longitude')
+    parser_search.add_argument('--address', type=str, help='The address')
+    parser_search.add_argument('--json', action='store_true', help='Returns a bare JSON response')
 
     parser_download = subparsers.add_parser('download',
                                             help='Download images from Google Storage')
@@ -190,7 +202,7 @@ def args_options():
                                  help="Provide Full sceneID, e.g. LC81660392014196LGN00")
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
-                                 'the band from S3. If the band does not exist, an error is returned', default='432')
+                                 'the band from S3. If the band does not exist, an error is returned', default='')
     parser_download.add_argument('-d', '--dest', help='Destination path')
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
@@ -198,6 +210,7 @@ def args_options():
                                  'image. Pansharpening requires larger memory')
     parser_download.add_argument('--ndvi', action='store_true',
                                  help='Whether to run the NDVI process. If used, bands parameter is disregarded')
+    parser_download.add_argument('--ndvigrey', action='store_true', help='Create an NDVI map in grayscale (grey)')
     parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                  'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                  'separated by comma.' +
@@ -290,7 +303,7 @@ def main(args):
                 if args.latest > 0:
                     args.limit = 25
                     end = datetime.now()
-                    start = end-relativedelta(days=+365)
+                    start = end - relativedelta(days=+365)
                     args.end = end.strftime("%Y-%m-%d")
                     args.start = start.strftime("%Y-%m-%d")
             except (TypeError, ValueError):
@@ -304,15 +317,23 @@ def main(args):
             except ValueError:
                 return ["The latitude and longitude values must be valid numbers", 1]
 
+            address = args.address
+            if address and (lat and lon):
+                return ["Cannot specify both address and latitude-longitude"]
+
             result = s.search(paths_rows=args.pathrow,
                               lat=lat,
                               lon=lon,
+                              address=address,
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
                               cloud_max=args.cloud)
 
             if result['status'] == 'SUCCESS':
+                if args.json:
+                    return json.dumps(result)
+
                 if args.latest > 0:
                     datelist = []
                     for i in range(0, result['total_returned']):
@@ -341,15 +362,22 @@ def main(args):
             d = Downloader(download_dir=args.dest)
             try:
                 bands = convert_to_integer_list(args.bands)
-                if args.pansharpen:
-                    bands.append(8)
 
-                if args.ndvi:
-                    bands = [4, 5]
+                if args.process:
+                    if args.pansharpen:
+                        bands.append(8)
+
+                    if args.ndvi or args.ndvigrey:
+                        bands = [4, 5]
+
+                    if not args.bands:
+                        bands = [4, 3, 2]
 
                 downloaded = d.download(args.scenes, bands)
 
                 if args.process:
+                    if not args.bands:
+                        args.bands = '432'
                     force_unzip = True if args.force_unzip else False
                     for scene, src in downloaded.iteritems():
                         if args.dest:
@@ -362,7 +390,7 @@ def main(args):
                             path = path + '.tar.bz'
 
                         stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
-                                               bounds=bounds)
+                                               args.ndvigrey, bounds=bounds)
 
                         if args.upload:
                             try:
@@ -431,8 +459,13 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    with timer():
-        exit(*main(args))
+    if args.subs == 'search':
+        if args.json:
+            print main(args)
+            sys.exit(0)
+    else:
+        with timer():
+            exit(*main(args))
 
 if __name__ == "__main__":
     try:

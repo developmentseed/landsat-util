@@ -7,6 +7,7 @@ import time
 import re
 from cStringIO import StringIO
 from datetime import datetime
+import geocoder
 
 from mixins import VerbosityMixin
 
@@ -280,6 +281,52 @@ def convert_to_integer_list(value):
         return s
 
 
+# Geocoding confidence scores, from https://github.com/DenisCarriere/geocoder/blob/master/docs/features/Confidence%20Score.md
+geocode_confidences = {
+    10: 0.25,
+    9: 0.5,
+    8: 1.,
+    7: 5.,
+    6: 7.5,
+    5: 10.,
+    4: 15.,
+    3: 20.,
+    2: 25.,
+    1: 99999.,
+    # 0: unable to locate at all
+}
+
+
+def geocode(address, required_precision_km=1.):
+    """ Identifies the coordinates of an address
+
+    :param address:
+        the address to be geocoded
+    :type value:
+        String
+    :param required_precision_km:
+        the maximum permissible geographic uncertainty for the geocoding
+    :type required_precision_km:
+        float
+
+    :returns:
+        dict
+
+    :example:
+        >>> geocode('1600 Pennsylvania Ave NW, Washington, DC 20500')
+        {'lat': 38.89767579999999, 'lon': -77.0364827}
+
+    """
+    geocoded = geocoder.google(address)
+    precision_km = geocode_confidences[geocoded.confidence]
+
+    if precision_km <= required_precision_km:
+        (lon, lat) = geocoded.geometry['coordinates']
+        return {'lat': lat, 'lon': lon}
+    else:
+        raise ValueError("Address could not be precisely located")
+
+
 def convert_to_float_list(value):
     """ Converts a comma separate string to a list
 
@@ -344,3 +391,17 @@ def adjust_bounding_box(bounds1, bounds2):
         new_bounds[3] = bounds1[3]
 
     return tuple(new_bounds)
+
+
+def remove_slash(value):
+
+    assert(isinstance(value, str))
+    return re.sub('(^\/|\/$)', '', value)
+
+
+def url_builder(segments):
+
+    # Only accept list or tuple
+    assert((isinstance(segments, list) or isinstance(segments, tuple)))
+    return "/".join([remove_slash(s) for s in segments])
+

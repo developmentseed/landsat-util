@@ -20,6 +20,8 @@ Commands
 
                     --lon               Longitude
 
+                    --address           Street address
+
                     -l LIMIT, --limit LIMIT
                                         Search return results limit default is 10
 
@@ -34,6 +36,8 @@ Commands
 
                     -c CLOUD, --cloud CLOUD
                                         Maximum cloud percentage. Default: 20 perct
+
+                    --json              Returns a bare JSON response
 
                     -h, --help          Show this help message and exit
 
@@ -59,6 +63,8 @@ Commands
                                         Pansharpening requires larger memory
 
                     --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+
+                    --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
                     --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                         and with longitude and latitude units of decimal degrees separated by comma.

@@ -88,8 +88,6 @@ class NDVI(BaseProcess):
 
             output.write_band(1, output_band)
 
-            cmap = {k: v[:3] for k, v in self.cmap.iteritems()}
-            output.write_colormap(1, cmap)
             self.output("Writing to file", normal=True, color='green', indent=1)
         return output_file
 
@@ -123,7 +121,7 @@ class NDVIWithManualColorMap(NDVI):
                                crs=self.dst_crs) as output:
 
                 for i in range(3):
-                    output.write_band(i+1, rgb_bands[i])
+                    output.write_band(i + 1, rgb_bands[i])
 
             self.output("Writing to file", normal=True, color='green', indent=1)
         return output_file

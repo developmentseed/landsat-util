@@ -5,4 +5,3 @@ ADD     landsat /usr/local/lib/python2.7/dist-packages/landsat
 ADD     bin/landsat /usr/local/bin/
 ADD     . /landsat
 RUN     cd /landsat && pip install -r requirements/docker.txt
-

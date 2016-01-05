@@ -105,6 +105,15 @@ class TestUtils(unittest.TestCase):
         r = utils.convert_to_integer_list('1,11,10,QA')
         self.assertEqual([1, 11, 10, 'QA'], r)
 
+    def test_geocode(self):
+        loc = utils.geocode('1600 Pennsylvania Ave NW, Washington, DC 20500')
+
+        self.assertEqual(round(loc['lat'], 3), 38.898)
+        self.assertEqual(round(loc['lon'], 3), -77.037)
+        self.assertRaises(ValueError, utils.geocode, 'Pennsylvania Ave NW, Washington, DC')
+        self.assertEqual({'lat': 38.8987352, 'lon': -77.0350902},
+                         utils.geocode('Pennsylvania Ave NW, Washington, DC', 10.))
+
     def test_convert_to_float_list(self):
         # correct input
         r = utils.convert_to_float_list('-1,2,-3')
@@ -165,6 +174,17 @@ class TestUtils(unittest.TestCase):
         target = (80, -20, 79, -19)
 
         self.assertEqual(utils.adjust_bounding_box(origin, target), origin)
+
+    def test_url_builder(self):
+
+        self.assertEqual('http://example.com/segment1/segment2',
+                         utils.url_builder(['/http://example.com', 'segment1/', '/segment2']))
+
+        self.assertEqual('http://example.com/segment1/segment2',
+                         utils.url_builder(('/http://example.com', 'segment1/', '/segment2',)))
+
+        with self.assertRaises(AssertionError):
+            utils.url_builder('example.com')
 
 if __name__ == '__main__':
     unittest.main()
