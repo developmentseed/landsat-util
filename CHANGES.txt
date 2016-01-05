@@ -1,6 +1,19 @@
 Changes
 =======
 
+0.10.0 (2016-01-05)
+------------------
+- add support for bare json output
+- faster travis tests
+- add street search
+- apply ndvigrey to process and download
+- fixes #127
+- update commands help file
+- apply pansharpen and ndvi only if -p is used
+- download zip if bands are not specified
+- better handle url joins to a fix error on Windows
+- other small bug fixes
+
 0.9.1 (2015-10-26)
 ------------------
 - Add missing package (polyline) to setup.py
