@@ -459,10 +459,8 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    if args.subs == 'search':
-        if args.json:
-            print main(args)
-            sys.exit(0)
+    if args.subs == 'search' and hasattr(args, 'json'):
+            print(main(args))
     else:
         with timer():
             exit(*main(args))
