@@ -468,7 +468,7 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    if args.subs == 'search' and hasattr(args, 'json'):
+    if args.subs == 'search' and (hasattr(args, 'json') or hasattr(args, 'geojson')):
             print(main(args))
     else:
         with timer():
