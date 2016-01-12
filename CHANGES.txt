@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.11.0 (2016-01-12)
+------------------
+- a hotfix for search command not showing outputs #137
+- add support for geojson outputs #68
+
 0.10.0 (2016-01-05)
 ------------------
 - add support for bare json output
