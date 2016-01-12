@@ -16,7 +16,7 @@ class Search(object):
         self.api_url = settings.API_URL
 
     def search(self, paths_rows=None, lat=None, lon=None, address=None, start_date=None, end_date=None, cloud_min=None,
-               cloud_max=None, limit=1):
+               cloud_max=None, limit=1, geojson=False):
         """
         The main method of Search class. It searches Development Seed's Landsat API.
 
@@ -56,6 +56,10 @@ class Search(object):
             integer specigying the maximum results return.
         :type limit:
             integer
+        :param geojson:
+            boolean specifying whether to return a geojson object
+        :type geojson:
+            boolean
 
         :returns:
             dict
@@ -98,18 +102,51 @@ class Search(object):
             result['message'] = r_dict['error']['message']
 
         elif 'meta' in r_dict:
-            result['status'] = u'SUCCESS'
-            result['total'] = r_dict['meta']['results']['total']
-            result['limit'] = r_dict['meta']['results']['limit']
-            result['total_returned'] = len(r_dict['results'])
-            result['results'] = [{'sceneID': i['sceneID'],
-                                  'sat_type': u'L8',
-                                  'path': three_digit(i['path']),
-                                  'row': three_digit(i['row']),
-                                  'thumbnail': i['browseURL'],
-                                  'date': i['acquisitionDate'],
-                                  'cloud': i['cloudCoverFull']}
-                                 for i in r_dict['results']]
+            if geojson:
+                result = {
+                    'type': 'FeatureCollection',
+                    'features': []
+                }
+                for r in r_dict['results']:
+                    feature = {
+                        'type': 'Feature',
+                        'properties': {
+                            'sceneID': r['sceneID'],
+                            'row': three_digit(r['row']),
+                            'path': three_digit(r['path']),
+                            'thumbnail': r['browseURL'],
+                            'date': r['acquisitionDate'],
+                            'cloud': r['cloudCoverFull']
+                        },
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': [
+                                [
+                                    [r['upperLeftCornerLongitude'], r['upperLeftCornerLatitude']],
+                                    [r['lowerLeftCornerLongitude'], r['lowerLeftCornerLatitude']],
+                                    [r['lowerRightCornerLongitude'], r['lowerRightCornerLatitude']],
+                                    [r['upperRightCornerLongitude'], r['upperRightCornerLatitude']],
+                                    [r['upperLeftCornerLongitude'], r['upperLeftCornerLatitude']]
+                                ]
+                            ]
+                        }
+                    }
+
+                    result['features'].append(feature)
+
+            else:
+                result['status'] = u'SUCCESS'
+                result['total'] = r_dict['meta']['results']['total']
+                result['limit'] = r_dict['meta']['results']['limit']
+                result['total_returned'] = len(r_dict['results'])
+                result['results'] = [{'sceneID': i['sceneID'],
+                                      'sat_type': u'L8',
+                                      'path': three_digit(i['path']),
+                                      'row': three_digit(i['row']),
+                                      'thumbnail': i['browseURL'],
+                                      'date': i['acquisitionDate'],
+                                      'cloud': i['cloudCoverFull']}
+                                     for i in r_dict['results']]
 
         return result
 

@@ -36,9 +36,13 @@ Search by latitude and longitude::
 
     $: landsat search --lat 38.9004204 --lon -77.0237117
 
-Search by latitude and longitude with pure json output::
+Search by latitude and longitude with pure json output (you should install geojsonio-cli first)::
 
-    $: landsat search --lat 38.9004204 --lon -77.0237117 --json
+    $: landsat search --lat 38.9004204 --lon -77.0237117 --geojson | geojosnio
+
+Show search output on geojsonio::
+
+    $: landsat search
 
 Download
 ++++++++

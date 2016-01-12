@@ -8,10 +8,13 @@ import unittest
 import subprocess
 import errno
 import shutil
-from os.path import join
 import mock
+from os.path import join
+from jsonschema import validate
+
 
 import landsat.landsat as landsat
+from tests import geojson_schema
 
 
 class TestLandsat(unittest.TestCase):
@@ -75,6 +78,16 @@ class TestLandsat(unittest.TestCase):
         output = landsat.main(self.parser.parse_args(args))
         j = json.loads(output)
 
+        self.assertEquals(type(j), dict)
+
+    def test_search_geojson_output(self):
+        """Test json output in search"""
+        args = ['search', '--latest', '10', '--geojson']
+
+        output = landsat.main(self.parser.parse_args(args))
+        j = json.loads(output)
+
+        self.assertIsNone(validate(j, geojson_schema))
         self.assertEquals(type(j), dict)
 
     @mock.patch('landsat.landsat.Downloader')
