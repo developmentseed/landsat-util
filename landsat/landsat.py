@@ -3,7 +3,6 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-import sys
 import argparse
 import textwrap
 import json
@@ -61,6 +60,8 @@ search, download, and process Landsat imagery.
                                     Maximum cloud percentage. Default: 20 perct
 
                 --json              Returns a bare JSON response
+
+                --geojson           Returns a geojson response
 
                 -h, --help          Show this help message and exit
 
@@ -193,6 +194,7 @@ def args_options():
     parser_search.add_argument('--lon', type=float, help='The longitude')
     parser_search.add_argument('--address', type=str, help='The address')
     parser_search.add_argument('--json', action='store_true', help='Returns a bare JSON response')
+    parser_search.add_argument('--geojson', action='store_true', help='Returns a geojson response')
 
     parser_download = subparsers.add_parser('download',
                                             help='Download images from Google Storage')
@@ -328,36 +330,43 @@ def main(args):
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
-                              cloud_max=args.cloud)
+                              cloud_max=args.cloud,
+                              geojson=args.geojson)
 
-            if result['status'] == 'SUCCESS':
-                if args.json:
-                    return json.dumps(result)
+            if 'status' in result:
 
-                if args.latest > 0:
-                    datelist = []
-                    for i in range(0, result['total_returned']):
-                        datelist.append((result['results'][i]['date'], result['results'][i]))
+                if result['status'] == 'SUCCESS':
+                    if args.json:
+                        return json.dumps(result)
 
-                    datelist.sort(key=lambda tup: tup[0], reverse=True)
-                    datelist = datelist[:args.latest]
+                    if args.latest > 0:
+                        datelist = []
+                        for i in range(0, result['total_returned']):
+                            datelist.append((result['results'][i]['date'], result['results'][i]))
 
-                    result['results'] = []
-                    for i in range(0, len(datelist)):
-                        result['results'].append(datelist[i][1])
-                        result['total_returned'] = len(datelist)
+                        datelist.sort(key=lambda tup: tup[0], reverse=True)
+                        datelist = datelist[:args.latest]
 
-                else:
-                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                        result['results'] = []
+                        for i in range(0, len(datelist)):
+                            result['results'].append(datelist[i][1])
+                            result['total_returned'] = len(datelist)
 
-                if result['total'] > 100:
-                    return ['Over 100 results. Please narrow your search', 1]
-                else:
-                    v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                return ['Search completed!']
+                    else:
+                        v.output('%s items were found' % result['total'], normal=True, arrow=True)
 
-            elif result['status'] == 'error':
-                return [result['message'], 1]
+                    if result['total'] > 100:
+                        return ['Over 100 results. Please narrow your search', 1]
+                    else:
+                        v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
+                    return ['Search completed!']
+
+                elif result['status'] == 'error':
+                    return [result['message'], 1]
+
+            if args.geojson:
+                return json.dumps(result)
+
         elif args.subs == 'download':
             d = Downloader(download_dir=args.dest)
             try:
