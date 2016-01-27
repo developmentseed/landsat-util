@@ -68,7 +68,7 @@ Commands
 
                     --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                         and with longitude and latitude units of decimal degrees separated by comma.
-                                        Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                        Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
                     -u --upload         Upload to S3 after the image processing completed
 
@@ -104,7 +104,7 @@ Commands
 
                     --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                         and with longitude and latitude units of decimal degrees separated by comma.
-                                        Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
+                                        Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
                     -v, --verbose       Show verbose output
 
