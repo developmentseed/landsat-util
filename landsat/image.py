@@ -37,7 +37,7 @@ class BoundsDoNotOverlap(Exception):
 
 class BaseProcess(VerbosityMixin):
     """
-    Image procssing class
+    Image processing class
 
     To initiate the following parameters must be passed:
 
