@@ -245,7 +245,7 @@ class Downloader(VerbosityMixin):
         return int(headers['content-length'])
 
     def scene_interpreter(self, scene):
-        """ Conver sceneID to rows, paths and dates.
+        """ Convert sceneID to rows, paths and dates.
 
         :param scene:
             The scene ID.
