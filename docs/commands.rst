@@ -129,7 +129,7 @@ Commands
     positional arguments:
       {search,download,process}
                             Landsat Utility
-        search              Search Landsat metdata
+        search              Search Landsat metadata
         download            Download images from Google Storage
         process             Process Landsat imagery
 

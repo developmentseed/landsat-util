@@ -170,7 +170,7 @@ def args_options():
 
     # Search Logic
     parser_search = subparsers.add_parser('search',
-                                          help='Search Landsat metdata')
+                                          help='Search Landsat metadata')
 
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
