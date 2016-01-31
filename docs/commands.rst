@@ -130,7 +130,7 @@ Commands
       {search,download,process}
                             Landsat Utility
         search              Search Landsat metadata
-        download            Download images from Google Storage
+        download            Download images from Google Storage or Amazon S3 if bands are provided
         process             Process Landsat imagery
 
     optional arguments:

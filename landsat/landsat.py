@@ -197,7 +197,7 @@ def args_options():
     parser_search.add_argument('--geojson', action='store_true', help='Returns a geojson response')
 
     parser_download = subparsers.add_parser('download',
-                                            help='Download images from Google Storage')
+                                            help='Download images from Google Storage or Amazon S3 if bands are provided')
     parser_download.add_argument('scenes',
                                  metavar='sceneID',
                                  nargs="+",

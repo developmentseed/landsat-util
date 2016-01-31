@@ -33,7 +33,7 @@ class Downloader(VerbosityMixin):
 
     def download(self, scenes, bands=None):
         """
-        Download scenese from Google Storage or Amazon S3 if bands are provided
+        Download scenes from Google Storage or Amazon S3 if bands are provided
 
         :param scenes:
             A list of scene IDs
