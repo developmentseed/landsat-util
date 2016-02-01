@@ -120,6 +120,10 @@ search, download, and process Landsat imagery.
                                     Default: Natural colors (432)
                                     Example --bands 432
 
+                --out_crs           Specify output coordinate system. Must be an integer EPSG code.
+                                    Default: 3857 (web mercator)
+                                    Example --out_crs 4326
+
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
 
@@ -170,7 +174,7 @@ def args_options():
 
     # Search Logic
     parser_search = subparsers.add_parser('search',
-                                          help='Search Landsat metdata')
+                                          help='Search Landsat metadata')
 
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
@@ -197,7 +201,7 @@ def args_options():
     parser_search.add_argument('--geojson', action='store_true', help='Returns a geojson response')
 
     parser_download = subparsers.add_parser('download',
-                                            help='Download images from Google Storage')
+                                            help='Download images from Google Storage or Amazon S3 if bands are provided')
     parser_download.add_argument('scenes',
                                  metavar='sceneID',
                                  nargs="+",
@@ -241,8 +245,10 @@ def args_options():
                                 'separated by comma.' +
                                 'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
                                 '50.2682767372753')
-    parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
+    parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432. '
                                 'Example: --bands 321', default='432')
+    parser_process.add_argument('--out_crs', help='Specify output coordinate system. Must be an integer EPSG code. Default: 3857 (web mercator).'
+                                'Example --out_crs 4326', default='3857')
     parser_process.add_argument('-v', '--verbose', action='store_true',
                                 help='Turn on verbosity')
     parser_process.add_argument('-u', '--upload', action='store_true',
@@ -286,7 +292,7 @@ def main(args):
         if args.subs == 'process':
             verbose = True if args.verbose else False
             force_unzip = True if args.force_unzip else False
-            stored = process_image(args.path, args.bands, verbose, args.pansharpen, args.ndvi, force_unzip,
+            stored = process_image(args.path, args.bands, args.out_crs, verbose, args.pansharpen, args.ndvi, force_unzip,
                                    args.ndvigrey, bounds)
 
             if args.upload:
@@ -398,7 +404,7 @@ def main(args):
                         if src == 'google':
                             path = path + '.tar.bz'
 
-                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
+                        stored = process_image(path, args.bands, args.out_crs, False, args.pansharpen, args.ndvi, force_unzip,
                                                args.ndvigrey, bounds=bounds)
 
                         if args.upload:
@@ -417,7 +423,7 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
 
 
-def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
+def process_image(path, bands=None, out_crs=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
                   ndvigrey=False, bounds=None):
     """ Handles constructing and image process.
 
@@ -429,6 +435,10 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
         List of bands that has to be processed. (optional)
     :type bands:
         List
+    :param out_crs:
+        The coordinate system of the output image. Must be an integer EPSG code. (optional)
+    :type out_crs:
+        String
     :param verbose:
         Sets the level of verbosity. Default is False.
     :type verbose:
@@ -444,15 +454,15 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
     try:
         bands = convert_to_integer_list(bands)
         if pansharpen:
-            p = PanSharpen(path, bands=bands, dst_path=settings.PROCESSED_IMAGE,
+            p = PanSharpen(path, bands=bands, out_crs=out_crs, dst_path=settings.PROCESSED_IMAGE,
                            verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         elif ndvigrey:
-            p = NDVI(path, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip, bounds=bounds)
+            p = NDVI(path, out_crs=out_crs, verbose=verbose, dst_path=settings.PROCESSED_IMAGE, force_unzip=force_unzip, bounds=bounds)
         elif ndvi:
-            p = NDVIWithManualColorMap(path, dst_path=settings.PROCESSED_IMAGE,
+            p = NDVIWithManualColorMap(path, out_crs=out_crs, dst_path=settings.PROCESSED_IMAGE,
                                        verbose=verbose, force_unzip=force_unzip, bounds=bounds)
         else:
-            p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
+            p = Simple(path, bands=bands, out_crs=out_crs, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
                        bounds=bounds)
 
     except IOError:

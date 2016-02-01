@@ -33,7 +33,7 @@ class Downloader(VerbosityMixin):
 
     def download(self, scenes, bands=None):
         """
-        Download scenese from Google Storage or Amazon S3 if bands are provided
+        Download scenes from Google Storage or Amazon S3 if bands are provided
 
         :param scenes:
             A list of scene IDs
@@ -245,7 +245,7 @@ class Downloader(VerbosityMixin):
         return int(headers['content-length'])
 
     def scene_interpreter(self, scene):
-        """ Conver sceneID to rows, paths and dates.
+        """ Convert sceneID to rows, paths and dates.
 
         :param scene:
             The scene ID.
