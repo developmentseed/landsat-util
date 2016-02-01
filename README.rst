@@ -47,6 +47,7 @@ Recently Added Features
 - Use BQA bands for cloud/snow coverage and use in color correction
 - Add support for different NDVI color maps (three included)
 - Add support for image clipping using the new `--clip` flag
+- Add alternative projections (currently only option is default web-mercator; EPSG: 3857)
 
 Change Log
 ++++++++++
