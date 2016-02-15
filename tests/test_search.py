@@ -4,8 +4,10 @@
 """Tests for search"""
 
 import unittest
+from jsonschema import validate
 
 from landsat.search import Search
+from tests import geojson_schema
 
 
 class TestSearchHelper(unittest.TestCase):
@@ -31,6 +33,17 @@ class TestSearchHelper(unittest.TestCase):
 
         result = self.s.search(lat=lat, lon=lon, start_date=start_date, end_date=end_date)
         self.assertEqual('2015-02-06', result['results'][0]['date'])
+
+    def test_search_with_geojson(self):
+
+        # TEST A REGULAR SEARCH WITH KNOWN RESULT for paths and rows
+        paths_rows = '003,003'
+        start_date = '2014-01-01'
+        end_date = '2014-06-01'
+
+        result = self.s.search(paths_rows=paths_rows, start_date=start_date, end_date=end_date, geojson=True)
+        self.assertIsNone(validate(result, geojson_schema))
+        self.assertEqual('2014-05-22', result['features'][0]['properties']['date'])
 
     def test_query_builder(self):
         # test wiht no input

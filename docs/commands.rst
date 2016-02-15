@@ -39,6 +39,8 @@ Commands
 
                     --json              Returns a bare JSON response
 
+                    --geojson             Returns a geojson response
+
                     -h, --help          Show this help message and exit
 
             Download:
