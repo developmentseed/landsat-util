@@ -32,7 +32,6 @@ deploy:
     repo: developmentseed/landsat-util
     branch:
       - master
-      - develop
 
 after_deploy:
   if [ "$TRAVIS_BRANCH" == "master" ]; then
