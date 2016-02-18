@@ -92,7 +92,7 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,
                                     50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
@@ -135,7 +135,7 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,
                                     50.2682767372753
 
                 -v, --verbose       Show verbose output
@@ -222,7 +222,7 @@ def args_options():
     parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                  'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                  'separated by comma.' +
-                                 'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                 'Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,' +
                                  '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
@@ -249,7 +249,7 @@ def args_options():
     parser_process.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                 'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                 'separated by comma.' +
-                                'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                'Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,' +
                                 '50.2682767372753')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432'
                                 'Example: --bands 321', default='432')
