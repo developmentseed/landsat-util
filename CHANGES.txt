@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.12.0 (2016-02-18)
+------------------
+- Add USGS download fallback closes #89
+
 0.11.0 (2016-01-12)
 ------------------
 - a hotfix for search command not showing outputs #137

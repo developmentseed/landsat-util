@@ -1,9 +1,11 @@
 # Landsat Util
 # License: CC0 1.0 Universal
+from xml.etree import ElementTree
 from os.path import join, exists, getsize
 
-from homura import download as fetch
 import requests
+from usgs import api, USGSError
+from homura import download as fetch
 
 from utils import check_create_folder, url_builder
 from mixins import VerbosityMixin
@@ -20,13 +22,20 @@ class IncorrectSceneId(Exception):
     pass
 
 
+class USGSInventoryAccessMissing(Exception):
+    """ Exception for when User does not have Inventory Service access """
+    pass
+
+
 class Downloader(VerbosityMixin):
     """ The downloader class """
 
-    def __init__(self, verbose=False, download_dir=None):
+    def __init__(self, verbose=False, download_dir=None, usgs_user=None, usgs_pass=None):
         self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
         self.google = settings.GOOGLE_STORAGE
         self.s3 = settings.S3_LANDSAT
+        self.usgs_user = usgs_user
+        self.usgs_pass = usgs_pass
 
         # Make sure download directory exist
         check_create_folder(self.download_dir)
@@ -110,7 +119,22 @@ class Downloader(VerbosityMixin):
             return self.fetch(url, path, filename)
 
         else:
-            raise RemoteFileDoesntExist('%s is not available on Google Storage' % filename)
+            # download from usgs if login information is provided
+            if self.usgs_user and self.usgs_pass:
+                try:
+                    api_key = api.login(self.usgs_user, self.usgs_pass)
+                except USGSError as e:
+                    error_tree = ElementTree.fromstring(str(e.message))
+                    error_text = error_tree.find("SOAP-ENV:Body/SOAP-ENV:Fault/faultstring", api.NAMESPACES).text
+                    raise USGSInventoryAccessMissing(error_text)
+
+                download_url = api.download('LANDSAT_8', 'EE', [scene], api_key=api_key)
+                if download_url:
+                    return self.fetch(download_url[0], path, filename)
+
+                raise RemoteFileDoesntExist('%s is not available on AWS S3, Google or USGS Earth Explorer' % filename)
+
+            raise RemoteFileDoesntExist('%s is not available on AWS S3 or Google Storage' % filename)
 
     def amazon_s3(self, scene, band, path):
         """
