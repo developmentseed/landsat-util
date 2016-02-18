@@ -8,10 +8,13 @@ import unittest
 import subprocess
 import errno
 import shutil
-from os.path import join
 import mock
+from os.path import join
+from jsonschema import validate
+
 
 import landsat.landsat as landsat
+from tests import geojson_schema
 
 
 class TestLandsat(unittest.TestCase):
@@ -77,6 +80,16 @@ class TestLandsat(unittest.TestCase):
 
         self.assertEquals(type(j), dict)
 
+    def test_search_geojson_output(self):
+        """Test json output in search"""
+        args = ['search', '--latest', '10', '--geojson']
+
+        output = landsat.main(self.parser.parse_args(args))
+        j = json.loads(output)
+
+        self.assertIsNone(validate(j, geojson_schema))
+        self.assertEquals(type(j), dict)
+
     @mock.patch('landsat.landsat.Downloader')
     def test_download_correct(self, mock_downloader):
         """Test download command with correct input"""
@@ -84,7 +97,7 @@ class TestLandsat(unittest.TestCase):
 
         args = ['download', 'LC80010092015051LGN00', '-b', '11,', '-d', self.mock_path]
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(download_dir=self.mock_path)
+        mock_downloader.assert_called_with(download_dir=self.mock_path, usgs_pass=None, usgs_user=None)
         mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [11])
         self.assertEquals(output, ['Download Completed', 0])
 
@@ -95,7 +108,7 @@ class TestLandsat(unittest.TestCase):
 
         args = ['download', 'LC80010092015051LGN00', '-d', self.mock_path]
         output = landsat.main(self.parser.parse_args(args))
-        mock_downloader.assert_called_with(download_dir=self.mock_path)
+        mock_downloader.assert_called_with(download_dir=self.mock_path, usgs_pass=None, usgs_user=None)
         mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [])
         self.assertEquals(output, ['Download Completed', 0])
 

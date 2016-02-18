@@ -2,8 +2,10 @@ requests==2.7.0
 python-dateutil>=2.4.2
 termcolor>=1.1.0
 rasterio>=0.27.0
-six==1.9.0
+six==1.8.0
 homura>=0.1.2
 boto>=2.38.0
 polyline==1.1
 geocoder>=1.5.1
+jsonschema==2.5.1
+git+git://github.com/developmentseed/usgs@develop

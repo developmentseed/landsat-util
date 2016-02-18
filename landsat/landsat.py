@@ -3,7 +3,6 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
-import sys
 import argparse
 import textwrap
 import json
@@ -16,7 +15,7 @@ from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
 
-from downloader import Downloader, IncorrectSceneId
+from downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
 from search import Search
 from uploader import Uploader
 from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
@@ -61,6 +60,8 @@ search, download, and process Landsat imagery.
                                     Maximum cloud percentage. Default: 20 perct
 
                 --json              Returns a bare JSON response
+
+                --geojson           Returns a geojson response
 
                 -h, --help          Show this help message and exit
 
@@ -107,6 +108,12 @@ search, download, and process Landsat imagery.
                 --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
 
                 --force-unzip       Force unzip tar file
+
+                --username          USGS Eros account Username (only works if the account has special
+                                    inventory access). Username and password as a fallback if the image
+                                    is not found on AWS S3 or Google Storage
+
+                --password          USGS Eros account Password
 
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
@@ -193,6 +200,7 @@ def args_options():
     parser_search.add_argument('--lon', type=float, help='The longitude')
     parser_search.add_argument('--address', type=str, help='The address')
     parser_search.add_argument('--json', action='store_true', help='Returns a bare JSON response')
+    parser_search.add_argument('--geojson', action='store_true', help='Returns a geojson response')
 
     parser_download = subparsers.add_parser('download',
                                             help='Download images from Google Storage')
@@ -218,6 +226,10 @@ def args_options():
                                  '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
+    parser_download.add_argument('--username', help='USGS Eros account Username (only works if the account has' +
+                                 ' special inventory access). Username and password as a fallback if the image' +
+                                 'is not found on AWS S3 or Google Storage')
+    parser_download.add_argument('--password', help='USGS Eros username, used as a fallback')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
                                  'Environment Variables)')
     parser_download.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
@@ -328,38 +340,45 @@ def main(args):
                               limit=args.limit,
                               start_date=args.start,
                               end_date=args.end,
-                              cloud_max=args.cloud)
+                              cloud_max=args.cloud,
+                              geojson=args.geojson)
 
-            if result['status'] == 'SUCCESS':
-                if args.json:
-                    return json.dumps(result)
+            if 'status' in result:
 
-                if args.latest > 0:
-                    datelist = []
-                    for i in range(0, result['total_returned']):
-                        datelist.append((result['results'][i]['date'], result['results'][i]))
+                if result['status'] == 'SUCCESS':
+                    if args.json:
+                        return json.dumps(result)
 
-                    datelist.sort(key=lambda tup: tup[0], reverse=True)
-                    datelist = datelist[:args.latest]
+                    if args.latest > 0:
+                        datelist = []
+                        for i in range(0, result['total_returned']):
+                            datelist.append((result['results'][i]['date'], result['results'][i]))
 
-                    result['results'] = []
-                    for i in range(0, len(datelist)):
-                        result['results'].append(datelist[i][1])
-                        result['total_returned'] = len(datelist)
+                        datelist.sort(key=lambda tup: tup[0], reverse=True)
+                        datelist = datelist[:args.latest]
 
-                else:
-                    v.output('%s items were found' % result['total'], normal=True, arrow=True)
+                        result['results'] = []
+                        for i in range(0, len(datelist)):
+                            result['results'].append(datelist[i][1])
+                            result['total_returned'] = len(datelist)
 
-                if result['total'] > 100:
-                    return ['Over 100 results. Please narrow your search', 1]
-                else:
-                    v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
-                return ['Search completed!']
+                    else:
+                        v.output('%s items were found' % result['total'], normal=True, arrow=True)
 
-            elif result['status'] == 'error':
-                return [result['message'], 1]
+                    if result['total'] > 100:
+                        return ['Over 100 results. Please narrow your search', 1]
+                    else:
+                        v.output(json.dumps(result, sort_keys=True, indent=4), normal=True, color='green')
+                    return ['Search completed!']
+
+                elif result['status'] == 'error':
+                    return [result['message'], 1]
+
+            if args.geojson:
+                return json.dumps(result)
+
         elif args.subs == 'download':
-            d = Downloader(download_dir=args.dest)
+            d = Downloader(download_dir=args.dest, usgs_user=args.username, usgs_pass=args.password)
             try:
                 bands = convert_to_integer_list(args.bands)
 
@@ -406,6 +425,8 @@ def main(args):
                     return ['Download Completed', 0]
             except IncorrectSceneId:
                 return ['The SceneID provided was incorrect', 1]
+            except (RemoteFileDoesntExist, USGSInventoryAccessMissing) as e:
+                return [e.message, 1]
 
 
 def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
@@ -459,10 +480,8 @@ def __main__():
     global parser
     parser = args_options()
     args = parser.parse_args()
-    if args.subs == 'search':
-        if args.json:
-            print main(args)
-            sys.exit(0)
+    if args.subs == 'search' and (hasattr(args, 'json') or hasattr(args, 'geojson')):
+            print(main(args))
     else:
         with timer():
             exit(*main(args))
