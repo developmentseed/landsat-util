@@ -109,6 +109,12 @@ search, download, and process Landsat imagery.
 
                 --force-unzip       Force unzip tar file
 
+                --username          USGS Eros account Username (only works if the account has special
+                                    inventory access). Username and password as a fallback if the image
+                                    is not found on AWS S3 or Google Storage
+
+                --password          USGS Eros account Password
+
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
 
@@ -220,7 +226,9 @@ def args_options():
                                  '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
-    parser_download.add_argument('--username', help='USGS Eros username, used as a fallback')
+    parser_download.add_argument('--username', help='USGS Eros account Username (only works if the account has' +
+                                 ' special inventory access). Username and password as a fallback if the image' +
+                                 'is not found on AWS S3 or Google Storage')
     parser_download.add_argument('--password', help='USGS Eros username, used as a fallback')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
                                  'Environment Variables)')
