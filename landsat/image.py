@@ -269,14 +269,18 @@ class BaseProcess(VerbosityMixin):
         return output_file
 
     def _color_correction(self, band, band_id, low, coverage):
-        self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
-        temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
-        cloud_divide = 65000 - coverage * 100
-        mask = numpy.logical_and(band < cloud_cut_low, band > 0)
-        temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
-        temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
-        return temp
+        if self.bands == [4, 5]:
+            return band
+        else:
+            self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
+            p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
+            temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
+            cloud_divide = 65000 - coverage * 100
+            mask = numpy.logical_and(band < cloud_cut_low, band > 0)
+            temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
+            temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low],
+                                                            out_range=(cloud_divide, 65535))
+            return temp
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
