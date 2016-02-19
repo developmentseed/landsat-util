@@ -392,23 +392,14 @@ def main(args):
                     if not args.bands:
                         bands = [4, 3, 2]
 
-                downloaded = d.download(args.scenes, bands)
+                files = d.download(args.scenes, bands)
 
                 if args.process:
                     if not args.bands:
                         args.bands = '432'
                     force_unzip = True if args.force_unzip else False
-                    for scene, src in downloaded.iteritems():
-                        if args.dest:
-                            path = join(args.dest, scene)
-                        else:
-                            path = join(settings.DOWNLOAD_DIR, scene)
-
-                        # Keep using Google if the image is before 2015
-                        if src == 'google':
-                            path = path + '.tar.bz'
-
-                        stored = process_image(path, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
+                    for f in files:
+                        stored = process_image(f, args.bands, False, args.pansharpen, args.ndvi, force_unzip,
                                                args.ndvigrey, bounds=bounds)
 
                         if args.upload:
@@ -467,8 +458,8 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
             p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
                        bounds=bounds)
 
-    except IOError:
-        exit("Zip file corrupted", 1)
+    except IOError as e:
+        exit(e.message, 1)
     except FileDoesNotExist as e:
         exit(e.message, 1)
 
