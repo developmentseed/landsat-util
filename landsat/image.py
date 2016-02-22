@@ -70,8 +70,8 @@ class BaseProcess(VerbosityMixin):
 
     def __init__(self, path, bands=None, out_crs=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
 
-        self.projection = {'init': u'epsg:'+str(out_crs)} if isinstance(out_crs, object) else {'init': 'epsg:3857'}
-        self.dst_crs = {'init': u'epsg:'+str(out_crs)} if isinstance(out_crs, object) else {'init': 'epsg:3857'}
+        self.projection = {'init': 'epsg:3857'} if isinstance(out_crs, type(None)) else {'init': u'epsg:'+str(out_crs)}
+        self.dst_crs = {'init': 'epsg:3857'} if isinstance(out_crs, type(None)) else {'init': u'epsg:'+str(out_crs)}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
         self.clipped = False
