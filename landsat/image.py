@@ -188,9 +188,10 @@ class BaseProcess(VerbosityMixin):
 
     def _check_if_zipped(self, path):
         """ Checks if the filename shows a tar/zip file """
+
         filename = get_file(path).split('.')
 
-        if filename[-1] in ['bz', 'bz2']:
+        if filename[-1] in ['bz', 'bz2', 'gz']:
             return True
 
         return False
@@ -264,7 +265,7 @@ class BaseProcess(VerbosityMixin):
             # Color Correction
             band = self._color_correction(band, self.bands[i], 0, coverage)
 
-            output.write_band(i+1, img_as_ubyte(band))
+            output.write_band(i + 1, img_as_ubyte(band))
 
             new_bands[i] = None
         self.output("Writing to file", normal=True, color='green', indent=1)
@@ -272,14 +273,18 @@ class BaseProcess(VerbosityMixin):
         return output_file
 
     def _color_correction(self, band, band_id, low, coverage):
-        self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-        p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
-        temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
-        cloud_divide = 65000 - coverage * 100
-        mask = numpy.logical_and(band < cloud_cut_low, band > 0)
-        temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
-        temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low], out_range=(cloud_divide, 65535))
-        return temp
+        if self.bands == [4, 5]:
+            return band
+        else:
+            self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
+            p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
+            temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
+            cloud_divide = 65000 - coverage * 100
+            mask = numpy.logical_and(band < cloud_cut_low, band > 0)
+            temp[mask] = rescale_intensity(band[mask], in_range=(p_low, cloud_cut_low), out_range=(256, cloud_divide))
+            temp[band >= cloud_cut_low] = rescale_intensity(band[band >= cloud_cut_low],
+                                                            out_range=(cloud_divide, 65535))
+            return temp
 
     def _percent_cut(self, color, low, high):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
@@ -496,7 +501,7 @@ class PanSharpen(BaseProcess):
             band = numpy.multiply(band, pan)
             band = self._color_correction(band, self.bands[i], 0, coverage)
 
-            output.write_band(i+1, img_as_ubyte(band))
+            output.write_band(i + 1, img_as_ubyte(band))
 
             new_bands[i] = None
 

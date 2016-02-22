@@ -15,7 +15,7 @@ from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
 
-from downloader import Downloader, IncorrectSceneId
+from downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
 from search import Search
 from uploader import Uploader
 from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
@@ -92,7 +92,7 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,
                                     50.2682767372753
 
                 -u --upload         Upload to S3 after the image processing completed
@@ -108,6 +108,12 @@ search, download, and process Landsat imagery.
                 --region            URL to S3 region e.g. s3-us-west-2.amazonaws.com
 
                 --force-unzip       Force unzip tar file
+
+                --username          USGS Eros account Username (only works if the account has special
+                                    inventory access). Username and password as a fallback if the image
+                                    is not found on AWS S3 or Google Storage
+
+                --password          USGS Eros account Password
 
         Process:
             landsat.py process path [-h] [-b --bands] [-p --pansharpen]
@@ -133,7 +139,7 @@ search, download, and process Landsat imagery.
 
                 --clip              Clip the image with the bounding box provided. Values must be in WGS84 datum,
                                     and with longitude and latitude units of decimal degrees separated by comma.
-                                    Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,
+                                    Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,
                                     50.2682767372753
 
                 -v, --verbose       Show verbose output
@@ -220,10 +226,14 @@ def args_options():
     parser_download.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                  'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                  'separated by comma.' +
-                                 'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                 'Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,' +
                                  '50.2682767372753')
     parser_download.add_argument('-u', '--upload', action='store_true',
                                  help='Upload to S3 after the image processing completed')
+    parser_download.add_argument('--username', help='USGS Eros account Username (only works if the account has' +
+                                 ' special inventory access). Username and password as a fallback if the image' +
+                                 'is not found on AWS S3 or Google Storage')
+    parser_download.add_argument('--password', help='USGS Eros username, used as a fallback')
     parser_download.add_argument('--key', help='Amazon S3 Access Key (You can also be set AWS_ACCESS_KEY_ID as '
                                  'Environment Variables)')
     parser_download.add_argument('--secret', help='Amazon S3 Secret Key (You can also be set AWS_SECRET_ACCESS_KEY '
@@ -243,7 +253,7 @@ def args_options():
     parser_process.add_argument('--clip', help='Clip the image with the bounding box provided. Values must be in ' +
                                 'WGS84 datum, and with longitude and latitude units of decimal degrees ' +
                                 'separated by comma.' +
-                                'Example: --clip -346.06658935546875,49.93531194616915,-345.4595947265625,' +
+                                'Example: --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,' +
                                 '50.2682767372753')
     parser_process.add_argument('-b', '--bands', help='specify band combinations. Default is 432. '
                                 'Example: --bands 321', default='432')
@@ -374,7 +384,7 @@ def main(args):
                 return json.dumps(result)
 
         elif args.subs == 'download':
-            d = Downloader(download_dir=args.dest)
+            d = Downloader(download_dir=args.dest, usgs_user=args.username, usgs_pass=args.password)
             try:
                 bands = convert_to_integer_list(args.bands)
 
@@ -421,6 +431,8 @@ def main(args):
                     return ['Download Completed', 0]
             except IncorrectSceneId:
                 return ['The SceneID provided was incorrect', 1]
+            except (RemoteFileDoesntExist, USGSInventoryAccessMissing) as e:
+                return [e.message, 1]
 
 
 def process_image(path, bands=None, out_crs=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,
