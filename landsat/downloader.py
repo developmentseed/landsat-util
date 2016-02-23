@@ -58,41 +58,48 @@ class Downloader(VerbosityMixin):
         """
 
         if isinstance(scenes, list):
-            output = {}
+            files = []
 
             for scene in scenes:
-                # If bands are provided the image is from 2015 or later use Amazon
-                self.scene_interpreter(scene)
 
-                if (bands and int(scene[12]) > 4):
-                    if isinstance(bands, list):
-                        # Create a folder to download the specific bands into
-                        path = check_create_folder(join(self.download_dir, scene))
-                        try:
-                            # Always grab MTL.txt if bands are specified
-                            if 'BQA' not in bands:
-                                bands.append('QA')
+                # for all scenes if bands provided, first check AWS, if the bands exist
+                # download them, otherwise use Google and then USGS.
+                try:
+                    # if bands are not provided, directly go to Goodle and then USGS
+                    if not isinstance(bands, list):
+                        raise RemoteFileDoesntExist
+                    files.append(self.amazon_s3(scene, bands))
 
-                            if 'MTL' not in bands:
-                                bands.append('MTL')
+                except RemoteFileDoesntExist:
+                    try:
+                        files.append(self.google_storage(scene, self.download_dir))
+                    except RemoteFileDoesntExist:
+                        files.append(self.usgs_eros(scene, self.download_dir))
 
-                            for band in bands:
-                                self.amazon_s3(scene, band, path)
-                                output[scene] = 'aws'
-                        except RemoteFileDoesntExist:
-                            self.google_storage(scene, self.download_dir)
-                            output[scene] = 'google'
-
-                    else:
-                        raise Exception('Expected bands list')
-                else:
-                    self.google_storage(scene, self.download_dir)
-                    output[scene] = 'google'
-
-            return output
+            return files
 
         else:
             raise Exception('Expected sceneIDs list')
+
+    def usgs_eros(self, scene, path):
+        """ Downloads the image from USGS """
+
+        # download from usgs if login information is provided
+        if self.usgs_user and self.usgs_pass:
+            try:
+                api_key = api.login(self.usgs_user, self.usgs_pass)
+            except USGSError as e:
+                error_tree = ElementTree.fromstring(str(e.message))
+                error_text = error_tree.find("SOAP-ENV:Body/SOAP-ENV:Fault/faultstring", api.NAMESPACES).text
+                raise USGSInventoryAccessMissing(error_text)
+
+            download_url = api.download('LANDSAT_8', 'EE', [scene], api_key=api_key)
+            if download_url:
+                self.output('Source: USGS EarthExplorer', normal=True, arrow=True)
+                return self.fetch(download_url[0], path)
+
+            raise RemoteFileDoesntExist('%s is not available on AWS S3, Google or USGS Earth Explorer' % scene)
+        raise RemoteFileDoesntExist('%s is not available on AWS S3 or Google Storage' % scene)
 
     def google_storage(self, scene, path):
         """
@@ -110,67 +117,49 @@ class Downloader(VerbosityMixin):
         :returns:
             Boolean
         """
-        sat = self.scene_interpreter(scene)
 
-        filename = scene + '.tar.bz'
+        sat = self.scene_interpreter(scene)
         url = self.google_storage_url(sat)
 
-        if self.remote_file_exists(url):
-            return self.fetch(url, path, filename)
+        self.remote_file_exists(url)
 
-        else:
-            # download from usgs if login information is provided
-            if self.usgs_user and self.usgs_pass:
-                try:
-                    api_key = api.login(self.usgs_user, self.usgs_pass)
-                except USGSError as e:
-                    error_tree = ElementTree.fromstring(str(e.message))
-                    error_text = error_tree.find("SOAP-ENV:Body/SOAP-ENV:Fault/faultstring", api.NAMESPACES).text
-                    raise USGSInventoryAccessMissing(error_text)
+        self.output('Source: Google Storge', normal=True, arrow=True)
+        return self.fetch(url, path)
 
-                download_url = api.download('LANDSAT_8', 'EE', [scene], api_key=api_key)
-                if download_url:
-                    return self.fetch(download_url[0], path, filename)
-
-                raise RemoteFileDoesntExist('%s is not available on AWS S3, Google or USGS Earth Explorer' % filename)
-
-            raise RemoteFileDoesntExist('%s is not available on AWS S3 or Google Storage' % filename)
-
-    def amazon_s3(self, scene, band, path):
+    def amazon_s3(self, scene, bands):
         """
         Amazon S3 downloader
-
-        :param scene:
-            The scene ID.
-        :type scene:
-            String
-        :param band:
-            The band number.
-        :type band:
-            String, Integer
-        :param path:
-            The directory path to where the image should be stored
-        :type path:
-            String
-
-        :returns:
-            Boolean
         """
+
         sat = self.scene_interpreter(scene)
 
-        if band != 'MTL':
-            filename = '%s_B%s.TIF' % (scene, band)
-        else:
-            filename = '%s_%s.txt' % (scene, band)
-        url = self.amazon_s3_url(sat, filename)
+        # Always grab MTL.txt and QA band if bands are specified
+        if 'BQA' not in bands:
+            bands.append('QA')
 
-        if self.remote_file_exists(url):
-            return self.fetch(url, path, filename)
+        if 'MTL' not in bands:
+            bands.append('MTL')
 
-        else:
-            raise RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
+        urls = []
 
-    def fetch(self, url, path, filename):
+        for band in bands:
+            # get url for the band
+            url = self.amazon_s3_url(sat, band)
+
+            # make sure it exist
+            self.remote_file_exists(url)
+            urls.append(url)
+
+        # create folder
+        path = check_create_folder(join(self.download_dir, scene))
+
+        self.output('Source: AWS S3', normal=True, arrow=True)
+        for url in urls:
+            self.fetch(url, path)
+
+        return path
+
+    def fetch(self, url, path):
         """ Downloads the given url.
 
         :param url:
@@ -190,18 +179,26 @@ class Downloader(VerbosityMixin):
             Boolean
         """
 
+        segments = url.split('/')
+        filename = segments[-1]
+
+        # remove query parameters from the filename
+        filename = filename.split('?')[0]
+
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
+        # print(join(path, filename))
+        # raise Exception
         if exists(join(path, filename)):
             size = getsize(join(path, filename))
             if size == self.get_remote_file_size(url):
                 self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
-                return False
 
-        fetch(url, path)
+        else:
+            fetch(url, path)
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
-        return True
+        return join(path, filename)
 
     def google_storage_url(self, sat):
         """
@@ -218,7 +215,7 @@ class Downloader(VerbosityMixin):
         filename = sat['scene'] + '.tar.bz'
         return url_builder([self.google, sat['sat'], sat['path'], sat['row'], filename])
 
-    def amazon_s3_url(self, sat, filename):
+    def amazon_s3_url(self, sat, band):
         """
         Return an amazon s3 url the contains the scene and band provided.
 
@@ -234,6 +231,11 @@ class Downloader(VerbosityMixin):
         :returns:
             (String) The URL to a S3 file
         """
+        if band != 'MTL':
+            filename = '%s_B%s.TIF' % (sat['scene'], band)
+        else:
+            filename = '%s_%s.txt' % (sat['scene'], band)
+
         return url_builder([self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename])
 
     def remote_file_exists(self, url):
@@ -249,10 +251,8 @@ class Downloader(VerbosityMixin):
         """
         status = requests.head(url).status_code
 
-        if status == 200:
-            return True
-        else:
-            return False
+        if status != 200:
+            raise RemoteFileDoesntExist
 
     def get_remote_file_size(self, url):
         """ Gets the filesize of a remote file.
