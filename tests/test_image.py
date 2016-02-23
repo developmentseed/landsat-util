@@ -124,3 +124,18 @@ class TestProcess(unittest.TestCase):
 
         p = NDVIWithManualColorMap(path=self.landsat_image, dst_path=self.temp_folder)
         self.assertTrue(exists(p.run()))
+
+    def test_simple_with_crs(self):
+
+        p = Simple(path=self.landsat_image, out_crs=4326, dst_path=self.temp_folder)
+        self.assertTrue(exists(p.run()))
+
+    def test_ndvi_with_crs(self):
+
+        p = NDVI(path=self.landsat_image, out_crs=4326, dst_path=self.temp_folder)
+        self.assertTrue(exists(p.run()))
+
+    def test_pansharpen_with_crs(self):
+        
+        p = PanSharpen(path=self.landsat_image, bands=[4, 3, 2], out_crs=4326, dst_path=self.temp_folder)
+        self.assertTrue(exists(p.run()))

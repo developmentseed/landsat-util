@@ -129,8 +129,8 @@ Commands
     positional arguments:
       {search,download,process}
                             Landsat Utility
-        search              Search Landsat metdata
-        download            Download images from Google Storage
+        search              Search Landsat metadata
+        download            Download images from Google Storage or Amazon S3 if bands are provided
         process             Process Landsat imagery
 
     optional arguments:

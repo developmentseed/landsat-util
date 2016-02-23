@@ -37,7 +37,7 @@ class BoundsDoNotOverlap(Exception):
 
 class BaseProcess(VerbosityMixin):
     """
-    Image procssing class
+    Image processing class
 
     To initiate the following parameters must be passed:
 
@@ -49,6 +49,10 @@ class BaseProcess(VerbosityMixin):
         The band sequence for the final image. Must be a python list. (optional)
     :type bands:
         List
+    :param out_crs:
+        The coordinate system of the output image. Must be an integer EPSG code. (optional)
+    :type out_crs:
+        String
     :param dst_path:
         Path to the folder where the image should be stored. (optional)
     :type dst_path:
@@ -64,10 +68,10 @@ class BaseProcess(VerbosityMixin):
 
     """
 
-    def __init__(self, path, bands=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
+    def __init__(self, path, bands=None, out_crs=None, dst_path=None, verbose=False, force_unzip=False, bounds=None):
 
-        self.projection = {'init': 'epsg:3857'}
-        self.dst_crs = {'init': u'epsg:3857'}
+        self.projection = {'init': 'epsg:3857'} if isinstance(out_crs, type(None)) else {'init': u'epsg:'+str(out_crs)}
+        self.dst_crs = {'init': 'epsg:3857'} if isinstance(out_crs, type(None)) else {'init': u'epsg:'+str(out_crs)}
         self.scene = get_file(path).split('.')[0]
         self.bands = bands if isinstance(bands, list) else [4, 3, 2]
         self.clipped = False
