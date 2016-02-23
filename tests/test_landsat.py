@@ -226,7 +226,7 @@ class TestLandsat(unittest.TestCase):
         output = landsat.main(self.parser.parse_args(args))
 
         mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432',
-                                        False, False, False, False, False, None)
+                                        None, False, False, False, False, False, None)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
     @mock.patch('landsat.landsat.process_image')
@@ -237,7 +237,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', 'path/to/folder/LC80010092015051LGN00', '--clip', '"-180,-180,0,0"']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432',
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', None,
                                         False, False, False, False, False, [-180.0, -180.0, 0.0, 0.0])
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
@@ -249,7 +249,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', '--pansharpen', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, True, False, False,
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', None, False, True, False, False,
                                         False, None)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
@@ -261,7 +261,7 @@ class TestLandsat(unittest.TestCase):
         args = ['process', '--ndvi', 'path/to/folder/LC80010092015051LGN00']
         output = landsat.main(self.parser.parse_args(args))
 
-        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', False, False, True, False,
+        mock_process.assert_called_with('path/to/folder/LC80010092015051LGN00', '432', None, False, False, True, False,
                                         False, None)
         self.assertEquals(output, ["The output is stored at image.TIF"])
 
