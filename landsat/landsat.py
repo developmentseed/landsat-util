@@ -6,8 +6,10 @@
 import argparse
 import textwrap
 import json
-from os.path import join
-from urllib2 import URLError
+try:
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import URLError
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -15,15 +17,15 @@ from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
 
-from downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
-from search import Search
-from uploader import Uploader
-from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
-from mixins import VerbosityMixin
-from image import Simple, PanSharpen, FileDoesNotExist
-from ndvi import NDVIWithManualColorMap, NDVI
-from __init__ import __version__
-import settings
+from .downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
+from .search import Search
+from .uploader import Uploader
+from .utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
+from .mixins import VerbosityMixin
+from .image import Simple, PanSharpen, FileDoesNotExist
+from .ndvi import NDVIWithManualColorMap, NDVI
+from . import __version__
+from . import settings
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -418,6 +420,9 @@ def main(args):
                 return ['The SceneID provided was incorrect', 1]
             except (RemoteFileDoesntExist, USGSInventoryAccessMissing) as e:
                 return [e.message, 1]
+
+        else:
+            return ["Must provide search|download|process", 1]
 
 
 def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False, force_unzip=None,

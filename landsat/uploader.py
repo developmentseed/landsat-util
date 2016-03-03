@@ -11,16 +11,20 @@ import sys
 import time
 import threading
 import contextlib
-import Queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 from multiprocessing import pool
 try:
     import cStringIO
     StringIO = cStringIO
 except ImportError:
-    import StringIO
+    from io import StringIO
+    #import StringIO        # FIXME: why original fall back to StringIO in Py2?
 
 from boto.s3.connection import S3Connection
-from mixins import VerbosityMixin
+from .mixins import VerbosityMixin
 
 STREAM = sys.stderr
 
@@ -134,7 +138,7 @@ def upload_part(upload_func, progress_cb, part_no, part_data):
                 f.seek(0)
                 cb = lambda c, t: progress_cb(part_no, c, t) if progress_cb else None
                 upload_func(f, part_no, cb=cb, num_cb=100)
-        except Exception, exc:
+        except Exception as exc:
             retries_left -= 1
             if retries_left > 0:
                 return _upload_part(retries_left=retries_left)
@@ -208,7 +212,7 @@ def upload(bucket, aws_access_key, aws_secret_key,
         raise Exception('s3 key ' + key + ' already exists')
 
     multipart_obj = b.initiate_multipart_upload(key)
-    err_queue = Queue.Queue()
+    err_queue = queue.Queue()
     lock = threading.Lock()
     upload.counter = 0
 
@@ -218,7 +222,7 @@ def upload(bucket, aws_access_key, aws_secret_key,
         def check_errors():
             try:
                 exc = err_queue.get(block=False)
-            except Queue.Empty:
+            except queue.Empty:
                 pass
             else:
                 raise exc
