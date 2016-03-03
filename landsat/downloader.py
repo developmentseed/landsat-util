@@ -7,9 +7,9 @@ import requests
 from usgs import api, USGSError
 from homura import download as fetch
 
-from utils import check_create_folder, url_builder
-from mixins import VerbosityMixin
-import settings
+from .utils import check_create_folder, url_builder
+from .mixins import VerbosityMixin
+from . import settings
 
 
 class RemoteFileDoesntExist(Exception):

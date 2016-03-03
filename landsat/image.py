@@ -20,9 +20,9 @@ from skimage.util import img_as_ubyte
 from skimage.exposure import rescale_intensity
 from polyline.codec import PolylineCodec
 
-from mixins import VerbosityMixin
-from utils import get_file, check_create_folder, exit, adjust_bounding_box
-from decorators import rasterio_decorator
+from .mixins import VerbosityMixin
+from .utils import get_file, check_create_folder, exit, adjust_bounding_box
+from .decorators import rasterio_decorator
 
 
 class FileDoesNotExist(Exception):
