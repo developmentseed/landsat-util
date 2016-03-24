@@ -35,7 +35,7 @@ setup(
     license='CCO',
     platforms='Posix; MacOS X; Windows',
     install_requires=[
-        'usgs2==0.2.0',
+        'usgs==0.1.9',
         'requests==2.7.0',
         'python-dateutil>=2.4.2',
         'numpy>=1.9.3',
