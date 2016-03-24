@@ -1,4 +1,9 @@
-sudo: required
+language: python
+sudo: false
+
+cache:
+  directories:
+    - ~/.cache/pip
 
 services:
 - docker
@@ -8,13 +13,22 @@ env:
   - secure: QsF7ignSAbH/WCyO6v9bw1exmCWDQR0DqmHkwJ5swc9N44OOOzbWGsaMSYB5y9h+d70fz4arbxQDhsk2KvX4Zd1/2YIMOrIsbgDYeegpkhVPgyQNPKmVqiX+Tb47t1C/TgkC7A07tiPpuefYcLNMZ8gzz7oKhh1UKapYftqzZ+g=
   - secure: HxjeKWSROBQYy9NuNkgQeaK1ubTF8vH5FcR8nUTSAYxxw/qOzKpqkiq4BcJSRcIwTbkvaBf4MshLGVOxPjMeyJFe06UD/6LvTUGS3bwdya+m0RFjHe5/3wzS8/MxLbTlvgzmuGLLKOsJjXCi9eQQchKfHv+QuhGxhYVLQpnbU9E=
   - secure: Zq0Z2UA2A7/ieXX8XoMweClJTp8hiVBxoQ1ylJYNd7qsRSk0QvZhn62db5/x48L9S1kELk0sG64q5Pf96/RPLpdjkBUAdEkS7qF+QOvRvAv2woNEHutjlMUvP6jwYGbug+AORg76btZ57OwMOi3aTkagQMMKnokfo7KGbffy0Jo=
+  - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
+  - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
+
+before_install:
+  - pip install -U pip
+  - pip install wheel
 
 
 install:
-- pip install --user twine
+  - pip wheel -r requirements-dev.txt
+  - pip install -r requirements-dev.txt
+  - pip install -e .
+
 
 script:
-- echo 'nothing'
+- nosetests
 
 deploy:
   provider: pypi
