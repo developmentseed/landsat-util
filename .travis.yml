@@ -1,19 +1,8 @@
 language: python
-sudo: false
 
 cache:
   directories:
     - ~/.cache/pip
-
-addons:
-  apt:
-    packages:
-    - libgdal1h
-    - gdal-bin
-    - libgdal-dev
-    - libatlas-dev
-    - libatlas-base-dev
-    - gfortran
 
 env:
   global:
@@ -24,17 +13,22 @@ env:
   - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
 
 before_install:
+  - sudo apt-get update -q
+  - sudo apt-get install --yes python-skimage python-numpy python-scipy libgdal1h gdal-bin libgdal-dev libatlas-dev libatlas-base-dev gfortran
   - pip install -U pip
   - pip install wheel
+  - sed -i 's/numpy.*//g' /landsat/requirements.txt
+  - sed -i 's/scipy.*//g' /landsat/requirements.txt
+  - sed -i 's/scikit-image.*//g' /landsat/requirements.txt
+  - sed -i 's/matplotlib.*//g' /landsat/requirements.txt
 
 
 install:
-  - pip install -r requirements-dev.txt
   - pip install -e .
 
 
 script:
-- nosetests
+- python setup.py test
 
 deploy:
   provider: pypi
