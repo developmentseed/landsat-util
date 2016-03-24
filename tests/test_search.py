@@ -34,6 +34,18 @@ class TestSearchHelper(unittest.TestCase):
         result = self.s.search(lat=lat, lon=lon, start_date=start_date, end_date=end_date)
         self.assertEqual('2015-02-06', result['results'][0]['date'])
 
+    def test_search_zero_lon(self):
+        # Make sure that zero coordinates are handled correctly
+        paths_rows = '003,003'
+        lon = 0.0
+        lat = 52.0
+        start_date = '2016-01-01'
+        end_date = '2016-01-10'
+
+        result = self.s.search(start_date=start_date, end_date=end_date,
+                               lon=0.0, lat=52.0)
+        self.assertEqual('2016-01-06', result['results'][0]['date'])
+
     def test_search_with_geojson(self):
 
         # TEST A REGULAR SEARCH WITH KNOWN RESULT for paths and rows
