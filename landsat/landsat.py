@@ -324,8 +324,15 @@ def main(args):
             s = Search()
 
             try:
-                lat = float(args.lat) if args.lat else None
-                lon = float(args.lon) if args.lon else None
+                if args.lat is not None:
+                    lat = float(args.lat)
+                else:
+                    lat = None
+
+                if args.lon is not None:
+                    lon = float(args.lon)
+                else:
+                    lon = None
             except ValueError:
                 return ["The latitude and longitude values must be valid numbers", 1]
 

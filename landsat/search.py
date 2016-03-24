@@ -218,7 +218,7 @@ class Search(object):
 
         if address:
             query.append(self.address_builder(address))
-        elif lat and lon:
+        elif (lat is not None) and (lon is not None):
             query.append(self.lat_lon_builder(lat, lon))
 
         if query:
