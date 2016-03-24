@@ -5,8 +5,15 @@ cache:
   directories:
     - ~/.cache/pip
 
-services:
-- docker
+addons:
+  apt:
+    packages:
+    - libgdal1h
+    - gdal-bin
+    - libgdal-dev
+    - libatlas-dev
+    - libatlas-base-dev
+    - gfortran
 
 env:
   global:
@@ -22,7 +29,6 @@ before_install:
 
 
 install:
-  - pip wheel -r requirements-dev.txt
   - pip install -r requirements-dev.txt
   - pip install -e .
 
