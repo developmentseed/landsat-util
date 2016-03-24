@@ -13,15 +13,8 @@ env:
 install:
 - pip install --user twine
 
-before_script:
-- docker build --file="travis-dockerfile" -t "developmentseed/landsat-util:travis" .
-
 script:
-- docker run --rm -it -v "$(pwd)":/test -w /test developmentseed/landsat-util:travis nosetests
-
-after_success:
-- docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-- docker push developmentseed/landsat-util:travis
+- echo 'nothing'
 
 deploy:
   provider: pypi
