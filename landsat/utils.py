@@ -1,15 +1,22 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+from __future__ import print_function
+
 import os
 import sys
 import time
 import re
-from cStringIO import StringIO
+
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
+
 from datetime import datetime
 import geocoder
 
-from mixins import VerbosityMixin
+from .mixins import VerbosityMixin
 
 
 class Capturing(list):
@@ -43,7 +50,7 @@ class timer(object):
 
     def __exit__(self, type, value, traceback):
         self.end = time.time()
-        print 'Time spent : {0:.2f} seconds'.format((self.end - self.start))
+        print('Time spent : {0:.2f} seconds'.format((self.end - self.start)))
 
 
 def exit(message, code=0):
