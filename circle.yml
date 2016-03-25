@@ -18,3 +18,12 @@ test:
   override:
     - python setup.py test
 
+
+deployment:
+  production:
+    branch: master
+    commands:
+      - echo "[pypi]" > ~/.pypirc
+      - echo "username:" $PYPI_USERNAME >> ~/.pypirc
+      - echo "password:" $PYPI_PASSWORD >> ~/.pypirc
+      - make release
