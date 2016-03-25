@@ -63,9 +63,6 @@ Running Tests
 
 ::
 
-    $: pip install -U requirements/dev.txt
-    $: nosetests
-
-Or::
-
+    $: pip install -r requirements-dev.txt
     $: python setup.py test
+
