@@ -1,12 +1,14 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+from __future__ import print_function, division, absolute_import
+
 import json
 import time
 import requests
 
-import settings
-from utils import three_digit, create_paired_list, geocode
+from . import settings
+from .utils import three_digit, create_paired_list, geocode
 
 
 class Search(object):

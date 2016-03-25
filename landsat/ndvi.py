@@ -1,11 +1,13 @@
+from __future__ import print_function, division, absolute_import
+
 from os.path import join
 
 import rasterio
 import numpy
 
-import settings
-from decorators import rasterio_decorator
-from image import BaseProcess
+from . import settings
+from .decorators import rasterio_decorator
+from .image import BaseProcess
 
 
 class NDVI(BaseProcess):
@@ -45,7 +47,7 @@ class NDVI(BaseProcess):
         except IOError:
             pass
 
-        self.cmap = {k: v[:4] for k, v in colormap.iteritems()}
+        self.cmap = {k: v[:4] for k, v in colormap.items()}
 
     @rasterio_decorator
     def run(self):
