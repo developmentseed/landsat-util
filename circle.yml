@@ -5,7 +5,7 @@ machine:
 dependencies:
   pre:
     - sudo apt-get -y update
-    - sudo apt-get install -f --yes libgdal-dev libatlas-base-dev gfortran libglib2.0-dev zlib1g-dev
+    - sudo apt-get install -f --yes libgdal-dev
     - pip install -r requirements-dev.txt
     - pip install -e .
 
