@@ -1,9 +1,6 @@
 machine:
   python:
-    version:
-      - 2.7.10
-      - 3.4.0
-      - 3.5.0
+    version: 2.7.10
 
 dependencies:
   pre:
