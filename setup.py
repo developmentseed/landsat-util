@@ -47,7 +47,8 @@ setup(
         'homura>=0.1.2',
         'boto>=2.38.0',
         'polyline==1.1',
-        'geocoder>=1.5.1'
+        'geocoder>=1.5.1',
+        'matplotlib==1.5.1'
     ],
     test_suite='nose.collector',
     tests_require=test_requirements
