@@ -35,7 +35,7 @@ setup(
     license='CCO',
     platforms='Posix; MacOS X; Windows',
     install_requires=[
-        'usgs2==0.2.0',
+        'usgs==0.1.9',
         'requests==2.7.0',
         'python-dateutil>=2.4.2',
         'numpy>=1.9.3',
@@ -47,7 +47,8 @@ setup(
         'homura>=0.1.2',
         'boto>=2.38.0',
         'polyline==1.1',
-        'geocoder>=1.5.1'
+        'geocoder>=1.5.1',
+        'matplotlib==1.5.1'
     ],
     test_suite='nose.collector',
     tests_require=test_requirements
