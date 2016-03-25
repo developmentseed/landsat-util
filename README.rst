@@ -1,8 +1,8 @@
 Landsat-util
 ===============
 
-.. image:: https://circleci.com/gh/developmentseed/landsat-util/tree/develop.svg?style=svg
-    :target: https://circleci.com/gh/developmentseed/landsat-util/tree/develop
+.. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=master
+    :target: https://travis-ci.org/developmentseed/landsat-util
 
 .. image:: https://badge.fury.io/py/landsat-util.svg
     :target: http://badge.fury.io/py/landsat-util

@@ -2,6 +2,8 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+from __future__ import print_function, division, absolute_import
+
 import sys
 import subprocess
 from termcolor import colored
@@ -108,6 +110,6 @@ class VerbosityMixin(object):
         if indent:
             msg = ('     ' * indent) + msg
 
-        sys.stdout.write(msg + '\n')
+        print(msg)
 
         return msg

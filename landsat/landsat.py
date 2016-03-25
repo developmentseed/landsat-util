@@ -3,11 +3,17 @@
 # Landsat Util
 # License: CC0 1.0 Universal
 
+from __future__ import print_function, division, absolute_import
+
 import argparse
 import textwrap
 import json
 from os.path import join
-from urllib2 import URLError
+
+try:
+    from urllib.request import URLError
+except ImportError:
+    from urllib2 import URLError
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -15,15 +21,15 @@ from dateutil.parser import parse
 import pycurl
 from boto.exception import NoAuthHandlerFound
 
-from downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
-from search import Search
-from uploader import Uploader
-from utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
-from mixins import VerbosityMixin
-from image import Simple, PanSharpen, FileDoesNotExist
-from ndvi import NDVIWithManualColorMap, NDVI
-from __init__ import __version__
-import settings
+from .downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
+from .search import Search
+from .uploader import Uploader
+from .utils import reformat_date, convert_to_integer_list, timer, exit, get_file, convert_to_float_list
+from .mixins import VerbosityMixin
+from .image import Simple, PanSharpen, FileDoesNotExist
+from .ndvi import NDVIWithManualColorMap, NDVI
+from .__init__ import __version__
+from . import settings
 
 
 DESCRIPTION = """Landsat-util is a command line utility that makes it easy to
@@ -465,10 +471,10 @@ def process_image(path, bands=None, verbose=False, pansharpen=False, ndvi=False,
             p = Simple(path, bands=bands, dst_path=settings.PROCESSED_IMAGE, verbose=verbose, force_unzip=force_unzip,
                        bounds=bounds)
 
-    except IOError as e:
-        exit(e.message, 1)
-    except FileDoesNotExist as e:
-        exit(e.message, 1)
+    except IOError as err:
+        exit(str(err), 1)
+    except FileDoesNotExist as err:
+        exit(str(err), 1)
 
     return p.run()
 
