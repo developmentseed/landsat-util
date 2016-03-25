@@ -3,7 +3,6 @@ sudo: false
 
 python:
   - '2.7'
-  - '3.4'
   - '3.5'
 
 cache:
@@ -37,7 +36,6 @@ before_install:
 
 
 install:
-  - pip wheel -r requirements-dev.txt
   - pip install -r requirements-dev.txt
   - pip install -e .
 
