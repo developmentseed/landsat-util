@@ -5,7 +5,7 @@ machine:
 dependencies:
   pre:
     - sudo apt-get -y update
-    - sudo apt-get install -f --yes git-core python-pip python-scipy libgdal-dev libatlas-base-dev gfortran libfreetype6-dev libglib2.0-dev zlib1g-dev python-pycurl
+    - sudo apt-get install -f --yes libgdal-dev libatlas-base-dev gfortran libfreetype6-dev libglib2.0-dev zlib1g-dev
     - pip install -r requirements-dev.txt
     - pip install -e .
 
