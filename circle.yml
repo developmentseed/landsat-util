@@ -6,17 +6,14 @@ dependencies:
   pre:
     - sudo apt-get -y update
     - sudo apt-get install -f --yes libgdal-dev
-    - pip install setuptools
+    - pip install setuptools>=20.3.1
     - pip install -U pip
     - pip install wheel
-    - pip install cython>=0.21
-    - pip install numpy==1.10.4
-    - pip install -r requirements-dev.txt
-    - pip install -e .
+    - pip install tox>=2.3.1
 
 test:
   override:
-    - python setup.py test
+    - tox
 
 
 deployment:
