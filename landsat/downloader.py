@@ -1,5 +1,8 @@
 # Landsat Util
 # License: CC0 1.0 Universal
+
+from __future__ import print_function, division, absolute_import
+
 from xml.etree import ElementTree
 from os.path import join, exists, getsize
 
@@ -7,9 +10,9 @@ import requests
 from usgs import api, USGSError
 from homura import download as fetch
 
-from utils import check_create_folder, url_builder
-from mixins import VerbosityMixin
-import settings
+from .utils import check_create_folder, url_builder
+from .mixins import VerbosityMixin
+from . import settings
 
 
 class RemoteFileDoesntExist(Exception):

@@ -8,6 +8,7 @@ import errno
 import shutil
 import unittest
 from tempfile import mkdtemp
+
 import rasterio
 from rasterio.warp import transform_bounds
 
@@ -62,7 +63,8 @@ class TestProcess(unittest.TestCase):
                    bounds=bounds)
         path = p.run()
         self.assertTrue(exists(path))
-        self.assertEqual(map('{0:.2f}'.format, get_bounds(path)), map('{0:.2f}'.format, bounds))
+        for val, exp in zip(get_bounds(path), bounds):
+            self.assertAlmostEqual(val, exp, 2)
 
     def test_simple_with_intersecting_bounds_clip(self):
 
@@ -72,7 +74,8 @@ class TestProcess(unittest.TestCase):
                    bounds=bounds)
         path = p.run()
         self.assertTrue(exists(path))
-        self.assertEqual(map('{0:.2f}'.format, get_bounds(path)), map('{0:.2f}'.format, expected_bounds))
+        for val, exp in zip(get_bounds(path), expected_bounds):
+            self.assertAlmostEqual(val, exp, 2)
 
     def test_simple_with_out_of_bounds_clip(self):
 
@@ -82,7 +85,8 @@ class TestProcess(unittest.TestCase):
                    bounds=bounds)
         path = p.run()
         self.assertTrue(exists(path))
-        self.assertEqual(map('{0:.2f}'.format, get_bounds(path)), map('{0:.2f}'.format, expected_bounds))
+        for val, exp in zip(get_bounds(path), expected_bounds):
+            self.assertAlmostEqual(val, exp, 2)
 
     def test_simple_with_zip_file(self):
 
@@ -104,7 +108,8 @@ class TestProcess(unittest.TestCase):
                        bounds=bounds)
         path = p.run()
         self.assertTrue(exists(path))
-        self.assertEqual(map('{0:.2f}'.format, get_bounds(path)), map('{0:.2f}'.format, bounds))
+        for val, exp in zip(get_bounds(path), bounds):
+            self.assertAlmostEqual(val, exp, 2)
 
     def test_ndvi(self):
 
@@ -118,7 +123,8 @@ class TestProcess(unittest.TestCase):
                  bounds=bounds)
         path = p.run()
         self.assertTrue(exists(path))
-        self.assertEqual(map('{0:.2f}'.format, get_bounds(path)), map('{0:.2f}'.format, bounds))
+        for val, exp in zip(get_bounds(path), bounds):
+            self.assertAlmostEqual(val, exp, 2)
 
     def test_ndvi_with_manual_colormap(self):
 

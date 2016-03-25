@@ -4,6 +4,7 @@
 """Tests for search"""
 
 import unittest
+
 from jsonschema import validate
 
 from landsat.search import Search

@@ -8,10 +8,10 @@ import unittest
 import subprocess
 import errno
 import shutil
-import mock
 from os.path import join
-from jsonschema import validate
 
+from jsonschema import validate
+import mock
 
 import landsat.landsat as landsat
 from tests import geojson_schema
