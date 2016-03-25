@@ -15,10 +15,11 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
-test_requirements = [
-    'nose>=1.3.7',
-    'mock>=1.3.0'
-]
+with open('requirements.txt') as fid:
+    INSTALL_REQUIRES = [l.strip() for l in fid.readlines() if l]
+
+with open('requirements-dev.txt') as fid:
+    TEST_REQUIRES = [l.strip() for l in fid.readlines() if l]
 
 setup(
     name='landsat-util',
@@ -34,22 +35,7 @@ setup(
     include_package_data=True,
     license='CCO',
     platforms='Posix; MacOS X; Windows',
-    install_requires=[
-        'usgs==0.1.9',
-        'requests==2.7.0',
-        'python-dateutil>=2.4.2',
-        'numpy>=1.9.3',
-        'termcolor>=1.1.0',
-        'rasterio>=0.26.0',
-        'six==1.8.0',
-        'scipy>=0.16.0',
-        'scikit-image>=0.11.3',
-        'homura>=0.1.2',
-        'boto>=2.38.0',
-        'polyline==1.1',
-        'geocoder>=1.5.1',
-        'matplotlib==1.5.1'
-    ],
+    install_requires=INSTALL_REQUIRES,
     test_suite='nose.collector',
-    tests_require=test_requirements
+    tests_require=TEST_REQUIRES
 )

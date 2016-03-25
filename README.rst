@@ -1,7 +1,7 @@
 Landsat-util
 ===============
 
-.. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=v0.5
+.. image:: https://travis-ci.org/developmentseed/landsat-util.svg?branch=master
     :target: https://travis-ci.org/developmentseed/landsat-util
 
 .. image:: https://badge.fury.io/py/landsat-util.svg
@@ -29,16 +29,6 @@ To run the documentation locally::
     $ cd docs
     $ make html
 
-Travis Tests
-++++++++++++
-
-To speed up testing on travis, we use a docker image.
-
-To test with docker image locally run:
-
-.. code::
-
-    $ docker run --rm -it -v "$(pwd)":/test developmentseed/landsat-util:travis nosetests
 
 Recently Added Features
 +++++++++++++++++++++++

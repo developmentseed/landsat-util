@@ -1,27 +1,47 @@
-sudo: required
+language: python
+sudo: false
 
-services:
-- docker
+python:
+  - '2.7'
+  - '3.5'
+
+cache:
+  directories:
+    - ~/.cache/pip
+
+addons:
+  apt:
+    packages:
+    - libgdal1h
+    - gdal-bin
+    - libproj-dev
+    - libhdf5-serial-dev
+    - libpng-dev
+    - libgdal-dev
+    - libatlas-dev
+    - libatlas-base-dev
+    - gfortran
 
 env:
   global:
   - secure: QsF7ignSAbH/WCyO6v9bw1exmCWDQR0DqmHkwJ5swc9N44OOOzbWGsaMSYB5y9h+d70fz4arbxQDhsk2KvX4Zd1/2YIMOrIsbgDYeegpkhVPgyQNPKmVqiX+Tb47t1C/TgkC7A07tiPpuefYcLNMZ8gzz7oKhh1UKapYftqzZ+g=
   - secure: HxjeKWSROBQYy9NuNkgQeaK1ubTF8vH5FcR8nUTSAYxxw/qOzKpqkiq4BcJSRcIwTbkvaBf4MshLGVOxPjMeyJFe06UD/6LvTUGS3bwdya+m0RFjHe5/3wzS8/MxLbTlvgzmuGLLKOsJjXCi9eQQchKfHv+QuhGxhYVLQpnbU9E=
   - secure: Zq0Z2UA2A7/ieXX8XoMweClJTp8hiVBxoQ1ylJYNd7qsRSk0QvZhn62db5/x48L9S1kELk0sG64q5Pf96/RPLpdjkBUAdEkS7qF+QOvRvAv2woNEHutjlMUvP6jwYGbug+AORg76btZ57OwMOi3aTkagQMMKnokfo7KGbffy0Jo=
+  - PIP_WHEEL_DIR=$HOME/.cache/pip/wheels
+  - PIP_FIND_LINKS=file://$HOME/.cache/pip/wheels
+
+before_install:
+  - pip install -U pip
+  - pip install wheel
 
 
 install:
-- pip install --user twine
+  - pip install -r requirements-dev.txt
+  - pip install -e .
 
-before_script:
-- docker build --file="travis-dockerfile" -t "developmentseed/landsat-util:travis" .
 
 script:
-- docker run --rm -it -v "$(pwd)":/test -w /test developmentseed/landsat-util:travis nosetests
-
-after_success:
-- docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-- docker push developmentseed/landsat-util:travis
+- python setup.py test
 
 deploy:
   provider: pypi
@@ -32,11 +52,3 @@ deploy:
     repo: developmentseed/landsat-util
     branch:
       - master
-
-after_deploy:
-  if [ "$TRAVIS_BRANCH" == "master" ]; then
-    echo "Start Docker Hub Push"
-    VER=$(docker run --rm -it -v "$(pwd)":/test -w /test developmentseed/landsat-util:travis python landsat/landsat.py --version | sed s/[^0-9\.]//g)
-    docker build . -t developmentseed/landsat-util:$VER
-    docker push developmentseed/landsat-util:$VER
-  fi
