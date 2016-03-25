@@ -10,6 +10,18 @@ cache:
   directories:
     - ~/.cache/pip
 
+addons:
+  apt:
+    packages:
+    - libgdal1h
+    - gdal-bin
+    - libproj-dev
+    - libhdf5-serial-dev
+    - libpng-dev
+    - libgdal-dev
+    - libatlas-dev
+    - libatlas-base-dev
+    - gfortran
 
 env:
   global:
