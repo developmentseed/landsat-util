@@ -77,7 +77,7 @@ search, download, and process Landsat imagery.
             positional arguments:
                 sceneID     Provide Full sceneIDs. You can add as many sceneIDs as you wish
 
-                Example: landast download LC81660392014196LGN00
+                Example: landsat download LC81660392014196LGN00
 
             optional arguments:
                 -b --bands          If you specify bands, landsat-util will try to download the band from S3.
