@@ -92,7 +92,7 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                 --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -135,7 +135,7 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                 --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -182,7 +182,7 @@ def args_options():
 
     # Search Logic
     parser_search = subparsers.add_parser('search',
-                                          help='Search Landsat metdata')
+                                          help='Search Landsat metadata')
 
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
