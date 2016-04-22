@@ -1,0 +1,114 @@
+Changes
+=======
+
+0.13.0 (2016-03-25)
+------------------
+- Python 3.5 support
+
+0.12.2 (2016-03-24)
+------------------
+- Fix for #167
+- Fix for #145
+
+0.12.0 (2016-02-18)
+------------------
+- Add USGS download fallback closes #89
+
+0.11.0 (2016-01-12)
+------------------
+- a hotfix for search command not showing outputs #137
+- add support for geojson outputs #68
+
+0.10.0 (2016-01-05)
+------------------
+- add support for bare json output
+- faster travis tests
+- add street search
+- apply ndvigrey to process and download
+- fixes #127
+- update commands help file
+- apply pansharpen and ndvi only if -p is used
+- download zip if bands are not specified
+- better handle url joins to a fix error on Windows
+- other small bug fixes
+
+0.9.1 (2015-10-26)
+------------------
+- Add missing package (polyline) to setup.py
+
+0.9.0 (2015-10-23)
+------------------
+- Improved pansharpening
+- Use BQA bands for cloud/snow coverage and use in color correction
+- Fix a bug in NDVI process where novalues appeared in the image
+- Add support for different NDVI color maps (three included)
+- Add support for image clipping using the new `--clip` flag
+- Multiple bug fixes
+
+0.8.0 (2015-09-22)
+------------------
+- Improved docs
+- Add `--ndvi` flag
+- Handle downloading new bands (10, 11, QA)
+- Improved color correction
+- Remove noise in pansharpened image processing
+
+0.7.0 (2015-05-29)
+------------------
+- New documentation
+- Deployed to readthedocs
+- Automate deployment to pypi
+- Adds docker support
+- skip unzipping if images already unzipped
+- add force-unzip flag
+- fix a bug where multiple downloads was not followed by multiple process #81
+- fix a bug where if scenes was downloaded from google instead of aws, process failed #84
+- download band 8 when pansharpen fixes #73
+
+0.6.3 (2015-04-29)
+------------------
+- adjust lower rescaling bound, closes #66 for now
+- better pixel math for #71
+- update destination transform calculation for reprojection in polar regions
+
+0.6.2 (2015-04-24)
+------------------
+- Updated readme
+- removed gamma correction from image process
+
+0.6.1 (2015-04-23)
+------------------
+- Updated tests that run faster
+- New upload command for uploading final image to S3
+- New command for continuous upload, process and upload
+- Updated image processing that produces better color correction
+- Other bug fixes
+
+0.5.1 (2015-04-08)
+------------------
+- Updated Rasterio and Requests versions
+
+0.5.0 (2015-03-10)
+------------------
+- Fewer dependencies
+- Uses wheel on OSX
+- New image processing algorithm which is faster and require less storage
+- Updated API
+- Includes longitude latitude search
+- Improved console output
+- Accepts bands combinations for processing images
+- Includes a new faster downloader
+- More comprehensive tests (96% coverage)
+- Added to pypi pip install landsat-util
+- Brew formula removed
+
+0.2.0 (2014-08-28)
+------------------
+- New image processing
+- New command-line syntax
+- A lot of other new additions
+- Lots of bug fixes
+
+0.1.0 (2014-08-08)
+------------------
+- Pre-release version.

@@ -5,6 +5,7 @@
 *.egg-info
 build/
 dist/
+*.eggs
 MANIFEST
 .DS_Store
 .idea
@@ -12,6 +13,12 @@ MANIFEST
 .coverage
 *flymake.py
 .settings
+.vagrant
+.pypirc
 metadata.csv
 txt.txt
+eva.py
+test.sh
+_build
+htmlcov
 

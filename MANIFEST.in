@@ -1,6 +1,12 @@
-include README.md
-include .gitignore
+include AUTHORS.txt
 include LICENSE
-recursive-include landsat/assests *.prj *.sbn *.sbx
-recursive-include landsat/assests *.shp *.xml *.shx *.html *.txt *.dbf
-recursive-include doc *.html
+include README.md
+include requirements.txt
+include requirements-dev.txt
+
+recursive-include tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+recursive-include docs *.rst conf.py Makefile make.bat
+recursive-include landsat/maps *.txt
