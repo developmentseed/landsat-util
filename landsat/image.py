@@ -288,24 +288,22 @@ class BaseProcess(VerbosityMixin):
         return numpy.percentile(color[numpy.logical_and(color > 0, color < 65535)], (low, high))
 
     def _calculate_cloud_ice_perc(self):
+        """ Return the percentage of pixels that are either cloud or snow with
+        high confidence (> 67%).
+        """
         self.output('Calculating cloud and snow coverage from QA band', normal=True, arrow=True)
-
         a = rasterio.open(join(self.scene_path, self._get_full_filename('QA'))).read_band(1)
 
-        count = 0
-        snow = [56320, 39936, 31744, 28590, 26656, 23552]
-        cloud = [61440, 59424, 57344, 53248, 28672, 36896, 36864, 24576]
+        cloud_high_conf = int('1100000000000000', 2)
+        snow_high_conf = int('0000110000000000', 2)
+        fill_pixels = int('0000000000000001', 2)
+        cloud_mask = numpy.bitwise_and(a, cloud_high_conf) == cloud_high_conf
+        snow_mask = numpy.bitwise_and(a, snow_high_conf) == snow_high_conf
+        fill_mask = numpy.bitwise_and(a, fill_pixels) == fill_pixels
 
-        for item in cloud:
-            count += numpy.extract(a == item, a).size
-
-        for item in snow:
-            count += numpy.extract(a == item, a).size * 2
-
-        perc = numpy.true_divide(count, a.size) * 100
-
+        perc = numpy.true_divide(numpy.sum(cloud_mask | snow_mask),
+                                 a.size - numpy.sum(fill_mask)) * 100.0
         self.output('cloud/snow coverage: %s' % round(perc, 2), indent=1, normal=True, color='green')
-
         return perc
 
     def _filename(self, name=None, suffix=None, prefix=None):
