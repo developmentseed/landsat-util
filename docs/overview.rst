@@ -19,7 +19,7 @@ Search returns information about all landsat tiles that match your criteria.  Th
 Search for landsat tiles in a given geographical region, using any of the following:
 
 - **Paths and rows**: If you know the paths and rows you want to search for.
-- **Latidue and Longitude**: If you need the latitude and longitude of the point you want to search for.
+- **Latitude and Longitude**: If you need the latitude and longitude of the point you want to search for.
 
 Additionally filter your search using the following parameters:
 
@@ -38,7 +38,7 @@ Search by latitude and longitude::
 
 Search by latitude and longitude with pure json output (you should install geojsonio-cli first)::
 
-    $: landsat search --lat 38.9004204 --lon -77.0237117 --geojson | geojosnio
+    $: landsat search --lat 38.9004204 --lon -77.0237117 --geojson | geojsonio
 
 Show search output on geojsonio::
 
@@ -88,7 +88,7 @@ Process *and* pansharpen a downloaded image::
 
     $: landsat process path/to/LC80090452014008LGN00.tar.bz --pansharpen
 
-Clip an image before processing (The coordinates shows below show Prague)::
+Clip an image before processing (The coordinates below show Prague)::
 
     $: landsat process path/to/LC81920252015157LGN00.tar.bz --pansharpen --clip=-346.06658935546875,49.93531194616915,-345.4595947265625,50.2682767372753
 
