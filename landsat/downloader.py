@@ -126,7 +126,7 @@ class Downloader(VerbosityMixin):
 
         self.remote_file_exists(url)
 
-        self.output('Source: Google Storge', normal=True, arrow=True)
+        self.output('Source: Google Storage', normal=True, arrow=True)
         return self.fetch(url, path)
 
     def amazon_s3(self, scene, bands):
