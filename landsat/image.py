@@ -75,7 +75,7 @@ class BaseProcess(VerbosityMixin):
         self.clipped = False
 
         # Landsat source path
-        self.src_path = path.replace(get_file(path), '')
+        self.src_path = os.path.split(path)[0]
 
         # Build destination folder if doesn't exist
         self.dst_path = dst_path if dst_path else os.getcwd()
@@ -469,7 +469,7 @@ class PanSharpen(BaseProcess):
             'width': image_data['shape'][1],
             'height': image_data['shape'][0],
             'count': 3,
-            'dtype': numpy.uint8,
+            'dtype': numpy.uint16,
             'nodata': 0,
             'transform': image_data['dst_transform'],
             'photometric': 'RGB',
@@ -495,9 +495,9 @@ class PanSharpen(BaseProcess):
         for i, band in enumerate(new_bands):
             # Color Correction
             band = numpy.multiply(band, pan)
-            band = self._color_correction(band, self.bands[i], 0, coverage)
-
-            output.write_band(i + 1, img_as_ubyte(band))
+            band = band.astype(numpy.uint16)
+            band = rescale_intensity(band, in_range=(band.min(), band.max()), out_range=(0, 65535))
+            output.write_band(i + 1, band)
 
             new_bands[i] = None
 
