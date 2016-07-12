@@ -92,7 +92,7 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                --ndvi              Calculates NDVI and produce a RGB GTiff.
 
                 --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
