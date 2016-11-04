@@ -275,7 +275,7 @@ class BaseProcess(VerbosityMixin):
             return band
         else:
             self.output("Color correcting band %s" % band_id, normal=True, color='green', indent=1)
-            p_low, cloud_cut_low = self._percent_cut(band, low, 100 - (coverage * 3 / 4))
+            p_low, cloud_cut_low = self._percent_cut(band, low, 100 - coverage)
             temp = numpy.zeros(numpy.shape(band), dtype=numpy.uint16)
             cloud_divide = 65000 - coverage * 100
             mask = numpy.logical_and(band < cloud_cut_low, band > 0)
