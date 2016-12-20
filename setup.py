@@ -5,8 +5,11 @@
 
 try:
     from setuptools import setup
+    setup_kwargs = {'entry_points': {'console_scripts':['landsat=landsat.landsat:__main__']}}
 except ImportError:
     from distutils.core import setup
+    setup_kwargs = {'scripts': ['bin/landsat']}
+    
 
 from landsat import __version__
 
@@ -29,7 +32,6 @@ setup(
     long_description=readme(),
     author='Development Seed',
     author_email='info@developmentseed.org',
-    scripts=['bin/landsat'],
     url='https://github.com/developmentseed/landsat-util',
     packages=['landsat'],
     include_package_data=True,
@@ -37,5 +39,6 @@ setup(
     platforms='Posix; MacOS X; Windows',
     install_requires=INSTALL_REQUIRES,
     test_suite='nose.collector',
-    tests_require=TEST_REQUIRES
+    tests_require=TEST_REQUIRES,
+    **setup_kwargs
 )
