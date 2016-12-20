@@ -25,7 +25,7 @@ class TestDownloader(unittest.TestCase):
         cls.scene_2 = 'LC82050312014229LGN00'
         cls.scene_s3 = 'LC80010092015051LGN00'
         cls.scene_s3_2 = 'LC82050312015136LGN00'
-        cls.scene_size = 59204484
+        cls.scene_size = 59239149
 
     @classmethod
     def tearDownClass(cls):
