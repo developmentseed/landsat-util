@@ -108,7 +108,7 @@ class TestDownloader(unittest.TestCase):
         url = self.d.google_storage_url(self.d.scene_interpreter(self.scene))
         size = self.d.get_remote_file_size(url)
 
-        self.assertEqual(self.scene_size, size)
+        self.assertAlmostEqual(self.scene_size, size)
 
     def test_google_storage_url(self):
         sat = self.d.scene_interpreter(self.scene)
