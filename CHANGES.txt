@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.13.1 (2017-01-10)
+------------------
+- Switch API endpoint to replacement
+- Proper treatment of `bands` flag
+- Other minor bug fixes
+
 0.13.0 (2016-03-25)
 ------------------
 - Python 3.5 support
