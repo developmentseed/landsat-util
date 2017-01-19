@@ -68,8 +68,7 @@ class TestLandsat(unittest.TestCase):
         """Test Path Row search with incorrect input"""
         args = ['search', '-p', 'what?']
 
-        self.assertEquals(landsat.main(self.parser.parse_args(args)),
-                          ['Check your request and try again', 1])
+        self.assertEquals(landsat.main(self.parser.parse_args(args)), None)
 
     def test_search_json_output(self):
         """Test json output in search"""
