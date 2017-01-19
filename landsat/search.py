@@ -138,8 +138,8 @@ class Search(object):
 
             else:
                 result['status'] = u'SUCCESS'
-                result['total'] = r_dict['meta']['results']['total']
-                result['limit'] = r_dict['meta']['results']['limit']
+                result['total'] = r_dict['meta']['found']
+                result['limit'] = r_dict['meta']['limit']
                 result['total_returned'] = len(r_dict['results'])
                 result['results'] = [{'sceneID': i['sceneID'],
                                       'sat_type': u'L8',
