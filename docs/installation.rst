@@ -54,7 +54,7 @@ Upgrade
 
     $: pip install -U landsat-util
 
-If you have installed previous version of landsat using brew, first run::
+If you have installed a previous version of landsat using brew, first run::
 
     $: brew uninstall landsat-util
 

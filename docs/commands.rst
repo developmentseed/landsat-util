@@ -64,7 +64,7 @@ Commands
                     --pansharpen        Whether to also pansharpen the processed image.
                                         Pansharpening requires larger memory
 
-                    --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                    --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                     --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -100,7 +100,7 @@ Commands
                     --pansharpen        Whether to also pansharpen the process image.
                                         Pansharpening requires larger memory
 
-                    --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                    --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                     --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -129,7 +129,7 @@ Commands
     positional arguments:
       {search,download,process}
                             Landsat Utility
-        search              Search Landsat metdata
+        search              Search Landsat metadata
         download            Download images from Google Storage
         process             Process Landsat imagery
 

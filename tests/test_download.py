@@ -25,7 +25,7 @@ class TestDownloader(unittest.TestCase):
         cls.scene_2 = 'LC82050312014229LGN00'
         cls.scene_s3 = 'LC80010092015051LGN00'
         cls.scene_s3_2 = 'LC82050312015136LGN00'
-        cls.scene_size = 59204484
+        cls.scene_size = 59239149
 
     @classmethod
     def tearDownClass(cls):
@@ -108,7 +108,7 @@ class TestDownloader(unittest.TestCase):
         url = self.d.google_storage_url(self.d.scene_interpreter(self.scene))
         size = self.d.get_remote_file_size(url)
 
-        self.assertEqual(self.scene_size, size)
+        self.assertAlmostEqual(self.scene_size, size)
 
     def test_google_storage_url(self):
         sat = self.d.scene_interpreter(self.scene)

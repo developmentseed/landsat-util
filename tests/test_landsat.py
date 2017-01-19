@@ -68,8 +68,7 @@ class TestLandsat(unittest.TestCase):
         """Test Path Row search with incorrect input"""
         args = ['search', '-p', 'what?']
 
-        self.assertEquals(landsat.main(self.parser.parse_args(args)),
-                          ['Check your request and try again', 1])
+        self.assertEquals(landsat.main(self.parser.parse_args(args)), None)
 
     def test_search_json_output(self):
         """Test json output in search"""
@@ -109,7 +108,7 @@ class TestLandsat(unittest.TestCase):
         args = ['download', 'LC80010092015051LGN00', '-d', self.mock_path]
         output = landsat.main(self.parser.parse_args(args))
         mock_downloader.assert_called_with(download_dir=self.mock_path, usgs_pass=None, usgs_user=None)
-        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], [])
+        mock_downloader.return_value.download.assert_called_with(['LC80010092015051LGN00'], None)
         self.assertEquals(output, ['Download Completed', 0])
 
     @mock.patch('landsat.landsat.process_image')

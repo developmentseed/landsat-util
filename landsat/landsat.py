@@ -77,7 +77,7 @@ search, download, and process Landsat imagery.
             positional arguments:
                 sceneID     Provide Full sceneIDs. You can add as many sceneIDs as you wish
 
-                Example: landast download LC81660392014196LGN00
+                Example: landsat download LC81660392014196LGN00
 
             optional arguments:
                 -b --bands          If you specify bands, landsat-util will try to download the band from S3.
@@ -92,7 +92,7 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the processed image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                 --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -135,7 +135,7 @@ search, download, and process Landsat imagery.
                 --pansharpen        Whether to also pansharpen the process image.
                                     Pansharpening requires larger memory
 
-                --ndvi              Calculates NDVI and produce a RGB GTiff with seperate colorbar.
+                --ndvi              Calculates NDVI and produce a RGB GTiff with separate colorbar.
 
                 --ndvigrey          Calculates NDVI and produce a greyscale GTiff.
 
@@ -182,7 +182,7 @@ def args_options():
 
     # Search Logic
     parser_search = subparsers.add_parser('search',
-                                          help='Search Landsat metdata')
+                                          help='Search Landsat metadata')
 
     # Global search options
     parser_search.add_argument('-l', '--limit', default=10, type=int,
@@ -216,7 +216,7 @@ def args_options():
                                  help="Provide Full sceneID, e.g. LC81660392014196LGN00")
 
     parser_download.add_argument('-b', '--bands', help='If you specify bands, landsat-util will try to download '
-                                 'the band from S3. If the band does not exist, an error is returned', default='')
+                                 'the band from S3. If the band does not exist, an error is returned', default=None)
     parser_download.add_argument('-d', '--dest', help='Destination path')
     parser_download.add_argument('-p', '--process', help='Process the image after download', action='store_true')
     parser_download.add_argument('--pansharpen', action='store_true',
