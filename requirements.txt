@@ -1,4 +1,4 @@
-usgs==0.1.9
+usgs>=0.2.0
 requests==2.7.0
 python-dateutil==2.5.1
 numpy==1.10.4
