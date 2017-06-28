@@ -96,12 +96,14 @@ class Downloader(VerbosityMixin):
                 error_text = error_tree.find("SOAP-ENV:Body/SOAP-ENV:Fault/faultstring", api.NAMESPACES).text
                 raise USGSInventoryAccessMissing(error_text)
 
-            download_url = api.download('LANDSAT_8', 'EE', [scene], api_key=api_key)
-            if download_url:
-                self.output('Source: USGS EarthExplorer', normal=True, arrow=True)
-                return self.fetch(download_url[0], path)
+            response = api.download('LANDSAT_8_C1', 'EE', [scene], api_key=api_key)
+            try:
+                download_url = response['data'][0]
+            except IndexError:
+                raise RemoteFileDoesntExist('%s is not available on AWS S3, Google or USGS Earth Explorer' % scene)
+            self.output('Source: USGS EarthExplorer', normal=True, arrow=True)
+            return self.fetch(download_url, path)
 
-            raise RemoteFileDoesntExist('%s is not available on AWS S3, Google or USGS Earth Explorer' % scene)
         raise RemoteFileDoesntExist('%s is not available on AWS S3 or Google Storage' % scene)
 
     def google_storage(self, scene, path):
