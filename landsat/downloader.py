@@ -92,7 +92,7 @@ class Downloader(VerbosityMixin):
         # download from usgs if login information is provided
         if self.usgs_user and self.usgs_pass:
             try:
-                print (self.usgs_user)
+                #print (self.usgs_user)
                 api_key = api.login(self.usgs_user, self.usgs_pass)
             except USGSError as e:
                 error_tree = ElementTree.fromstring(str(e.message))
@@ -128,7 +128,7 @@ class Downloader(VerbosityMixin):
 
         sat = self.scene_interpreter(scene)
         url = self.google_storage_url(sat)
-        print (url)
+        #print (url)
 
         self.remote_file_exists(url)
 
@@ -220,7 +220,7 @@ class Downloader(VerbosityMixin):
 
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
-        print(join(path, filename))
+        #print(join(path, filename))
         # raise Exception
         if exists(join(path, filename)):
             size = getsize(join(path, filename))
