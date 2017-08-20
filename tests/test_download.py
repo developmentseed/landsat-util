@@ -77,8 +77,8 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(test_paths, paths)
 
         # When passing product_id AWS should be triggered (Collection 1 data structure)
-        paths = self.d.download([self.scene4], bands=[11])
-        test_paths = [self.temp_folder + '/' + self.scene4 ]
+        paths = self.d.download([self.scene_s4], bands=[11])
+        test_paths = [self.temp_folder + '/' + self.scene_s4 ]
         self.assertEqual(test_paths, paths)
 
     @mock.patch('landsat.downloader.Downloader.google_storage')
