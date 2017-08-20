@@ -27,7 +27,7 @@ class TestDownloader(unittest.TestCase):
         cls.scene_s3 = 'LC80010092015051LGN00'
         cls.scene_s3_2 = 'LC82050312015136LGN00'
         #Collection 1 data: Product_ID
-        cls_scene_s4 = 'LC08_L1TP_139045_20170304_20170316_01_T1'
+        cls.scene_s4 = 'LC08_L1TP_139045_20170304_20170316_01_T1'
         cls.scene_size = 59239149
 
     @classmethod
