@@ -19,6 +19,11 @@ class RemoteFileDoesntExist(Exception):
     """ Exception to be used when the remote file does not exist """
     pass
 
+class Forbidden403(Exception):
+    """ Exception to be used when the user is forbidden to use the remote file 
+        This a appears when downloading some of the files from google storage bucket gcp-public-data-landsat
+    """
+    pass
 
 class IncorrectSceneId(Exception):
     """ Exception to be used when scene id is incorrect """
@@ -36,6 +41,7 @@ class Downloader(VerbosityMixin):
     def __init__(self, verbose=False, download_dir=None, usgs_user=None, usgs_pass=None):
         self.download_dir = download_dir if download_dir else settings.DOWNLOAD_DIR
         self.google = settings.GOOGLE_STORAGE
+        self.google_C1 = settings.GOOGLE_STORAGE_C1
         self.s3 = settings.S3_LANDSAT
         self.usgs_user = usgs_user
         self.usgs_pass = usgs_pass
@@ -74,10 +80,17 @@ class Downloader(VerbosityMixin):
                     if not isinstance(bands, list):
                         raise RemoteFileDoesntExist
                     files.append(self.amazon_s3(scene, bands))
+                    #files.append(self.google_storage_new(scene, bands))
 
                 except RemoteFileDoesntExist:
                     try:
-                        files.append(self.google_storage(scene, self.download_dir))
+                        if len(scene) == 40:
+                           #Collection 1 data: Product_id
+                           files.append(self.google_storage_new(scene, bands))
+                           #files.append(self.amazon_s3(scene, bands))
+                        else:
+                           #Pre-Collection data: scene_id len(scene = 21)
+                           files.append(self.google_storage(scene, self.download_dir))
                     except RemoteFileDoesntExist:
                         files.append(self.usgs_eros(scene, self.download_dir))
 
@@ -128,12 +141,126 @@ class Downloader(VerbosityMixin):
 
         sat = self.scene_interpreter(scene)
         url = self.google_storage_url(sat)
-        #print (url)
 
         self.remote_file_exists(url)
 
         self.output('Source: Google Storage', normal=True, arrow=True)
         return self.fetch(url, path)
+
+    def google_storage_new(self, scene, bands):
+        """
+        Google downloader new version for collection 1 data: No tar.bz file but a lot files
+        """
+
+        sat = self.scene_interpreter(scene)
+        # Always grab QA band if bands are specified
+        urls = []
+
+        if 'BQA' not in bands:
+            bands.append('QA')
+
+        if len(scene) == 40:
+           for band in bands:
+               url2 = self.google_storage_url_type_new(sat, band, ".TIF.ovr")
+               #print (url2)
+
+               # make sure it exist
+               self.remote_file_exists(url2)
+               urls.append(url2)
+
+               url3 = self.google_storage_url_type_new(sat, band, "_wrk.IMD")
+               #print (url3)
+
+               # make sure it exist
+               self.remote_file_exists(url3)
+               urls.append(url3)
+
+        # Always grab MTL.txt and ANG band if bands are specified
+        if 'MTL' not in bands:
+            bands.append('MTL')
+
+        if 'ANG' not in bands and len(scene) == 40:
+            bands.append('ANG')
+
+        for band in bands:
+            # get url for the band
+            url = self.google_storage_url_new(sat, band)
+            #print (url)
+
+            # make sure it exist
+            self.remote_file_exists(url)
+            urls.append(url)
+            
+
+        # create folder
+        path = check_create_folder(join(self.download_dir, scene))
+
+        self.output('Source: Google Storage S3', normal=True, arrow=True)
+        for url in urls:
+            self.fetch(url, path)
+
+        return path
+
+    def google_storage_url(self, sat):
+        """
+        Returns a google storage url the contains the scene provided.
+
+        :param sat:
+            Expects an object created by scene_interpreter method
+        :type sat:
+            dict
+
+        :returns:
+            (String) The URL to a google storage file
+        """
+        filename = sat['scene'] + '.tar.bz'
+        return url_builder([self.google, sat['sat'], sat['path'], sat['row'], filename])
+
+    def google_storage_url_new(self, sat, band):
+        """
+        Return an amazon s3 url the contains the scene and band provided.
+
+        :param sat:
+            Expects an object created by scene_interpreter method
+        :type sat:
+            dict
+        :param filename:
+            The filename that has to be downloaded from Amazon
+        :type filename:
+            String
+
+        :returns:
+            (String) The URL to a S3 file
+        """
+        if band != 'MTL' and band != 'ANG':
+            filename = '%s_B%s.TIF' % (sat['scene'], band)
+        else:
+            filename = '%s_%s.txt' % (sat['scene'], band)
+        return url_builder([self.google_C1, sat['path'], sat['row'], sat['scene'], filename])
+
+    def google_storage_url_type_new(self, sat, band, type):
+        """
+        Return an amazon s3 url the contains the scene and band provided.
+
+        :param sat:
+            Expects an object created by scene_interpreter method
+        :type sat:
+            dict
+        :type type
+            TIF.ovr of WRK.IMD
+        :param filename:
+            The filename that has to be downloaded from Amazon
+        :type filename:
+            String
+
+        :returns:
+            (String) The URL to a S3 file
+        """
+        file_extentie = '%s_B%s' + type
+        if band != 'MTL' and band != 'ANG':
+            filename = file_extentie % (sat['scene'], band)
+
+        return url_builder([self.google_C1, sat['path'], sat['row'], sat['scene'], filename])
 
     def amazon_s3(self, scene, bands):
         """
@@ -220,7 +347,6 @@ class Downloader(VerbosityMixin):
 
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
-        #print(join(path, filename))
         # raise Exception
         if exists(join(path, filename)):
             size = getsize(join(path, filename))
@@ -232,21 +358,6 @@ class Downloader(VerbosityMixin):
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
         return join(path, filename)
-
-    def google_storage_url(self, sat):
-        """
-        Returns a google storage url the contains the scene provided.
-
-        :param sat:
-            Expects an object created by scene_interpreter method
-        :type sat:
-            dict
-
-        :returns:
-            (String) The URL to a google storage file
-        """
-        filename = sat['scene'] + '.tar.bz'
-        return url_builder([self.google, sat['sat'], sat['path'], sat['row'], filename])
 
     def amazon_s3_url(self, sat, band):
         """
@@ -268,8 +379,6 @@ class Downloader(VerbosityMixin):
             filename = '%s_B%s.TIF' % (sat['scene'], band)
         else:
             filename = '%s_%s.txt' % (sat['scene'], band)
-        
-        #print (url_builder([self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename]))
         return url_builder([self.s3, sat['sat'], sat['path'], sat['row'], sat['scene'], filename])
 
     def amazon_s3_url_type(self, sat, band, type):
@@ -309,7 +418,10 @@ class Downloader(VerbosityMixin):
         """
         status = requests.head(url).status_code
 
-        if status != 200:
+        if status == 403:
+            print("403: " + url)
+        elif status != 200:
+            #print ("File doesnotexits: %s-%s" % (url,status))
             raise RemoteFileDoesntExist
 
     def get_remote_file_size(self, url):
