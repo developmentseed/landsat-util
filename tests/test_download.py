@@ -22,9 +22,12 @@ class TestDownloader(unittest.TestCase):
         cls.temp_folder = mkdtemp()
         cls.d = Downloader(download_dir=cls.temp_folder)
         cls.scene = 'LT81360082013127LGN01'
-        cls.scene_2 = 'LC82050312014229LGN00'
+        #cls.scene_2 = 'LC82050312014229LGN00'
+        cls.scene_2 = 'LC81990232017067LGN00'
         cls.scene_s3 = 'LC80010092015051LGN00'
         cls.scene_s3_2 = 'LC82050312015136LGN00'
+        #Collection 1 data: Product_ID
+        cls_scene_s4 = 'LC08_L1TP_139045_20170304_20170316_01_T1'
         cls.scene_size = 59239149
 
     @classmethod
@@ -71,6 +74,11 @@ class TestDownloader(unittest.TestCase):
         # When passing scene as string, google storage download should be triggered
         paths = self.d.download([self.scene], bands=4)
         test_paths = [self.temp_folder + '/' + self.scene + '.tar.bz']
+        self.assertEqual(test_paths, paths)
+
+        # When passing product_id AWS should be triggered (Collection 1 data structure)
+        paths = self.d.download([self.scene4], bands=[11])
+        test_paths = [self.temp_folder + '/' + self.scene4 ]
         self.assertEqual(test_paths, paths)
 
     @mock.patch('landsat.downloader.Downloader.google_storage')

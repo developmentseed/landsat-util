@@ -10,7 +10,7 @@ import requests
 from usgs import api, USGSError
 from homura import download as fetch
 
-from .utils import check_create_folder, url_builder
+from .utils import check_create_folder, url_builder, geocode
 from .mixins import VerbosityMixin
 from . import settings
 
@@ -65,6 +65,16 @@ class Downloader(VerbosityMixin):
         :returns:
             (List) includes downloaded scenes as key and source as value (aws or google)
         """
+        #loc = geocode('1600 Pennsylvania Ave NW, Washington, DC 20500')
+        #print("DOWNLOAD*********************************")
+        #print(loc)
+        #self.assertEqual(round(loc['lat'], 3), 38.898)
+        #self.assertEqual(round(loc['lon'], 3), -77.037)
+        #self.assertRaises(ValueError, utils.geocode, 'Pennsylvania Ave NW, Washington, DC')
+        #self.assertEqual({'lat': 38.8987709, 'lon': -77.0351295},
+        #                 utils.geocode('Pennsylvania Ave NW, Washington, DC', 10.))
+        #loc2 = geocode('Pennsylvania Ave NW, Washington, DC', 10.)
+        #print(loc2)
 
         if isinstance(scenes, list):
             files = []
@@ -354,6 +364,7 @@ class Downloader(VerbosityMixin):
                 self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
 
         else:
+            #TODO: Try catch for files that are forbidden: 
             fetch(url, path)
         self.output('stored at %s' % path, normal=True, color='green', indent=1)
 
