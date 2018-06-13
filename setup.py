@@ -38,7 +38,6 @@ setup(
     license='CCO',
     platforms='Posix; MacOS X; Windows',
     install_requires=INSTALL_REQUIRES,
-    test_suite='nose.collector',
     tests_require=TEST_REQUIRES,
     **setup_kwargs
 )
