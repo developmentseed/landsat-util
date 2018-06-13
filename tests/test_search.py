@@ -75,7 +75,7 @@ class TestSearchHelper(unittest.TestCase):
         self.assertRaises(ValueError, self.s.query_builder, paths_rows='003,004,010')
 
         # full example
-        expected_string = ('acquisitionDate:[2014-01-01+TO+2014-11-12]+AND+cloudCoverFull:[10+TO+28]+AND+upperLeftCo'
+        expected_string = ('acquisitionDate:[2014-01-01+TO+2014-11-12]+AND+cloud_coverage:[10+TO+28]+AND+upperLeftCo'
                            'rnerLatitude:[23+TO+1000]+AND+lowerRightCornerLatitude:[-1000+TO+23]+AND+lowerLeftCorner'
                            'Longitude:[-1000+TO+21]+AND+upperRightCornerLongitude:[21+TO+1000]+AND+((path:003+AND+ro'
                            'w:004))')
@@ -99,19 +99,19 @@ class TestSearchHelper(unittest.TestCase):
     def test_cloud_cover_prct_range_builder(self):
         # no input
         string = self.s.cloud_cover_prct_range_builder()
-        self.assertEqual('cloudCoverFull:[0+TO+100]', string)
+        self.assertEqual('cloud_coverage:[0+TO+100]', string)
 
         # just min
         string = self.s.cloud_cover_prct_range_builder(3)
-        self.assertEqual('cloudCoverFull:[3+TO+100]', string)
+        self.assertEqual('cloud_coverage:[3+TO+100]', string)
 
         # just max
         string = self.s.cloud_cover_prct_range_builder(max=30)
-        self.assertEqual('cloudCoverFull:[0+TO+30]', string)
+        self.assertEqual('cloud_coverage:[0+TO+30]', string)
 
         # both inputs
         string = self.s.cloud_cover_prct_range_builder(7, 10)
-        self.assertEqual('cloudCoverFull:[7+TO+10]', string)
+        self.assertEqual('cloud_coverage:[7+TO+10]', string)
 
     def test_date_range_builder(self):
         string = self.s.date_range_builder('2014-01-01', '2015-01-01')

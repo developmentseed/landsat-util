@@ -118,7 +118,7 @@ class Search(object):
                             'path': three_digit(r['path']),
                             'thumbnail': r['browseURL'],
                             'date': r['acquisitionDate'],
-                            'cloud': r['cloudCoverFull']
+                            'cloud': r['cloud_coverage']
                         },
                         'geometry': {
                             'type': 'Polygon',
@@ -147,7 +147,7 @@ class Search(object):
                                       'row': three_digit(i['row']),
                                       'thumbnail': i['browseURL'],
                                       'date': i['acquisitionDate'],
-                                      'cloud': i['cloudCoverFull']}
+                                      'cloud': i['cloud_coverage']}
                                      for i in r_dict['results']]
 
         return result
@@ -288,7 +288,7 @@ class Search(object):
         :returns:
             String
         """
-        return 'cloudCoverFull:[%s+TO+%s]' % (min, max)
+        return 'cloud_coverage:[%s+TO+%s]' % (min, max)
 
     def address_builder(self, address):
         """ Builds lat and lon query from a geocoded address.
