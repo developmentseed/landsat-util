@@ -18,7 +18,6 @@ except ImportError:
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
-import pycurl
 from boto.exception import NoAuthHandlerFound
 
 from .downloader import Downloader, IncorrectSceneId, RemoteFileDoesntExist, USGSInventoryAccessMissing
@@ -493,5 +492,5 @@ def __main__():
 if __name__ == "__main__":
     try:
         __main__()
-    except (KeyboardInterrupt, pycurl.error):
+    except KeyboardInterrupt:
         exit('Received Ctrl + C... Exiting! Bye.', 1)
