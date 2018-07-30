@@ -1,9 +1,21 @@
-FROM    ubuntu:14.04
-RUN     apt-get -y update
-RUN     apt-get install --yes curl libgdal-dev python3-dev build-essential
-ADD     . /landsat
-RUN     curl -O https://bootstrap.pypa.io/get-pip.py
-RUN     python3 get-pip.py
-RUN     pip3 install numpy
-RUN     cd /landsat && pip install -r requirements-dev.txt
-RUN     cd /landsat && pip install -e .
+FROM developmentseed/geolambda:full
+
+#RUN \
+#    yum install -y openssl-devel
+
+ENV \
+    PYCURL_SSL_LIBRARY=nss
+
+WORKDIR /build
+
+COPY requirements*txt /build/
+
+RUN \
+    pip-3.6 install -r requirements.txt; \
+    pip-3.6 install -r requirements-dev.txt;
+
+COPY . /build/
+
+RUN pip-3.6 install .
+
+WORKDIR /home/geolambda
