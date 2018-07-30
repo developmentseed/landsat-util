@@ -11,6 +11,14 @@ services:
     volumes:
       - '.:/home/geolambda/work'
 
+  landsat:
+    image: 'developmentseed/landsat-util:latest'
+    working_dir: /home/geolambda
+    entrypoint: landsat
+    env_file: .env
+    volumes:
+      - '.:/home/geolambda/work'
+
   test:
     image: 'developmentseed/landsat-util:latest'
     working_dir: /home/geolambda
