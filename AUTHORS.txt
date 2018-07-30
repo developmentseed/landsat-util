@@ -6,5 +6,6 @@ Marc Farra https://github.com/kamicut
 Drew Bollinger https://github.com/drewbo
 Sean Gillies https://github.com/sgillies
 Alex Kappel https://twitter.com/alex_kappel
+Matthew Hanson https://github.com/matthewhanson
 
 See also https://github.com/developmentseed/landsat-util/graphs/contributors.

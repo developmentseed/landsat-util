@@ -11,11 +11,18 @@ Mac OSX
 Ubuntu 14.04
 ++++++++++++
 
-Use pip to install landsat-util. If you are not using virtualenv, you might have to run ``pip`` as ``sudo``::
+Use pip to install landsat-util. Follow these instructions to `install pip on Ubuntu`_::
 
     $: sudo apt-get update
-    $: sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran libfreetype6-dev
-    $: pip install landsat-util
+    $: sudo apt-get install libgdal-dev python3-dev build-essential
+    $: pip3 install numpy
+    $: pip3 install landsat-util
+
+.. _`install pip on Ubuntu`: https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py
+
+If you are not using virtualenv, you might have to use the ``--user`` flag with  ``pip`` (see `description of pip user installs`_).
+
+.. _`description of pip user installs`: https://pip.pypa.io/en/stable/user_guide/#user-installs
 
 Other systems
 +++++++++++++

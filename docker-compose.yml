@@ -1,0 +1,45 @@
+version: '2'
+
+services:
+
+  base:
+    build:
+      context: .
+    image: 'developmentseed/landsat-util:latest'
+    entrypoint: /bin/bash
+    env_file: .env
+    volumes:
+      - '.:/home/geolambda/work'
+
+  landsat:
+    image: 'developmentseed/landsat-util:latest'
+    working_dir: /home/geolambda
+    entrypoint: landsat
+    env_file: .env
+    volumes:
+      - '.:/home/geolambda/work'
+
+  test:
+    image: 'developmentseed/landsat-util:latest'
+    working_dir: /home/geolambda
+    entrypoint: bash -c 'pytest tests/';
+    env_file: .env
+    volumes:
+      - './lambda:/home/geolambda/lambda'
+      - './tests:/home/geolambda/tests'
+
+  package:
+    image: 'developmentseed/landsat-util:latest'
+    command: lambda-package.sh
+    working_dir: /home/geolambda/work
+    volumes:
+      - '.:/home/geolambda/work'
+
+  testpackage:
+    image: 'developmentseed/geolambda:base'
+    command: bash -c "pytest tests/";
+    working_dir: /home/geolambda
+    env_file: .env
+    volumes:
+      - './tests:/home/geolambda/tests'
+
