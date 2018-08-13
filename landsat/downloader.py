@@ -190,12 +190,10 @@ class Downloader(VerbosityMixin):
 
         self.output('Downloading: %s' % filename, normal=True, arrow=True)
 
-        # print(join(path, filename))
-        # raise Exception
-        if exists(join(path, filename)):
-            size = getsize(join(path, filename))
-            if size == self.get_remote_file_size(url):
-                self.output('%s already exists on your system' % filename, normal=True, color='green', indent=1)
+        if exists(join(path, filename)) and \
+           getsize(join(path, filename)) == self.get_remote_file_size(url):
+            self.output('%s already exists on your system' % filename,
+                        normal=True, color='green', indent=1)
 
         else:
             fetch(url, path)
