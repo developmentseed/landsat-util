@@ -15,7 +15,7 @@ from os.path import join, isdir
 import numpy
 import rasterio
 from rasterio.coords import disjoint_bounds
-from rasterio.warp import reproject, RESAMPLING, transform, transform_bounds
+from rasterio.warp import reproject, Resampling, transform, transform_bounds
 
 from skimage import transform as sktransform
 from skimage.util import img_as_ubyte
@@ -155,7 +155,7 @@ class BaseProcess(VerbosityMixin):
         for i, band in enumerate(bands):
             self.output("band %s" % self.bands[i], normal=True, color='green', indent=1)
             reproject(band, new_bands[i], src_transform=proj_data['transform'], src_crs=proj_data['crs'],
-                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=RESAMPLING.nearest,
+                      dst_transform=proj_data['dst_transform'], dst_crs=self.dst_crs, resampling=Resampling.nearest,
                       num_threads=2)
 
     def _unzip(self, src, dst, scene, force_unzip=False):
