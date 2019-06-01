@@ -25,7 +25,7 @@ For full documentation visit: https://pythonhosted.org/landsat-util/
 
 To run the documentation locally::
 
-    $ pip install -r requirements/dev.txt
+    $ pip install -r requirements-dev.txt
     $ cd docs
     $ make html
 
